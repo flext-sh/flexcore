@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # FlexCore Node 1 metrics
+  - job_name: 'flexcore-node1'
+    static_configs:
+      - targets: ['flexcore-node1:9090']
+    scrape_interval: 5s
+    metrics_path: /metrics
+
+  # FlexCore Node 2 metrics  
+  - job_name: 'flexcore-node2'
+    static_configs:
+      - targets: ['flexcore-node2:9090']
+    scrape_interval: 5s
+    metrics_path: /metrics
+
+  # Redis metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 10s
+
+  # Windmill metrics
+  - job_name: 'windmill'
+    static_configs:
+      - targets: ['windmill:8000']
+    scrape_interval: 10s
+    metrics_path: /metrics

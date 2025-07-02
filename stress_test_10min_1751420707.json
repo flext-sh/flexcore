@@ -1,0 +1,174 @@
+{
+  "test_started_at": 1751420707,
+  "test_completed_at": 1751421309,
+  "test_duration_seconds": 602,
+  "total_messages_sent": 30000,
+  "total_messages_received": 29995,
+  "average_messages_per_sec": 49.83388704318937,
+  "peak_messages_per_sec": 50,
+  "lowest_messages_per_sec": 49.833333333333336,
+  "error_count": 0,
+  "success_rate": 99.98333333333333,
+  "intervals": [
+    {
+      "interval_start": 1751420707,
+      "interval_end": 1751420737,
+      "messages_sent": 1495,
+      "messages_received": 1495,
+      "messages_per_sec": 49.833333333333336,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420737,
+      "interval_end": 1751420767,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420767,
+      "interval_end": 1751420797,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420797,
+      "interval_end": 1751420827,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420827,
+      "interval_end": 1751420857,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420857,
+      "interval_end": 1751420887,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420887,
+      "interval_end": 1751420917,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420917,
+      "interval_end": 1751420947,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420947,
+      "interval_end": 1751420977,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751420977,
+      "interval_end": 1751421007,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421007,
+      "interval_end": 1751421037,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421037,
+      "interval_end": 1751421067,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421067,
+      "interval_end": 1751421097,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421097,
+      "interval_end": 1751421127,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421127,
+      "interval_end": 1751421157,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421157,
+      "interval_end": 1751421187,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421187,
+      "interval_end": 1751421217,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421217,
+      "interval_end": 1751421247,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421247,
+      "interval_end": 1751421277,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    },
+    {
+      "interval_start": 1751421277,
+      "interval_end": 1751421307,
+      "messages_sent": 1500,
+      "messages_received": 1500,
+      "messages_per_sec": 50,
+      "errors_in_interval": 0
+    }
+  ]
+}

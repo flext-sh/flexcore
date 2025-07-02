@@ -1,0 +1,33 @@
+# FlexCore E2E Test Runner Dockerfile
+
+FROM alpine:3.18
+
+# Install required tools for testing
+RUN apk add --no-cache \
+    curl \
+    jq \
+    bash \
+    bc \
+    postgresql-client \
+    && rm -rf /var/cache/apk/*
+
+# Create test user
+RUN addgroup -g 1001 -S tester && \
+    adduser -u 1001 -S tester -G tester
+
+# Set working directory
+WORKDIR /app
+
+# Create results directory
+RUN mkdir -p /app/results && \
+    chown -R tester:tester /app
+
+# Copy test scripts
+COPY tests/e2e/run-e2e-tests.sh /app/
+RUN chmod +x /app/run-e2e-tests.sh
+
+# Switch to test user
+USER tester
+
+# Default command
+CMD ["./run-e2e-tests.sh"]

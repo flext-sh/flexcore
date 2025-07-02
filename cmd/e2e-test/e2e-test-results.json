@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Core Architecture Initialization",
+    "passed": true,
+    "duration": 24190
+  },
+  {
+    "name": "Dependency Injection System",
+    "passed": true,
+    "duration": 35385
+  },
+  {
+    "name": "Command/Query Bus Integration",
+    "passed": true,
+    "duration": 61821
+  },
+  {
+    "name": "Event System Integration",
+    "passed": true,
+    "duration": 10107
+  },
+  {
+    "name": "Observability Integration",
+    "passed": true,
+    "duration": 20665
+  },
+  {
+    "name": "Plugin System E2E",
+    "passed": true,
+    "duration": 32096
+  },
+  {
+    "name": "Windmill Client Integration",
+    "passed": true,
+    "duration": 2040
+  },
+  {
+    "name": "Timer Singletons \u0026 Cluster Coordination",
+    "passed": true,
+    "duration": 150520302
+  },
+  {
+    "name": "Distributed Event System \u0026 Clustering",
+    "passed": true,
+    "duration": 100263295
+  },
+  {
+    "name": "Cross-Component Integration",
+    "passed": true,
+    "duration": 27597
+  },
+  {
+    "name": "Error Handling \u0026 Recovery",
+    "passed": true,
+    "duration": 39110
+  },
+  {
+    "name": "Performance \u0026 Memory",
+    "passed": true,
+    "duration": 265472
+  }
+]

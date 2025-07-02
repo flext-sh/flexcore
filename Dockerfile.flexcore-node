@@ -1,0 +1,51 @@
+# Build stage
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git gcc musl-dev
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the main FlexCore binary
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o flexcore-node ./cmd/flexcore-node/
+
+# Build plugins
+RUN cd plugins/data-processor && go build -o ../../runtime-plugins/data-processor ./
+RUN cd plugins/json-transformer && go build -o ../../runtime-plugins/json-transformer ./
+RUN cd plugins/api-loader && go build -o ../../runtime-plugins/api-loader ./
+
+# Runtime stage
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk --no-cache add ca-certificates curl redis-tools
+
+WORKDIR /app
+
+# Copy binary and plugins
+COPY --from=builder /app/flexcore-node .
+COPY --from=builder /app/runtime-plugins ./plugins/
+COPY --from=builder /app/scripts ./scripts/
+
+# Create directories
+RUN mkdir -p logs data config
+
+# Copy configuration files
+COPY config/flexcore-node.yaml ./config/
+
+# Expose ports
+EXPOSE 8080 9090
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+# Run FlexCore
+CMD ["./flexcore-node"]
