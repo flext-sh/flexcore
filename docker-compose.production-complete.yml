@@ -1,0 +1,277 @@
+version: '3.8'
+
+services:
+  # Database Layer
+  postgres:
+    image: postgres:15-alpine
+    container_name: flexcore-postgres
+    environment:
+      POSTGRES_DB: flexcore
+      POSTGRES_USER: flexcore
+      POSTGRES_PASSWORD: flexcore123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flexcore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flexcore-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: flexcore-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flexcore-network
+
+  # Core FlexCore Services
+  event-store:
+    build:
+      context: .
+      dockerfile: Dockerfile.event-store
+    container_name: flexcore-event-store
+    ports:
+      - "8095:8095"
+    volumes:
+      - event_store_data:/app/data
+    environment:
+      - DATABASE_PATH=/app/data/events.db
+      - LOG_LEVEL=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8095/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - flexcore-network
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.api-gateway
+    container_name: flexcore-api-gateway
+    ports:
+      - "8100:8100"
+    environment:
+      - EVENT_STORE_URL=http://event-store:8095
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=info
+    depends_on:
+      event-store:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/system/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - flexcore-network
+
+  script-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.script-engine
+    container_name: flexcore-script-engine
+    ports:
+      - "8098:8098"
+    volumes:
+      - script_temp:/tmp/flexcore_scripts
+    environment:
+      - PYTHON_PATH=/usr/bin/python3
+      - NODE_PATH=/usr/bin/node
+      - WORK_DIR=/tmp/flexcore_scripts
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8098/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - flexcore-network
+
+  cqrs-read-model:
+    build:
+      context: .
+      dockerfile: Dockerfile.cqrs
+    container_name: flexcore-cqrs
+    ports:
+      - "8099:8099"
+    volumes:
+      - read_models_data:/app/data
+    environment:
+      - EVENT_STORE_URL=http://event-store:8095
+      - READ_MODELS_DB=/app/data/read_models.db
+    depends_on:
+      event-store:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8099/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - flexcore-network
+
+  data-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile.processor
+    container_name: flexcore-data-processor
+    ports:
+      - "8097:8097"
+    environment:
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8097/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - flexcore-network
+
+  ai-ml-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai-ml
+    container_name: flexcore-ai-ml
+    ports:
+      - "8200:8200"
+    environment:
+      - LOG_LEVEL=info
+      - ALGORITHMS_ENABLED=all
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8200/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - flexcore-network
+
+  # Monitoring and Observability
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: flexcore-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - flexcore-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: flexcore-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - flexcore-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: flexcore-jaeger
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    volumes:
+      - jaeger_data:/tmp
+    networks:
+      - flexcore-network
+
+  # Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: flexcore-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - api-gateway
+      - grafana
+    networks:
+      - flexcore-network
+
+  # Health Check Service
+  health-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.health-monitor
+    container_name: flexcore-health-monitor
+    environment:
+      - SERVICES_TO_MONITOR=event-store:8095,api-gateway:8100,script-engine:8098,cqrs-read-model:8099,data-processor:8097,ai-ml-service:8200
+      - CHECK_INTERVAL=30s
+      - PROMETHEUS_URL=http://prometheus:9090
+    depends_on:
+      - event-store
+      - api-gateway
+      - script-engine
+      - cqrs-read-model
+      - data-processor
+      - ai-ml-service
+      - prometheus
+    networks:
+      - flexcore-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  event_store_data:
+    driver: local
+  read_models_data:
+    driver: local
+  script_temp:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  jaeger_data:
+    driver: local
+
+networks:
+  flexcore-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
