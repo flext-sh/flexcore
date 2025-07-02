@@ -3,9 +3,7 @@ package windmill
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -207,7 +205,7 @@ function validateSchema(input) {
     if (schema.required) {
         for (const field of schema.required) {
             if (!(field in data)) {
-                throw new Error(\`Required field missing: \${field}\`);
+                throw new Error("Required field missing: " + field);
             }
         }
     }

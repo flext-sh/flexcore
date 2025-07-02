@@ -1,181 +1,365 @@
-// Package flexcore integration tests
-package flexcore_test
+// Integration test for FlexCore - validates complete functionality
+//go:build integration
+// +build integration
+
+package main
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"os/exec"
 	"testing"
 	"time"
 
-	"github.com/flext/flexcore/application/commands"
-	"github.com/flext/flexcore/application/queries"
-	"github.com/flext/flexcore/domain"
-	"github.com/flext/flexcore/domain/entities"
-	"github.com/flext/flexcore/infrastructure/di"
-	"github.com/flext/flexcore/infrastructure/events"
-	"github.com/flext/flexcore/shared/result"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestBasicIntegration(t *testing.T) {
-	// Test basic component integration
-	container := di.NewContainer()
-	
-	// Register components using correct API
-	container.RegisterSingleton(func() *events.InMemoryEventBus {
-		return events.NewInMemoryEventBus(100, 10) // buffered and concurrent workers
-	})
-	
-	container.RegisterSingleton(func() commands.CommandBus {
-		return commands.NewCommandBus()
-	})
-	
-	// Test resolution using generic Resolve
-	eventBusResult := di.Resolve[*events.InMemoryEventBus](container)
-	require.True(t, eventBusResult.IsSuccess())
-	
-	commandBusResult := di.Resolve[commands.CommandBus](container)
-	require.True(t, commandBusResult.IsSuccess())
-	
-	// Test event bus
-	eventBus := eventBusResult.Value()
-	assert.NotNil(t, eventBus)
-	
-	// Test command bus
-	commandBus := commandBusResult.Value()
-	assert.NotNil(t, commandBus)
+const (
+	testPort    = "8090"
+	baseURL     = "http://localhost:8090"
+	testTimeout = 30 * time.Second
+)
+
+// TestMain controls the setup and teardown for integration tests
+func TestMain(m *testing.M) {
+	// Build the application
+	cmd := exec.Command("go", "build", "-o", "build/flexcore-test", "./cmd/flexcore")
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Failed to build application: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Start the server
+	serverCmd := exec.Command("./build/flexcore-test", "--port", testPort)
+	if err := serverCmd.Start(); err != nil {
+		fmt.Printf("Failed to start server: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Wait for server to be ready
+	ready := false
+	for i := 0; i < 30; i++ {
+		if resp, err := http.Get(baseURL + "/health"); err == nil && resp.StatusCode == 200 {
+			ready = true
+			resp.Body.Close()
+			break
+		}
+		time.Sleep(time.Second)
+	}
+
+	if !ready {
+		serverCmd.Process.Kill()
+		fmt.Println("Server failed to start within timeout")
+		os.Exit(1)
+	}
+
+	// Run tests
+	code := m.Run()
+
+	// Cleanup
+	serverCmd.Process.Kill()
+	os.Remove("build/flexcore-test")
+
+	os.Exit(code)
 }
 
-func TestDomainEntities(t *testing.T) {
-	// Test Pipeline entity with correct parameters
-	pipelineResult := entities.NewPipeline("Test Pipeline", "A test pipeline", "test-owner")
-	require.True(t, pipelineResult.IsSuccess())
-	
-	pipeline := pipelineResult.Value()
-	assert.Equal(t, "Test Pipeline", pipeline.Name)
-	assert.Equal(t, "A test pipeline", pipeline.Description)
-	assert.Equal(t, entities.PipelineStatusDraft, pipeline.Status)
-	
-	// Test Pipeline activation
-	activateResult := pipeline.Activate()
-	require.True(t, activateResult.IsSuccess())
-	assert.Equal(t, entities.PipelineStatusActive, pipeline.Status)
-	
-	// Test Plugin entity
-	pluginResult := entities.NewPlugin("test-plugin", "1.0.0", "Test plugin", entities.PluginTypeExtractor)
-	require.True(t, pluginResult.IsSuccess())
-	
-	plugin := pluginResult.Value()
-	assert.Equal(t, "test-plugin", plugin.Name())
-	assert.Equal(t, "1.0.0", plugin.Version())
-	assert.Equal(t, entities.PluginTypeExtractor, plugin.Type())
-	assert.Equal(t, entities.PluginStatusRegistered, plugin.Status())
-	
-	// Test Plugin activation
-	activatePluginResult := plugin.Activate()
-	require.True(t, activatePluginResult.IsSuccess())
-	assert.Equal(t, entities.PluginStatusActive, plugin.Status())
+func TestIntegration_HealthEndpoint(t *testing.T) {
+	resp, err := http.Get(baseURL + "/health")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+
+	var health map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&health)
+	require.NoError(t, err)
+
+	assert.Equal(t, "healthy", health["status"])
+	assert.Equal(t, "dev", health["version"])
+	assert.NotNil(t, health["timestamp"])
 }
 
-func TestEventSystem(t *testing.T) {
-	// Test event publication and subscription
-	eventBus := events.NewInMemoryEventBus(10, 100) // 10 workers, 100 buffer
-	
-	received := make(chan string, 1)
-	
-	// Subscribe to events
-	err := eventBus.Subscribe("test.event", func(ctx context.Context, event domain.DomainEvent) error {
-		received <- event.EventType()
-		return nil
-	})
+func TestIntegration_InfoEndpoint(t *testing.T) {
+	resp, err := http.Get(baseURL + "/info")
 	require.NoError(t, err)
-	
-	// Start the event bus
-	ctx := context.Background()
-	err = eventBus.Start(ctx)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var info map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&info)
 	require.NoError(t, err)
-	defer eventBus.Stop()
-	
-	// Create and publish event
-	event := domain.NewBaseDomainEvent("test.event", "test-aggregate")
-	
-	err = eventBus.Publish(ctx, event)
+
+	assert.Equal(t, "flexcore", info["service"])
+	assert.Equal(t, "dev", info["version"])
+	assert.Equal(t, "flexcore-cluster", info["cluster"])
+	assert.NotEmpty(t, info["node_id"])
+}
+
+func TestIntegration_MetricsEndpoint(t *testing.T) {
+	resp, err := http.Get(baseURL + "/metrics")
 	require.NoError(t, err)
-	
-	// Check event was received
-	select {
-	case eventType := <-received:
-		assert.Equal(t, "test.event", eventType)
-	case <-time.After(500 * time.Millisecond):
-		t.Fatal("Event not received within timeout")
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Contains(t, resp.Header.Get("Content-Type"), "text/plain")
+}
+
+func TestIntegration_SendEvent(t *testing.T) {
+	eventData := map[string]interface{}{
+		"type":         "test-event",
+		"aggregate_id": "test-aggregate",
+		"data": map[string]interface{}{
+			"test_key": "test_value",
+		},
+	}
+
+	body, _ := json.Marshal(eventData)
+	resp, err := http.Post(baseURL+"/events", "application/json", bytes.NewBuffer(body))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	require.NoError(t, err)
+
+	assert.Equal(t, "accepted", result["status"])
+	assert.NotEmpty(t, result["id"])
+}
+
+func TestIntegration_BatchEvents(t *testing.T) {
+	events := []map[string]interface{}{
+		{
+			"type":         "batch-event-1",
+			"aggregate_id": "batch-aggregate-1",
+			"data":         map[string]interface{}{"batch": 1},
+		},
+		{
+			"type":         "batch-event-2",
+			"aggregate_id": "batch-aggregate-2",
+			"data":         map[string]interface{}{"batch": 2},
+		},
+	}
+
+	body, _ := json.Marshal(events)
+	resp, err := http.Post(baseURL+"/events/batch", "application/json", bytes.NewBuffer(body))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	require.NoError(t, err)
+
+	assert.Equal(t, float64(2), result["total"])
+
+	results := result["results"].([]interface{})
+	assert.Len(t, results, 2)
+
+	for _, r := range results {
+		res := r.(map[string]interface{})
+		assert.Equal(t, "accepted", res["status"])
+		assert.NotEmpty(t, res["id"])
 	}
 }
 
-func TestDependencyInjection(t *testing.T) {
-	container := di.NewContainer()
-	
-	// Test singleton registration
-	container.RegisterSingleton(func() string {
-		return "singleton-value"
-	})
-	
-	// Test factory registration (transient)
-	container.Register(func() string {
-		return "factory-value"
-	})
-	
-	// Test instance registration
-	container.RegisterInstance("static-value")
-	
-	// Test resolution using generics
-	singletonResult1 := di.Resolve[string](container)
-	require.True(t, singletonResult1.IsSuccess())
-	
-	singletonResult2 := di.Resolve[string](container)
-	require.True(t, singletonResult2.IsSuccess())
-	
-	// Should get the same value since string is the registered type
-	assert.Equal(t, singletonResult1.Value(), singletonResult2.Value())
-}
+func TestIntegration_SendMessage(t *testing.T) {
+	messageData := map[string]interface{}{
+		"test_message": "hello",
+		"priority":     "high",
+	}
 
-// Test command and handler types
-type TestCommand struct {
-	Name string
-}
-
-func (c TestCommand) CommandType() string {
-	return "test.command"
-}
-
-type TestCommandHandler struct{}
-
-func (h *TestCommandHandler) Handle(ctx context.Context, cmd TestCommand) result.Result[interface{}] {
-	return result.Success[interface{}]("handled: " + cmd.Name)
-}
-
-func TestCommandHandling(t *testing.T) {
-	
-	// Setup
-	commandBus := commands.NewCommandBus()
-	handler := &TestCommandHandler{}
-	
-	// Register handler
-	err := commandBus.RegisterHandler(TestCommand{}, handler)
+	body, _ := json.Marshal(messageData)
+	resp, err := http.Post(baseURL+"/queues/test-queue/messages", "application/json", bytes.NewBuffer(body))
 	require.NoError(t, err)
-	
-	// Execute command
-	cmd := TestCommand{Name: "test"}
-	result := commandBus.Execute(context.Background(), cmd)
-	
-	require.True(t, result.IsSuccess())
-	assert.Equal(t, "handled: test", result.Value())
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	require.NoError(t, err)
+
+	assert.Equal(t, "queued", result["status"])
+	assert.Equal(t, "test-queue", result["queue"])
+	assert.NotEmpty(t, result["id"])
 }
 
-func TestQueryHandling(t *testing.T) {
-	// Test query system
-	queryBus := queries.NewQueryBus()
-	assert.NotNil(t, queryBus)
+func TestIntegration_ReceiveMessages(t *testing.T) {
+	// First send a message
+	messageData := map[string]interface{}{
+		"test_message": "receive_test",
+	}
+
+	body, _ := json.Marshal(messageData)
+	sendResp, err := http.Post(baseURL+"/queues/receive-test-queue/messages", "application/json", bytes.NewBuffer(body))
+	require.NoError(t, err)
+	sendResp.Body.Close()
+
+	// Then receive messages
+	resp, err := http.Get(baseURL + "/queues/receive-test-queue/messages")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	require.NoError(t, err)
+
+	assert.Equal(t, "receive-test-queue", result["queue"])
+	assert.GreaterOrEqual(t, int(result["count"].(float64)), 1)
+
+	messages := result["messages"].([]interface{})
+	assert.GreaterOrEqual(t, len(messages), 1)
+
+	// Check the message we sent
+	message := messages[0].(map[string]interface{})
+	data := message["data"].(map[string]interface{})
+	assert.Equal(t, "receive_test", data["test_message"])
+}
+
+func TestIntegration_ExecuteWorkflow(t *testing.T) {
+	workflowData := map[string]interface{}{
+		"path": "test-workflow",
+		"input": map[string]interface{}{
+			"workflow_param": "test_value",
+		},
+	}
+
+	body, _ := json.Marshal(workflowData)
+	resp, err := http.Post(baseURL+"/workflows/execute", "application/json", bytes.NewBuffer(body))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	require.NoError(t, err)
+
+	assert.Equal(t, "started", result["status"])
+	jobID := result["job_id"].(string)
+	assert.NotEmpty(t, jobID)
+
+	// Test workflow status
+	statusResp, err := http.Get(baseURL + "/workflows/" + jobID + "/status")
+	require.NoError(t, err)
+	defer statusResp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, statusResp.StatusCode)
+
+	var status map[string]interface{}
+	err = json.NewDecoder(statusResp.Body).Decode(&status)
+	require.NoError(t, err)
+
+	assert.Equal(t, "test-workflow", status["path"])
+	assert.Equal(t, "running", status["status"])
+}
+
+func TestIntegration_ClusterStatus(t *testing.T) {
+	resp, err := http.Get(baseURL + "/cluster/status")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var status map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&status)
+	require.NoError(t, err)
+
+	assert.Equal(t, "flexcore-cluster", status["cluster_name"])
+	assert.Equal(t, "healthy", status["status"])
+	assert.NotEmpty(t, status["node_id"])
+	assert.GreaterOrEqual(t, int(status["cluster_size"].(float64)), 1)
+}
+
+func TestIntegration_ErrorHandling(t *testing.T) {
+	// Test invalid JSON
+	resp, err := http.Post(baseURL+"/events", "application/json", bytes.NewBufferString("invalid json"))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	// Test missing required fields
+	emptyEvent := map[string]interface{}{}
+	body, _ := json.Marshal(emptyEvent)
+	resp, err = http.Post(baseURL+"/events", "application/json", bytes.NewBuffer(body))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	// Test nonexistent workflow status
+	resp, err = http.Get(baseURL + "/workflows/nonexistent/status")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+func TestIntegration_ConcurrentRequests(t *testing.T) {
+	const numRequests = 10
 	
-	// Basic query bus functionality
-	// Note: Specific query tests would depend on query implementations
+	// Create a channel to collect results
+	results := make(chan bool, numRequests)
+	
+	// Send concurrent health check requests
+	for i := 0; i < numRequests; i++ {
+		go func() {
+			resp, err := http.Get(baseURL + "/health")
+			if err != nil {
+				results <- false
+				return
+			}
+			defer resp.Body.Close()
+			results <- resp.StatusCode == 200
+		}()
+	}
+	
+	// Collect results
+	successCount := 0
+	for i := 0; i < numRequests; i++ {
+		if success := <-results; success {
+			successCount++
+		}
+	}
+	
+	assert.Equal(t, numRequests, successCount, "All concurrent requests should succeed")
+}
+
+// Benchmark tests
+func BenchmarkIntegration_HealthEndpoint(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		resp, err := http.Get(baseURL + "/health")
+		if err != nil {
+			b.Fatal(err)
+		}
+		resp.Body.Close()
+	}
+}
+
+func BenchmarkIntegration_SendEvent(b *testing.B) {
+	eventData := map[string]interface{}{
+		"type":         "benchmark-event",
+		"aggregate_id": "benchmark-aggregate",
+		"data":         map[string]interface{}{"benchmark": true},
+	}
+	body, _ := json.Marshal(eventData)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		resp, err := http.Post(baseURL+"/events", "application/json", bytes.NewBuffer(body))
+		if err != nil {
+			b.Fatal(err)
+		}
+		resp.Body.Close()
+	}
 }

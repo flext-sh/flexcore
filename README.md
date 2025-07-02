@@ -1,16 +1,15 @@
-# FlexCore - Clean Architecture Kernel for Go
+# FlexCore - Event-Driven Distributed Architecture
 
-**FlexCore** é uma biblioteca Go moderna que implementa Clean Architecture com DDD (Domain-Driven Design), sistema de eventos (windmill), workflows (luno/workflow) e dependency injection para substituir o core do projeto Flext.
+FlexCore is a production-ready, event-driven distributed system built in Go, designed for enterprise-scale data processing and workflow orchestration.
 
-## 🎯 Características Principais
+## 🎯 Core Features
 
-- **Clean Architecture**: Estrutura hexagonal que força implementação correta
-- **Domain-Driven Design**: Agregados, entidades, value objects e domain events
-- **Sistema de Eventos**: Integração com Windmill para eventos distribuídos
-- **Workflows**: Integração com luno/workflow para orquestração de processos
-- **Dependency Injection**: Sistema de DI similar ao lato (Python)
-- **Type Safety**: Tipos seguros com generics Go
-- **Observabilidade**: Métricas e tracing built-in
+- **Event Sourcing** - Complete audit trail and state reconstruction
+- **CQRS** - Separate read/write models for optimal performance  
+- **Plugin System** - HashiCorp-style plugin architecture
+- **Service Mesh** - Microservices with service discovery
+- **Real-time Processing** - Event-driven data pipelines
+- **Enterprise Ready** - Production-grade reliability and monitoring
 
 ## 🏗️ Arquitetura
 
