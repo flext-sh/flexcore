@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package flexcore.plugins;
+
+option go_package = "github.com/flext/flexcore/plugins";
+
+// DataProcessor service definition
+service DataProcessor {
+  // Process data with the plugin
+  rpc Process(ProcessRequest) returns (ProcessResponse);
+  
+  // Get plugin information
+  rpc GetInfo(InfoRequest) returns (InfoResponse);
+  
+  // Health check
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+// Process request message
+message ProcessRequest {
+  bytes data = 1;
+  map<string, string> metadata = 2;
+  string input_format = 3;
+  string output_format = 4;
+}
+
+// Process response message
+message ProcessResponse {
+  bytes data = 1;
+  map<string, string> metadata = 2;
+  bool success = 3;
+  string error_message = 4;
+  int64 processing_time_ms = 5;
+}
+
+// Info request message
+message InfoRequest {}
+
+// Info response message
+message InfoResponse {
+  string name = 1;
+  string version = 2;
+  string description = 3;
+  repeated string supported_formats = 4;
+  map<string, string> capabilities = 5;
+}
+
+// Health request message
+message HealthRequest {}
+
+// Health response message
+message HealthResponse {
+  bool healthy = 1;
+  string status = 2;
+  string message = 3;
+}

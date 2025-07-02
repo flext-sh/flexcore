@@ -1,0 +1,226 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: flexcore
+      POSTGRES_USER: flexcore
+      POSTGRES_PASSWORD: flexcore123
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flexcore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Windmill Server - Core workflow engine
+  windmill-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: windmill
+      POSTGRES_USER: windmill
+      POSTGRES_PASSWORD: windmill123
+    volumes:
+      - windmill_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U windmill"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  windmill-server:
+    image: ghcr.io/windmill-labs/windmill:main
+    environment:
+      DATABASE_URL: postgresql://windmill:windmill123@windmill-db:5432/windmill
+      BASE_URL: http://localhost:8000
+      RUST_LOG: info
+    ports:
+      - "8000:8000"
+    depends_on:
+      windmill-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  windmill-worker:
+    image: ghcr.io/windmill-labs/windmill:main
+    environment:
+      DATABASE_URL: postgresql://windmill:windmill123@windmill-db:5432/windmill
+      BASE_URL: http://windmill-server:8000
+      RUST_LOG: info
+      MODE: worker
+    depends_on:
+      windmill-server:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+
+  # FlexCore Node 1 - Leader candidate
+  flexcore-node1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.flexcore-node
+    environment:
+      NODE_ID: "node-1"
+      NODE_TYPE: "leader-candidate"
+      CLUSTER_SIZE: "3"
+      WINDMILL_URL: "http://windmill-server:8000"
+      WINDMILL_TOKEN: "test-token"
+      POSTGRES_URL: "postgresql://flexcore:flexcore123@postgres:5432/flexcore"
+      REDIS_URL: "redis://redis:6379"
+      HTTP_PORT: "8001"
+      CLUSTER_DISCOVERY: "redis"
+      LOG_LEVEL: "debug"
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      windmill-server:
+        condition: service_healthy
+    volumes:
+      - ./dist/plugins:/app/plugins:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FlexCore Node 2 - Worker node
+  flexcore-node2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.flexcore-node
+    environment:
+      NODE_ID: "node-2"
+      NODE_TYPE: "worker"
+      CLUSTER_SIZE: "3"
+      WINDMILL_URL: "http://windmill-server:8000"
+      WINDMILL_TOKEN: "test-token"
+      POSTGRES_URL: "postgresql://flexcore:flexcore123@postgres:5432/flexcore"
+      REDIS_URL: "redis://redis:6379"
+      HTTP_PORT: "8002"
+      CLUSTER_DISCOVERY: "redis"
+      LOG_LEVEL: "debug"
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      windmill-server:
+        condition: service_healthy
+      flexcore-node1:
+        condition: service_healthy
+    volumes:
+      - ./dist/plugins:/app/plugins:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FlexCore Node 3 - Worker node
+  flexcore-node3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.flexcore-node
+    environment:
+      NODE_ID: "node-3"
+      NODE_TYPE: "worker"
+      CLUSTER_SIZE: "3"
+      WINDMILL_URL: "http://windmill-server:8000"
+      WINDMILL_TOKEN: "test-token"
+      POSTGRES_URL: "postgresql://flexcore:flexcore123@postgres:5432/flexcore"
+      REDIS_URL: "redis://redis:6379"
+      HTTP_PORT: "8003"
+      CLUSTER_DISCOVERY: "redis"
+      LOG_LEVEL: "debug"
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      windmill-server:
+        condition: service_healthy
+      flexcore-node1:
+        condition: service_healthy
+    volumes:
+      - ./dist/plugins:/app/plugins:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Load Balancer for FlexCore cluster
+  haproxy:
+    image: haproxy:2.8-alpine
+    ports:
+      - "8080:8080"
+      - "8404:8404"  # Stats page
+    volumes:
+      - ./docker/haproxy/haproxy-cluster.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - flexcore-node1
+      - flexcore-node2
+      - flexcore-node3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8404/stats"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # E2E Test Runner - Validates complete system
+  e2e-test-runner:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.e2e-test
+    environment:
+      FLEXCORE_CLUSTER_URL: "http://haproxy:8080"
+      WINDMILL_URL: "http://windmill-server:8000"
+      POSTGRES_URL: "postgresql://flexcore:flexcore123@postgres:5432/flexcore"
+      TEST_TIMEOUT: "300s"
+      CLUSTER_NODES: "flexcore-node1:8001,flexcore-node2:8002,flexcore-node3:8003"
+    depends_on:
+      flexcore-node1:
+        condition: service_healthy
+      flexcore-node2:
+        condition: service_healthy
+      flexcore-node3:
+        condition: service_healthy
+      haproxy:
+        condition: service_healthy
+    volumes:
+      - ./test-results:/app/results
+    profiles:
+      - test
+
+volumes:
+  postgres_data:
+  windmill_db:

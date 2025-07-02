@@ -1,0 +1,86 @@
+# FlexCore Test Node Dockerfile
+# Multi-stage build for efficient testing
+
+FROM golang:1.21-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git gcc musl-dev
+
+# Set working directory
+WORKDIR /build
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build FlexCore test application
+RUN CGO_ENABLED=1 go build \
+    -ldflags="-s -w" \
+    -o flexcore-test \
+    ./tests/e2e/cmd/flexcore-test
+
+# Build plugins
+WORKDIR /build/plugins
+
+# Build postgres-extractor
+WORKDIR /build/plugins/postgres-extractor
+RUN go mod tidy && CGO_ENABLED=1 go build -o postgres-extractor .
+
+# Build json-transformer
+WORKDIR /build/plugins/json-transformer
+RUN go mod tidy && CGO_ENABLED=0 go build -o json-transformer .
+
+# Build api-loader
+WORKDIR /build/plugins/api-loader
+RUN go mod tidy && CGO_ENABLED=0 go build -o api-loader .
+
+# Runtime stage
+FROM alpine:3.18
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    ca-certificates \
+    curl \
+    postgresql-client \
+    redis \
+    && rm -rf /var/cache/apk/*
+
+# Create app user
+RUN addgroup -g 1001 -S flexcore && \
+    adduser -u 1001 -S flexcore -G flexcore
+
+# Set working directory
+WORKDIR /app
+
+# Create necessary directories
+RUN mkdir -p /app/plugins /app/logs /app/data
+
+# Copy binary from builder
+COPY --from=builder /build/flexcore-test /app/
+COPY --from=builder /build/plugins/postgres-extractor/postgres-extractor /app/plugins/
+COPY --from=builder /build/plugins/json-transformer/json-transformer /app/plugins/
+COPY --from=builder /build/plugins/api-loader/api-loader /app/plugins/
+
+# Make binaries executable
+RUN chmod +x /app/flexcore-test /app/plugins/*
+
+# Change ownership
+RUN chown -R flexcore:flexcore /app
+
+# Switch to app user
+USER flexcore
+
+# Expose port
+EXPOSE 9000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:9000/health || exit 1
+
+# Default command
+CMD ["./flexcore-test"]

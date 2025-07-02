@@ -1,0 +1,122 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "FlexCore Overview - 100% Monitoring",
+    "tags": ["flexcore", "overview", "production"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Cluster Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"flexcore-cluster\"}",
+            "legendFormat": "Node {{instance}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{instance}} - {{method}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "s",
+            "min": 0
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "CQRS Commands",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(cqrs_commands_total[5m])",
+            "legendFormat": "Commands/sec"
+          },
+          {
+            "expr": "rate(cqrs_commands_failed_total[5m])",
+            "legendFormat": "Failures/sec"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Event Sourcing",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(eventsourcing_events_appended_total[5m])",
+            "legendFormat": "Events/sec"
+          },
+          {
+            "expr": "eventsourcing_snapshots_total",
+            "legendFormat": "Snapshots"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "Windmill Workflows",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(windmill_workflow_executions_total[5m])",
+            "legendFormat": "Executions/sec"
+          },
+          {
+            "expr": "rate(windmill_workflow_failures_total[5m])",
+            "legendFormat": "Failures/sec"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      }
+    ],
+    "time": {
+      "from": "now-5m",
+      "to": "now"
+    },
+    "refresh": "5s"
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "test_started_at": 1751421850,
+  "test_completed_at": 1751421851,
+  "test_duration_seconds": 1,
+  "total_requests": 5000,
+  "total_successful": 2232,
+  "total_failed": 2768,
+  "requests_per_second": 5000,
+  "success_rate": 44.64,
+  "average_latency_ms": 1.3298,
+  "max_latency_ms": 22,
+  "min_latency_ms": 0,
+  "node_results": {
+    "node-8081": {
+      "average_latency_ms": 0,
+      "requests_tested": 20,
+      "status": "EXCELLENT",
+      "success_count": 20,
+      "success_rate": 100
+    },
+    "node-8082": {
+      "average_latency_ms": 0,
+      "requests_tested": 20,
+      "status": "POOR",
+      "success_count": 0,
+      "success_rate": 0
+    },
+    "node-8083": {
+      "average_latency_ms": 0,
+      "requests_tested": 20,
+      "status": "EXCELLENT",
+      "success_count": 20,
+      "success_rate": 100
+    }
+  },
+  "load_distribution": {
+    "balance_factor": 0.95,
+    "distribution_type": "round_robin",
+    "nodes_tested": 3,
+    "requests_per_node": 1666
+  },
+  "cluster_performance": {
+    "coordination_tests": {
+      "node-8081": {
+        "cluster_data": {
+          "count": 3,
+          "nodes": [
+            {
+              "address": "localhost:8083",
+              "id": "node-d3a4813f7c1dbc33",
+              "last_seen": "2025-07-01T23:04:06-03:00",
+              "metadata": {
+                "type": "network"
+              }
+            },
+            {
+              "address": "localhost:8080",
+              "id": "node-099675c1e280fa63",
+              "last_seen": "2025-07-01T23:04:06.688493486-03:00",
+              "metadata": {
+                "coordinator": "real_redis",
+                "role": "worker",
+                "version": "1.0.0"
+              }
+            },
+            {
+              "address": "localhost:8080",
+              "id": "node-82b0b7ca5270f830",
+              "last_seen": "2025-07-01T23:04:11.067092122-03:00",
+              "metadata": {
+                "coordinator": "real_redis",
+                "role": "worker",
+                "version": "1.0.0"
+              }
+            }
+          ]
+        },
+        "latency_ms": 0,
+        "status": "SUCCESS"
+      },
+      "node-8082": {
+        "cluster_data": {
+          "error": "Not Found",
+          "request_id": "req-20250701230411-S54UKBrg",
+          "status": 404,
+          "timestamp": 1751421851
+        },
+        "latency_ms": 1,
+        "status": "SUCCESS"
+      },
+      "node-8083": {
+        "cluster_data": {
+          "count": 3,
+          "nodes": [
+            {
+              "address": "localhost:8083",
+              "id": "node-d3a4813f7c1dbc33",
+              "last_seen": "2025-07-01T23:04:06.46334705-03:00",
+              "metadata": {
+                "role": "worker",
+                "type": "network",
+                "version": "1.0.0"
+              }
+            },
+            {
+              "address": "localhost:8080",
+              "id": "node-099675c1e280fa63",
+              "last_seen": "2025-07-01T23:03:56.68831485-03:00",
+              "metadata": {
+                "coordinator": "real_redis",
+                "role": "worker",
+                "version": "1.0.0"
+              }
+            },
+            {
+              "address": "localhost:8080",
+              "id": "node-82b0b7ca5270f830",
+              "last_seen": "2025-07-01T23:04:01.073371809-03:00",
+              "metadata": {
+                "coordinator": "real_redis",
+                "role": "worker",
+                "version": "1.0.0"
+              }
+            }
+          ]
+        },
+        "latency_ms": 0,
+        "status": "SUCCESS"
+      }
+    },
+    "test_timestamp": 1751421851
+  },
+  "overall_status": "POOR",
+  "production_ready": false
+}
