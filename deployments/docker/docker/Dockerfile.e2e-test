@@ -1,0 +1,42 @@
+# E2E Test Runner for FlexCore Distributed System
+FROM golang:1.24-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates curl
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build E2E test binary
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o e2e-test ./tests/e2e/cmd/e2e-runner
+
+# Runtime stage
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk --no-cache add ca-certificates curl jq
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/e2e-test .
+
+# Create results directory
+RUN mkdir -p /app/results
+
+# Set permissions
+RUN chmod +x e2e-test
+
+# Create non-root user
+RUN adduser -D -s /bin/sh tester
+RUN chown -R tester:tester /app
+USER tester
+
+# Run E2E tests
+CMD ["./e2e-test"]

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/flext/flexcore/shared/result"
+	"github.com/flext/flexcore/pkg/result"
 )
 
 // AdapterBuilder provides a fluent interface for building adapters
