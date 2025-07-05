@@ -1,64 +1,80 @@
-# FlexCore - Event-Driven Distributed Architecture
+# FlexCore
+
+> **Professional Distributed Event-Driven Architecture System**
 
 FlexCore is a production-ready, event-driven distributed system built in Go, designed for enterprise-scale data processing and workflow orchestration.
 
-## 🎯 Core Features
+[![Go Version](https://img.shields.io/github/go-mod/go-version/flext/flexcore)](https://golang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- **Event Sourcing** - Complete audit trail and state reconstruction
-- **CQRS** - Separate read/write models for optimal performance  
-- **Plugin System** - HashiCorp-style plugin architecture
-- **Service Mesh** - Microservices with service discovery
-- **Real-time Processing** - Event-driven data pipelines
-- **Enterprise Ready** - Production-grade reliability and monitoring
+## ✨ Features
 
-## 🏗️ Arquitetura
+- **🔄 Event Sourcing** - Complete audit trail and state reconstruction
+- **⚡ CQRS Pattern** - Separate read/write models for optimal performance  
+- **🔌 Plugin System** - HashiCorp-style plugin architecture with dynamic loading
+- **🌐 Distributed Cluster** - Multi-node coordination with Redis/etcd
+- **📊 Observability** - Prometheus metrics, Grafana dashboards, and distributed tracing
+- **🏢 Enterprise Ready** - Production-grade reliability and monitoring
+
+## 🏗️ Architecture
 
 ```
 flexcore/
-├── domain/          # Camada de domínio (mais interna)
-│   ├── entities/    # Entidades do domínio
-│   ├── valueobjects/# Value objects
-│   ├── aggregates/  # Aggregate roots
-│   └── events/      # Domain events
-├── application/     # Casos de uso e comandos
-│   ├── commands/    # Command handlers
-│   ├── queries/     # Query handlers
-│   └── services/    # Application services
-├── infrastructure/ # Adapters externos
-│   ├── events/      # Event bus (windmill)
-│   ├── workflow/    # Workflow engine (luno)
-│   ├── persistence/ # Repositories
-│   └── di/          # Dependency injection
-└── shared/          # Tipos compartilhados
-    ├── errors/      # Error handling
-    ├── result/      # Result pattern
-    └── validation/  # Validation framework
+├── cmd/                    # Application entrypoints
+│   └── server/            # Main server application
+├── internal/              # Private application code
+│   ├── adapters/          # External integrations
+│   ├── application/       # Business logic layer
+│   │   ├── commands/      # Command handlers (CQRS)
+│   │   ├── queries/       # Query handlers (CQRS)
+│   │   └── services/      # Application services
+│   ├── domain/            # Core business logic
+│   │   ├── entities/      # Domain entities
+│   │   ├── events/        # Domain events
+│   │   └── repositories/  # Repository interfaces
+│   └── infrastructure/    # Infrastructure implementations
+│       ├── database/      # Database adapters
+│       ├── messaging/     # Event bus implementation
+│       ├── monitoring/    # Observability stack
+│       └── plugins/       # Plugin system
+├── pkg/                   # Public API
+├── deployments/           # Deployment configurations
+│   └── docker/           # Docker environments
+├── configs/              # Configuration files
+├── scripts/              # Build and utility scripts
+└── docs/                 # Documentation
 ```
 
 ## 🚀 Quick Start
 
-```go
-package main
+### Development
 
-import (
-    "github.com/flext/flexcore"
-    "github.com/flext/flexcore/infrastructure/di"
-)
+```bash
+# Clone the repository
+git clone https://github.com/flext/flexcore.git
+cd flexcore
 
-func main() {
-    // Initialize FlexCore kernel
-    kernel := flexcore.NewKernel()
-    
-    // Setup dependency injection
-    container := di.NewContainer()
-    
-    // Register services
-    container.RegisterSingleton(NewPipelineService)
-    
-    // Start application
-    app := kernel.BuildApplication(container)
-    app.Run()
-}
+# Start development environment
+docker-compose up -d
+
+# Build the application
+make build
+
+# Run tests
+make test
+
+# Start the server
+make run
+```
+
+### Production Deployment
+
+```bash
+# Deploy full cluster
+docker-compose -f deployments/docker/production/docker-compose.production.yml up -d
+
+# Check cluster status
+./scripts/check-cluster-status.sh
 ```
 
 ## 📦 Módulos
