@@ -85,7 +85,7 @@ func TestBatchEventsEndpoint(t *testing.T) {
 		},
 		{
 			"type":         "test.batch.event2",
-			"aggregate_id": "batch-2", 
+			"aggregate_id": "batch-2",
 			"data":         map[string]interface{}{"index": 2},
 		},
 	}
@@ -109,7 +109,7 @@ func TestBatchEventsEndpoint(t *testing.T) {
 
 func TestMessageQueueEndpoints(t *testing.T) {
 	queueName := "test-queue"
-	
+
 	// Test sending message
 	message := map[string]interface{}{
 		"content":  "Test message content",
@@ -152,7 +152,7 @@ func TestMessageQueueEndpoints(t *testing.T) {
 func TestWorkflowEndpoints(t *testing.T) {
 	// Test workflow execution
 	workflow := map[string]interface{}{
-		"path":  "/test/workflow",
+		"path": "/test/workflow",
 		"input": map[string]interface{}{
 			"data": "test workflow data",
 		},
@@ -214,4 +214,5 @@ func TestMetricsEndpoint(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Contains(t, resp.Header.Get("Content-Type"), "text/plain")
+
 }

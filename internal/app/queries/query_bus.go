@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
 )
 
 // Query represents a query in the CQRS pattern
@@ -62,7 +62,7 @@ func (bus *InMemoryQueryBus) RegisterHandler(query Query, handler interface{}) e
 	}
 
 	queryType := query.QueryType()
-	
+
 	bus.mu.Lock()
 	defer bus.mu.Unlock()
 
@@ -145,7 +145,7 @@ func (bus *InMemoryQueryBus) invokeHandler(ctx context.Context, handler interfac
 
 	// Extract the result
 	resultValue := results[0].Interface()
-	
+
 	// Handle different result types
 	switch v := resultValue.(type) {
 	case result.Result[interface{}]:
@@ -323,20 +323,20 @@ func (bus *CachedQueryBus) RegisterHandler(query Query, handler interface{}) err
 func (bus *CachedQueryBus) Execute(ctx context.Context, query Query) result.Result[interface{}] {
 	// Generate cache key
 	cacheKey := fmt.Sprintf("%s:%v", query.QueryType(), query)
-	
+
 	// Check cache
 	if cached, exists := bus.cache.Get(cacheKey); exists {
 		return result.Success(cached)
 	}
-	
+
 	// Execute query
 	result := bus.inner.Execute(ctx, query)
-	
+
 	// Cache successful results
 	if result.IsSuccess() {
 		bus.cache.Set(cacheKey, result.Value())
 	}
-	
+
 	return result
 }
 
@@ -364,10 +364,10 @@ func (b *QueryBusBuilder) WithCache() *QueryBusBuilder {
 // Build creates the query bus
 func (b *QueryBusBuilder) Build() QueryBus {
 	inner := NewInMemoryQueryBus()
-	
+
 	if b.enableCache {
 		return NewCachedQueryBus(inner)
 	}
-	
+
 	return inner
 }

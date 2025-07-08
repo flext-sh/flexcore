@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
 )
 
 // Command represents a command in the CQRS pattern
@@ -62,7 +62,7 @@ func (bus *InMemoryCommandBus) RegisterHandler(command Command, handler interfac
 	}
 
 	commandType := command.CommandType()
-	
+
 	bus.mu.Lock()
 	defer bus.mu.Unlock()
 
@@ -266,15 +266,15 @@ func NewLoggingDecorator(logger Logger) *LoggingDecorator {
 // Decorate decorates command execution with logging
 func (d *LoggingDecorator) Decorate(ctx context.Context, command Command, next func(ctx context.Context, command Command) result.Result[interface{}]) result.Result[interface{}] {
 	d.logger.Info("Executing command", "type", command.CommandType())
-	
+
 	result := next(ctx, command)
-	
+
 	if result.IsSuccess() {
 		d.logger.Info("Command executed successfully", "type", command.CommandType())
 	} else {
 		d.logger.Error("Command execution failed", result.Error(), "type", command.CommandType())
 	}
-	
+
 	return result
 }
 
@@ -307,7 +307,7 @@ func (d *ValidationDecorator) Decorate(ctx context.Context, command Command, nex
 			return result.Failure[interface{}](errors.Wrap(err, "command validation failed"))
 		}
 	}
-	
+
 	return next(ctx, command)
 }
 
@@ -329,12 +329,12 @@ func NewMetricsDecorator(collector MetricsCollector) *MetricsDecorator {
 // Decorate decorates command execution with metrics collection
 func (d *MetricsDecorator) Decorate(ctx context.Context, command Command, next func(ctx context.Context, command Command) result.Result[interface{}]) result.Result[interface{}] {
 	// start := result.Try(func() int64 { return 0 }).Value() // Simplified for example
-	
+
 	result := next(ctx, command)
-	
+
 	duration := int64(0) // Calculate actual duration
 	d.metricsCollector.RecordCommandExecution(command.CommandType(), duration, result.IsSuccess())
-	
+
 	return result
 }
 
@@ -377,10 +377,10 @@ func (b *CommandBusBuilder) WithDecorator(decorator Decorator) *CommandBusBuilde
 // Build creates the command bus
 func (b *CommandBusBuilder) Build() CommandBus {
 	inner := NewInMemoryCommandBus()
-	
+
 	if len(b.decorators) == 0 {
 		return inner
 	}
-	
+
 	return NewDecoratedCommandBus(inner, b.decorators...)
 }

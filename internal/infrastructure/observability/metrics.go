@@ -7,18 +7,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
 )
 
 // MetricsCollector provides real-time metrics collection
 type MetricsCollector struct {
-	mu      sync.RWMutex
-	counters map[string]*Counter
-	gauges   map[string]*Gauge
+	mu         sync.RWMutex
+	counters   map[string]*Counter
+	gauges     map[string]*Gauge
 	histograms map[string]*Histogram
-	timers   map[string]*Timer
-	enabled  bool
+	timers     map[string]*Timer
+	enabled    bool
 }
 
 // Counter represents a monotonically increasing counter
@@ -373,6 +373,6 @@ func (mc *MetricsCollector) HealthCheck(ctx context.Context) result.Result[bool]
 
 	// Check if we have any metrics (indicates system is working)
 	totalMetrics := len(mc.counters) + len(mc.gauges) + len(mc.histograms) + len(mc.timers)
-	
+
 	return result.Success(totalMetrics >= 0) // Always healthy if enabled
 }

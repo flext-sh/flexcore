@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
 )
 
 // Handler represents a request handler
@@ -82,17 +82,17 @@ func LoggingMiddleware(logger interface{ Info(string, ...interface{}) }) Middlew
 	return func(next Handler) Handler {
 		return HandlerFunc(func(ctx context.Context, req Request) result.Result[Response] {
 			start := time.Now()
-			
+
 			logger.Info("Request started",
 				"id", req.ID(),
 				"method", req.Method(),
 				"path", req.Path(),
 			)
-			
+
 			result := next.Handle(ctx, req)
-			
+
 			duration := time.Since(start)
-			
+
 			if result.IsSuccess() {
 				resp := result.Value()
 				logger.Info("Request completed",
@@ -107,7 +107,7 @@ func LoggingMiddleware(logger interface{ Info(string, ...interface{}) }) Middlew
 					"duration", duration,
 				)
 			}
-			
+
 			return result
 		})
 	}
@@ -123,7 +123,7 @@ func RecoveryMiddleware() Middleware {
 					resp = result.Failure[Response](err)
 				}
 			}()
-			
+
 			return next.Handle(ctx, req)
 		})
 	}
@@ -135,13 +135,13 @@ func TimeoutMiddleware(timeout time.Duration) Middleware {
 		return HandlerFunc(func(ctx context.Context, req Request) result.Result[Response] {
 			ctx, cancel := context.WithTimeout(ctx, timeout)
 			defer cancel()
-			
+
 			done := make(chan result.Result[Response], 1)
-			
+
 			go func() {
 				done <- next.Handle(ctx, req)
 			}()
-			
+
 			select {
 			case result := <-done:
 				return result
@@ -157,7 +157,7 @@ func RetryMiddleware(maxRetries int, backoff time.Duration) Middleware {
 	return func(next Handler) Handler {
 		return HandlerFunc(func(ctx context.Context, req Request) result.Result[Response] {
 			var lastErr error
-			
+
 			for attempt := 0; attempt <= maxRetries; attempt++ {
 				if attempt > 0 {
 					select {
@@ -166,24 +166,24 @@ func RetryMiddleware(maxRetries int, backoff time.Duration) Middleware {
 						return result.Failure[Response](ctx.Err())
 					}
 				}
-				
+
 				result := next.Handle(ctx, req)
 				if result.IsSuccess() {
 					return result
 				}
-				
+
 				lastErr = result.Error()
-				
+
 				// Don't retry on client errors
 				if httpErr, ok := lastErr.(*errors.FlexError); ok {
 					if httpErr.Code() == errors.CodeValidation ||
-					   httpErr.Code() == errors.CodeUnauthorized ||
-					   httpErr.Code() == errors.CodeForbidden {
+						httpErr.Code() == errors.CodeUnauthorized ||
+						httpErr.Code() == errors.CodeForbidden {
 						return result
 					}
 				}
 			}
-			
+
 			return result.Failure[Response](errors.Wrapf(lastErr, "failed after %d retries", maxRetries))
 		})
 	}
@@ -197,11 +197,11 @@ func AuthenticationMiddleware(authenticator Authenticator) Middleware {
 			if authResult.IsFailure() {
 				return result.Failure[Response](authResult.Error())
 			}
-			
+
 			// Add authenticated user to context
 			user := authResult.Value()
 			ctx = context.WithValue(ctx, "user", user)
-			
+
 			return next.Handle(ctx, req)
 		})
 	}
@@ -219,7 +219,7 @@ func ValidationMiddleware(validator Validator) Middleware {
 			if err := validator.Validate(req); err != nil {
 				return result.Failure[Response](errors.ValidationError(err.Error()))
 			}
-			
+
 			return next.Handle(ctx, req)
 		})
 	}
@@ -237,7 +237,7 @@ func RateLimitingMiddleware(limiter RateLimiter) Middleware {
 			if !limiter.Allow(req.ID()) {
 				return result.Failure[Response](errors.ForbiddenError("rate limit exceeded"))
 			}
-			
+
 			return next.Handle(ctx, req)
 		})
 	}
@@ -253,20 +253,20 @@ func MetricsMiddleware(collector MetricsCollector) Middleware {
 	return func(next Handler) Handler {
 		return HandlerFunc(func(ctx context.Context, req Request) result.Result[Response] {
 			start := time.Now()
-			
+
 			result := next.Handle(ctx, req)
-			
+
 			duration := time.Since(start)
 			status := 0
-			
+
 			if result.IsSuccess() {
 				status = result.Value().StatusCode()
 			} else {
 				status = http.StatusInternalServerError
 			}
-			
+
 			collector.RecordRequest(req.Method(), req.Path(), status, duration)
-			
+
 			return result
 		})
 	}
@@ -283,20 +283,20 @@ func TracingMiddleware(tracer Tracer) Middleware {
 		return HandlerFunc(func(ctx context.Context, req Request) result.Result[Response] {
 			span := tracer.StartSpan(ctx, "handler.request")
 			defer span.End()
-			
+
 			span.SetAttribute("request.id", req.ID())
 			span.SetAttribute("request.method", req.Method())
 			span.SetAttribute("request.path", req.Path())
-			
+
 			ctx = span.Context()
 			result := next.Handle(ctx, req)
-			
+
 			if result.IsSuccess() {
 				span.SetAttribute("response.status", result.Value().StatusCode())
 			} else {
 				span.SetError(result.Error())
 			}
-			
+
 			return result
 		})
 	}
@@ -330,16 +330,16 @@ func CORSMiddleware(config CORSConfig) Middleware {
 					},
 				})
 			}
-			
+
 			result := next.Handle(ctx, req)
-			
+
 			// Add CORS headers to response
 			if result.IsSuccess() {
 				resp := result.Value()
 				headers := resp.Headers()
 				headers["Access-Control-Allow-Origin"] = config.AllowedOrigins
 			}
-			
+
 			return result
 		})
 	}
@@ -357,12 +357,12 @@ func CompressionMiddleware() Middleware {
 	return func(next Handler) Handler {
 		return HandlerFunc(func(ctx context.Context, req Request) result.Result[Response] {
 			result := next.Handle(ctx, req)
-			
+
 			if result.IsSuccess() {
 				// In real implementation, compress response body
 				// based on Accept-Encoding header
 			}
-			
+
 			return result
 		})
 	}
@@ -376,24 +376,24 @@ func CacheMiddleware(cache Cache) Middleware {
 			if req.Method() != "GET" {
 				return next.Handle(ctx, req)
 			}
-			
+
 			cacheKey := fmt.Sprintf("%s:%s", req.Method(), req.Path())
-			
+
 			// Check cache
 			if cached := cache.Get(cacheKey); cached != nil {
 				if resp, ok := cached.(Response); ok {
 					return result.Success(resp)
 				}
 			}
-			
+
 			// Execute handler
 			result := next.Handle(ctx, req)
-			
+
 			// Cache successful responses
 			if result.IsSuccess() {
 				cache.Set(cacheKey, result.Value(), time.Minute*5)
 			}
-			
+
 			return result
 		})
 	}
@@ -417,10 +417,10 @@ func TransformMiddleware(reqTransformer RequestTransformer, respTransformer Resp
 				}
 				req = transformedReq
 			}
-			
+
 			// Execute handler
 			res := next.Handle(ctx, req)
-			
+
 			// Transform response
 			if respTransformer != nil && res.IsSuccess() {
 				transformedResp, err := respTransformer.Transform(res.Value())
@@ -429,7 +429,7 @@ func TransformMiddleware(reqTransformer RequestTransformer, respTransformer Resp
 				}
 				return result.Success(transformedResp)
 			}
-			
+
 			return res
 		})
 	}
@@ -457,12 +457,12 @@ type BasicRequest struct {
 	body    interface{}
 }
 
-func (r *BasicRequest) Context() context.Context         { return r.ctx }
-func (r *BasicRequest) ID() string                       { return r.id }
-func (r *BasicRequest) Method() string                   { return r.method }
-func (r *BasicRequest) Path() string                     { return r.path }
-func (r *BasicRequest) Headers() map[string][]string     { return r.headers }
-func (r *BasicRequest) Body() interface{}                { return r.body }
+func (r *BasicRequest) Context() context.Context     { return r.ctx }
+func (r *BasicRequest) ID() string                   { return r.id }
+func (r *BasicRequest) Method() string               { return r.method }
+func (r *BasicRequest) Path() string                 { return r.path }
+func (r *BasicRequest) Headers() map[string][]string { return r.headers }
+func (r *BasicRequest) Body() interface{}            { return r.body }
 
 // BasicResponse is a basic response implementation
 type BasicResponse struct {
@@ -472,8 +472,8 @@ type BasicResponse struct {
 }
 
 func (r *BasicResponse) StatusCode() int              { return r.status }
-func (r *BasicResponse) Headers() map[string][]string  { return r.headers }
-func (r *BasicResponse) Body() interface{}             { return r.body }
+func (r *BasicResponse) Headers() map[string][]string { return r.headers }
+func (r *BasicResponse) Body() interface{}            { return r.body }
 
 // ChainBuilder provides fluent interface for building chains
 type ChainBuilder struct {

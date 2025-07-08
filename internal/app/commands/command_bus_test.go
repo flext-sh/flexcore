@@ -152,10 +152,10 @@ func TestCommandBusExecuteAsync(t *testing.T) {
 	resultChan := bus.ExecuteAsync(context.Background(), cmd)
 
 	require.True(t, resultChan.IsSuccess())
-	
+
 	// Get result from channel
 	asyncResult := <-resultChan.Value()
-	
+
 	require.True(t, asyncResult.IsSuccess())
 	assert.Equal(t, "success", asyncResult.Value())
 	assert.Len(t, handler.executedCommands, 1)
@@ -164,15 +164,15 @@ func TestCommandBusExecuteAsync(t *testing.T) {
 func TestCommandBusBuilderPattern(t *testing.T) {
 	// Test that we can create command bus using builder
 	bus := commands.NewCommandBusBuilder().Build()
-	
+
 	handler := NewTestCommandHandler()
 	cmd := NewTestCommand("builder test")
-	
+
 	err := bus.RegisterHandler(cmd, handler)
 	require.NoError(t, err)
-	
+
 	result := bus.Execute(context.Background(), cmd)
-	
+
 	require.True(t, result.IsSuccess())
 	assert.Equal(t, "success", result.Value())
 }

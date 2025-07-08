@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/flext/flexcore/internal/domain/entities"
-	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
 )
 
 // CreatePipelineCommand represents a command to create a new pipeline
@@ -98,13 +98,13 @@ func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command Creat
 // AddPipelineStepCommand represents a command to add a step to a pipeline
 type AddPipelineStepCommand struct {
 	BaseCommand
-	PipelineID   entities.PipelineID
-	StepName     string
-	StepType     string
-	Config       map[string]interface{}
-	DependsOn    []string
-	MaxRetries   int
-	Timeout      time.Duration
+	PipelineID entities.PipelineID
+	StepName   string
+	StepType   string
+	Config     map[string]interface{}
+	DependsOn  []string
+	MaxRetries int
+	Timeout    time.Duration
 }
 
 // NewAddPipelineStepCommand creates a new add pipeline step command

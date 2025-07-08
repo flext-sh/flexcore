@@ -17,7 +17,7 @@ func TestNewPipeline(t *testing.T) {
 
 	result := entities.NewPipeline(name, description, owner)
 	require.True(t, result.IsSuccess())
-	
+
 	pipeline := result.Value()
 	assert.NotEmpty(t, pipeline.ID)
 	assert.Equal(t, name, pipeline.Name)
@@ -41,11 +41,11 @@ func TestPipelineAddStep(t *testing.T) {
 
 	// Add first step
 	step1 := entities.PipelineStep{
-		ID:          uuid.New().String(),
-		Name:        "Extract",
-		Type:        "extractor",
-		Config:      map[string]interface{}{"source": "database"},
-		IsEnabled:   true,
+		ID:        uuid.New().String(),
+		Name:      "Extract",
+		Type:      "extractor",
+		Config:    map[string]interface{}{"source": "database"},
+		IsEnabled: true,
 	}
 
 	res := pipeline.AddStep(step1)
@@ -55,11 +55,11 @@ func TestPipelineAddStep(t *testing.T) {
 
 	// Add second step
 	step2 := entities.PipelineStep{
-		ID:          uuid.New().String(),
-		Name:        "Transform",
-		Type:        "transformer",
-		Config:      map[string]interface{}{"operation": "clean"},
-		IsEnabled:   true,
+		ID:        uuid.New().String(),
+		Name:      "Transform",
+		Type:      "transformer",
+		Config:    map[string]interface{}{"operation": "clean"},
+		IsEnabled: true,
 	}
 
 	res = pipeline.AddStep(step2)
@@ -68,9 +68,9 @@ func TestPipelineAddStep(t *testing.T) {
 
 	// Try to add step with duplicate name
 	step3 := entities.PipelineStep{
-		ID:    uuid.New().String(),
-		Name:  "Extract", // Same name as step1
-		Type:  "loader",
+		ID:        uuid.New().String(),
+		Name:      "Extract", // Same name as step1
+		Type:      "loader",
 		IsEnabled: true,
 	}
 
@@ -89,15 +89,15 @@ func TestPipelineRemoveStep(t *testing.T) {
 
 	// Add steps
 	pipeline.AddStep(entities.PipelineStep{
-		ID: uuid.New().String(), 
-		Name: "Step1", 
-		Type: "generic", 
+		ID:        uuid.New().String(),
+		Name:      "Step1",
+		Type:      "generic",
 		IsEnabled: true,
 	})
 	pipeline.AddStep(entities.PipelineStep{
-		ID: uuid.New().String(), 
-		Name: "Step2", 
-		Type: "generic", 
+		ID:        uuid.New().String(),
+		Name:      "Step2",
+		Type:      "generic",
 		IsEnabled: true,
 	})
 
@@ -124,18 +124,18 @@ func TestPipelineActivate(t *testing.T) {
 	result := entities.NewPipeline("test", "desc", "owner")
 	require.True(t, result.IsSuccess())
 	pipeline := result.Value()
-	
+
 	// Initially inactive
 	assert.Equal(t, entities.PipelineStatusDraft, pipeline.Status)
 
 	// Activate - needs steps first
 	pipeline.AddStep(entities.PipelineStep{
-		ID: uuid.New().String(),
-		Name: "TestStep",
-		Type: "generic",
+		ID:        uuid.New().String(),
+		Name:      "TestStep",
+		Type:      "generic",
 		IsEnabled: true,
 	})
-	
+
 	res := pipeline.Activate()
 	require.True(t, res.IsSuccess())
 	assert.Equal(t, entities.PipelineStatusActive, pipeline.Status)
@@ -150,12 +150,12 @@ func TestPipelineDeactivate(t *testing.T) {
 	result := entities.NewPipeline("test", "desc", "owner")
 	require.True(t, result.IsSuccess())
 	pipeline := result.Value()
-	
+
 	// Add step and activate first
 	pipeline.AddStep(entities.PipelineStep{
-		ID: uuid.New().String(),
-		Name: "TestStep",
-		Type: "generic",
+		ID:        uuid.New().String(),
+		Name:      "TestStep",
+		Type:      "generic",
 		IsEnabled: true,
 	})
 	pipeline.Activate()
@@ -176,12 +176,12 @@ func TestPipelineStart(t *testing.T) {
 	result := entities.NewPipeline("test", "desc", "owner")
 	require.True(t, result.IsSuccess())
 	pipeline := result.Value()
-	
+
 	// Add step and activate first
 	pipeline.AddStep(entities.PipelineStep{
-		ID: uuid.New().String(),
-		Name: "TestStep",
-		Type: "generic",
+		ID:        uuid.New().String(),
+		Name:      "TestStep",
+		Type:      "generic",
 		IsEnabled: true,
 	})
 	pipeline.Activate()
@@ -207,12 +207,12 @@ func TestPipelineComplete(t *testing.T) {
 	result := entities.NewPipeline("test", "desc", "owner")
 	require.True(t, result.IsSuccess())
 	pipeline := result.Value()
-	
+
 	// Add step, activate and start
 	pipeline.AddStep(entities.PipelineStep{
-		ID: uuid.New().String(),
-		Name: "TestStep",
-		Type: "generic",
+		ID:        uuid.New().String(),
+		Name:      "TestStep",
+		Type:      "generic",
 		IsEnabled: true,
 	})
 	pipeline.Activate()
@@ -240,12 +240,12 @@ func TestPipelineFail(t *testing.T) {
 	result := entities.NewPipeline("test", "desc", "owner")
 	require.True(t, result.IsSuccess())
 	pipeline := result.Value()
-	
+
 	// Add step, activate and start
 	pipeline.AddStep(entities.PipelineStep{
-		ID: uuid.New().String(),
-		Name: "TestStep",
-		Type: "generic",
+		ID:        uuid.New().String(),
+		Name:      "TestStep",
+		Type:      "generic",
 		IsEnabled: true,
 	})
 	pipeline.Activate()
@@ -277,7 +277,7 @@ func TestPipelineSetSchedule(t *testing.T) {
 	// Set daily schedule
 	res := pipeline.SetSchedule("0 10 * * *", "UTC")
 	require.True(t, res.IsSuccess())
-	
+
 	assert.NotNil(t, pipeline.Schedule)
 	assert.Equal(t, "0 10 * * *", pipeline.Schedule.CronExpression)
 	assert.Equal(t, "UTC", pipeline.Schedule.Timezone)
@@ -299,9 +299,9 @@ func TestPipelineCanExecute(t *testing.T) {
 
 	// Add step first
 	pipeline.AddStep(entities.PipelineStep{
-		ID: uuid.New().String(),
-		Name: "TestStep",
-		Type: "generic",
+		ID:        uuid.New().String(),
+		Name:      "TestStep",
+		Type:      "generic",
 		IsEnabled: true,
 	})
 
@@ -316,7 +316,7 @@ func TestPipelineCanExecute(t *testing.T) {
 	// Failed pipeline can execute after being active again
 	pipeline.Status = entities.PipelineStatusFailed
 	assert.False(t, pipeline.CanExecute())
-	
+
 	pipeline.Status = entities.PipelineStatusActive
 	assert.True(t, pipeline.CanExecute())
 }
@@ -331,8 +331,8 @@ func TestPipelineValidate(t *testing.T) {
 		{
 			name: "valid pipeline",
 			pipeline: &entities.Pipeline{
-				Name:        "valid-pipeline",
-				Owner:       "owner@example.com",
+				Name:  "valid-pipeline",
+				Owner: "owner@example.com",
 				Steps: []entities.PipelineStep{
 					{ID: "1", Name: "Step1", Type: "extractor", IsEnabled: true},
 				},
@@ -342,8 +342,8 @@ func TestPipelineValidate(t *testing.T) {
 		{
 			name: "empty name",
 			pipeline: &entities.Pipeline{
-				Name:        "",
-				Owner:       "owner@example.com",
+				Name:  "",
+				Owner: "owner@example.com",
 			},
 			expectError: true,
 			errorMsg:    "name is required",
@@ -351,8 +351,8 @@ func TestPipelineValidate(t *testing.T) {
 		{
 			name: "empty owner",
 			pipeline: &entities.Pipeline{
-				Name:        "pipeline",
-				Owner:       "",
+				Name:  "pipeline",
+				Owner: "",
 			},
 			expectError: true,
 			errorMsg:    "owner is required",
@@ -360,9 +360,9 @@ func TestPipelineValidate(t *testing.T) {
 		{
 			name: "no steps",
 			pipeline: &entities.Pipeline{
-				Name:        "pipeline",
-				Owner:       "owner@example.com",
-				Steps:       []entities.PipelineStep{},
+				Name:  "pipeline",
+				Owner: "owner@example.com",
+				Steps: []entities.PipelineStep{},
 			},
 			expectError: true,
 			errorMsg:    "at least one step is required",
@@ -463,7 +463,7 @@ func BenchmarkPipelineAddStep(b *testing.B) {
 		b.Fatal("Failed to create pipeline")
 	}
 	pipeline := result.Value()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		step := entities.PipelineStep{
@@ -481,12 +481,12 @@ func BenchmarkPipelineValidate(b *testing.B) {
 	require.True(b, result.IsSuccess())
 	pipeline := result.Value()
 	pipeline.AddStep(entities.PipelineStep{
-		ID:    uuid.New().String(),
-		Name:  "Step",
-		Type:  "extractor",
+		ID:        uuid.New().String(),
+		Name:      "Step",
+		Type:      "extractor",
 		IsEnabled: true,
 	})
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = pipeline.Validate()

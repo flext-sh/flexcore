@@ -13,21 +13,21 @@ import (
 type AdapterBuilder struct {
 	name    string
 	version string
-	
+
 	// Functions
 	extractFn   ExtractFunc
 	loadFn      LoadFunc
 	transformFn TransformFunc
 	healthFn    HealthCheckFunc
 	configureFn ConfigureFunc
-	
+
 	// Options
 	hooks      AdapterHooks
 	middleware []Middleware
-	
+
 	// Validation
 	validator func(interface{}) error
-	
+
 	// Error tracking
 	err error
 }
@@ -153,17 +153,17 @@ func (b *AdapterBuilder) Build() (Adapter, error) {
 type builtAdapter struct {
 	name    string
 	version string
-	
+
 	extractFn   ExtractFunc
 	loadFn      LoadFunc
 	transformFn TransformFunc
 	healthFn    HealthCheckFunc
 	configureFn ConfigureFunc
-	
+
 	hooks      AdapterHooks
 	middleware []Middleware
 	validator  func(interface{}) error
-	
+
 	config interface{}
 }
 
@@ -283,16 +283,16 @@ func LoggingMiddleware(logger func(string, ...interface{})) Middleware {
 		return func(ctx context.Context, req interface{}) (interface{}, error) {
 			start := time.Now()
 			logger("Starting operation: %T", req)
-			
+
 			resp, err := next(ctx, req)
-			
+
 			duration := time.Since(start)
 			if err != nil {
 				logger("Operation failed after %v: %v", duration, err)
 			} else {
 				logger("Operation completed in %v", duration)
 			}
-			
+
 			return resp, err
 		}
 	}
@@ -303,7 +303,7 @@ func RetryMiddleware(maxRetries int, backoff time.Duration) Middleware {
 	return func(next Operation) Operation {
 		return func(ctx context.Context, req interface{}) (interface{}, error) {
 			var lastErr error
-			
+
 			for i := 0; i <= maxRetries; i++ {
 				if i > 0 {
 					select {
@@ -313,15 +313,15 @@ func RetryMiddleware(maxRetries int, backoff time.Duration) Middleware {
 						// Continue with retry
 					}
 				}
-				
+
 				resp, err := next(ctx, req)
 				if err == nil {
 					return resp, nil
 				}
-				
+
 				lastErr = err
 			}
-			
+
 			return nil, fmt.Errorf("operation failed after %d retries: %w", maxRetries, lastErr)
 		}
 	}
@@ -333,7 +333,7 @@ func TimeoutMiddleware(timeout time.Duration) Middleware {
 		return func(ctx context.Context, req interface{}) (interface{}, error) {
 			ctx, cancel := context.WithTimeout(ctx, timeout)
 			defer cancel()
-			
+
 			return next(ctx, req)
 		}
 	}

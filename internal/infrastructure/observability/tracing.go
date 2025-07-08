@@ -9,19 +9,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
 )
 
 // Tracer provides distributed tracing functionality
 type Tracer struct {
-	mu            sync.RWMutex
-	serviceName   string
-	spans         map[string]*Span
-	activeSpans   map[string]*Span
-	maxSpans      int
-	enabled       bool
-	exporters     []TraceExporter
+	mu          sync.RWMutex
+	serviceName string
+	spans       map[string]*Span
+	activeSpans map[string]*Span
+	maxSpans    int
+	enabled     bool
+	exporters   []TraceExporter
 }
 
 // Span represents a single trace span
@@ -71,9 +71,9 @@ type TraceExporter interface {
 
 // SpanContext represents the context for a span
 type SpanContext struct {
-	TraceID  string
-	SpanID   string
-	Sampled  bool
+	TraceID    string
+	SpanID     string
+	Sampled    bool
 	TraceState map[string]string
 }
 
@@ -139,7 +139,7 @@ func (t *Tracer) StartSpan(ctx context.Context, operationName string) (*Span, co
 	}
 
 	spanID := t.generateSpanID()
-	
+
 	span := &Span{
 		TraceID:       traceID,
 		SpanID:        spanID,
@@ -163,14 +163,14 @@ func (t *Tracer) StartSpan(ctx context.Context, operationName string) (*Span, co
 			}
 		}
 	}
-	
+
 	t.spans[spanID] = span
 	t.activeSpans[spanID] = span
 	t.mu.Unlock()
 
 	// Add span to context
 	newCtx := ContextWithSpan(ctx, span)
-	
+
 	return span, newCtx
 }
 
@@ -355,7 +355,7 @@ func (e *InMemoryExporter) Name() string {
 func (e *InMemoryExporter) GetSpans() []*Span {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
-	
+
 	result := make([]*Span, len(e.spans))
 	copy(result, e.spans)
 	return result
@@ -385,15 +385,15 @@ func (t *Tracer) HealthCheck(ctx context.Context) result.Result[bool] {
 	// Check if tracer is functional
 	activeCount := len(t.activeSpans)
 	totalCount := len(t.spans)
-	
+
 	// Tracer is healthy if it's enabled and not overloaded
 	healthy := totalCount < t.maxSpans && activeCount < t.maxSpans/2
-	
+
 	if !healthy {
 		return result.Failure[bool](errors.InternalError(
-			fmt.Sprintf("tracer overloaded: %d/%d spans, %d active", 
+			fmt.Sprintf("tracer overloaded: %d/%d spans, %d active",
 				totalCount, t.maxSpans, activeCount)))
 	}
-	
+
 	return result.Success(true)
 }

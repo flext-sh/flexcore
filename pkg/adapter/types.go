@@ -28,19 +28,19 @@ type Adapter interface {
 type ExtractRequest struct {
 	// Source identification
 	Source string `json:"source" validate:"required"`
-	
+
 	// Query parameters
 	Query  string                 `json:"query,omitempty"`
 	Filter map[string]interface{} `json:"filter,omitempty"`
-	
+
 	// Pagination
 	Limit  int `json:"limit,omitempty" validate:"min=0,max=10000"`
 	Offset int `json:"offset,omitempty" validate:"min=0"`
-	
+
 	// Time range
 	StartTime *time.Time `json:"start_time,omitempty"`
 	EndTime   *time.Time `json:"end_time,omitempty"`
-	
+
 	// Additional options
 	Options map[string]interface{} `json:"options,omitempty"`
 }
@@ -49,11 +49,11 @@ type ExtractRequest struct {
 type ExtractResponse struct {
 	// Extracted records
 	Records []Record `json:"records"`
-	
+
 	// Pagination info
 	HasMore    bool   `json:"has_more"`
 	NextCursor string `json:"next_cursor,omitempty"`
-	
+
 	// Metadata
 	ExtractedAt time.Time              `json:"extracted_at"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
@@ -63,10 +63,10 @@ type ExtractResponse struct {
 type LoadRequest struct {
 	// Target identification
 	Target string `json:"target" validate:"required"`
-	
+
 	// Records to load
 	Records []Record `json:"records" validate:"required,min=1"`
-	
+
 	// Load options
 	Mode    LoadMode               `json:"mode" validate:"required,oneof=append replace upsert"`
 	Options map[string]interface{} `json:"options,omitempty"`
@@ -77,10 +77,10 @@ type LoadResponse struct {
 	// Load statistics
 	RecordsLoaded int64 `json:"records_loaded"`
 	RecordsFailed int64 `json:"records_failed"`
-	
+
 	// Failed records details
 	FailedRecords []FailedRecord `json:"failed_records,omitempty"`
-	
+
 	// Metadata
 	LoadedAt time.Time              `json:"loaded_at"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
@@ -90,10 +90,10 @@ type LoadResponse struct {
 type TransformRequest struct {
 	// Input records
 	Records []Record `json:"records" validate:"required,min=1"`
-	
+
 	// Transformation spec
 	Transformations []Transformation `json:"transformations" validate:"required,min=1"`
-	
+
 	// Options
 	Options map[string]interface{} `json:"options,omitempty"`
 }
@@ -102,14 +102,14 @@ type TransformRequest struct {
 type TransformResponse struct {
 	// Transformed records
 	Records []Record `json:"records"`
-	
+
 	// Transformation statistics
 	RecordsTransformed int64 `json:"records_transformed"`
 	RecordsFailed      int64 `json:"records_failed"`
-	
+
 	// Failed records
 	FailedRecords []FailedRecord `json:"failed_records,omitempty"`
-	
+
 	// Metadata
 	TransformedAt time.Time              `json:"transformed_at"`
 	Metadata      map[string]interface{} `json:"metadata,omitempty"`

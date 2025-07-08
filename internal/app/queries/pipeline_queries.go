@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/flext/flexcore/internal/domain/entities"
-	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
 )
 
 // PipelineRepository represents a repository for pipelines (read operations)
@@ -330,7 +330,7 @@ func NewGetPipelineStatisticsQueryHandler(repository PipelineRepository) *GetPip
 func (h *GetPipelineStatisticsQueryHandler) Handle(ctx context.Context, query GetPipelineStatisticsQuery) result.Result[PipelineStatistics] {
 	// This is a simplified implementation
 	// In production, you would have specific repository methods for statistics
-	
+
 	totalCount, err := h.repository.Count(ctx)
 	if err != nil {
 		return result.Failure[PipelineStatistics](errors.Wrap(err, "failed to get pipeline count"))
@@ -348,8 +348,8 @@ func (h *GetPipelineStatisticsQueryHandler) Handle(ctx context.Context, query Ge
 		RunningPipelines:     len(runningPipelines),
 		FailedPipelines:      len(failedPipelines),
 		CompletedPipelines:   len(completedPipelines),
-		PipelinesLastHour:    0, // Would need time-based queries
-		PipelinesLastDay:     0, // Would need time-based queries
+		PipelinesLastHour:    0,               // Would need time-based queries
+		PipelinesLastDay:     0,               // Would need time-based queries
 		AverageExecutionTime: time.Minute * 5, // Would need execution data
 	}
 

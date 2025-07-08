@@ -1,0 +1,58 @@
+# Ignore build artifacts and development files
+*.log
+.git/
+.gitignore
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/flexcore
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Dependencies
+vendor/
+
+# Test coverage
+*.cover
+coverage.out
+
+# Documentation
+docs/
+*.md
+README*
+
+# Temporary files
+*.tmp
+tmp/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.backup
+*.bak
