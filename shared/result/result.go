@@ -47,6 +47,41 @@ func (r Result[T]) Error() error {
 	return r.err
 }
 
+// Get returns the value if successful, panics if failed
+func (r Result[T]) Get() T {
+	if r.err != nil {
+		panic(r.err)
+	}
+	return r.value
+}
+
+// Filter filters the result based on a predicate
+func Filter[T any](r Result[T], predicate func(T) bool) Result[T] {
+	if r.IsFailure() {
+		return r
+	}
+	if !predicate(r.value) {
+		return Failure[T](errors.New("filter predicate failed"))
+	}
+	return r
+}
+
+// OrElse returns this result if successful, or the alternative if failed
+func OrElse[T any](r Result[T], alternative Result[T]) Result[T] {
+	if r.IsSuccess() {
+		return r
+	}
+	return alternative
+}
+
+// OrElseGet returns this result if successful, or calls supplier if failed
+func OrElseGet[T any](r Result[T], supplier func() Result[T]) Result[T] {
+	if r.IsSuccess() {
+		return r
+	}
+	return supplier()
+}
+
 // ValueOr returns the value if successful, or the provided default if failed
 func (r Result[T]) ValueOr(defaultValue T) T {
 	if r.IsSuccess() {
@@ -176,7 +211,7 @@ func Try[T any](fn func() T) Result[T] {
 // TryAsync executes a function asynchronously that might panic
 func TryAsync[T any](fn func() T) *Async[T] {
 	async := NewAsync[T]()
-	
+
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {

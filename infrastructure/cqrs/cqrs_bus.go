@@ -83,11 +83,11 @@ type CQRSBus struct {
 }
 
 type CommandMetrics struct {
-	TotalExecuted   int64         `json:"total_executed"`
-	TotalSucceeded  int64         `json:"total_succeeded"`
-	TotalFailed     int64         `json:"total_failed"`
-	AverageLatency  time.Duration `json:"average_latency"`
-	LastExecuted    time.Time     `json:"last_executed"`
+	TotalExecuted  int64         `json:"total_executed"`
+	TotalSucceeded int64         `json:"total_succeeded"`
+	TotalFailed    int64         `json:"total_failed"`
+	AverageLatency time.Duration `json:"average_latency"`
+	LastExecuted   time.Time     `json:"last_executed"`
 }
 
 type QueryMetrics struct {
