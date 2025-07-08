@@ -8,39 +8,39 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
 )
 
 // Monitor provides real-time system monitoring
 type Monitor struct {
-	mu              sync.RWMutex
-	metrics         *MetricsCollector
-	tracer          *Tracer
-	healthCheckers  map[string]HealthChecker
-	alerts          []Alert
-	config          MonitorConfig
-	running         bool
-	stopCh          chan struct{}
-	alertCh         chan Alert
-	subscribers     []MonitorSubscriber
+	mu             sync.RWMutex
+	metrics        *MetricsCollector
+	tracer         *Tracer
+	healthCheckers map[string]HealthChecker
+	alerts         []Alert
+	config         MonitorConfig
+	running        bool
+	stopCh         chan struct{}
+	alertCh        chan Alert
+	subscribers    []MonitorSubscriber
 }
 
 // MonitorConfig configures the monitor
 type MonitorConfig struct {
-	MetricsInterval   time.Duration
-	HealthInterval    time.Duration
-	ResourceInterval  time.Duration
-	MaxAlerts         int
-	AlertThresholds   AlertThresholds
+	MetricsInterval  time.Duration
+	HealthInterval   time.Duration
+	ResourceInterval time.Duration
+	MaxAlerts        int
+	AlertThresholds  AlertThresholds
 }
 
 // AlertThresholds defines alert thresholds
 type AlertThresholds struct {
-	CPUPercent     float64
-	MemoryMB       float64
-	GoroutinesMax  int
-	LatencyMS      float64
+	CPUPercent       float64
+	MemoryMB         float64
+	GoroutinesMax    int
+	LatencyMS        float64
 	ErrorRatePercent float64
 }
 
@@ -52,15 +52,15 @@ type HealthChecker interface {
 
 // Alert represents a monitoring alert
 type Alert struct {
-	ID          string                 `json:"id"`
-	Type        AlertType              `json:"type"`
-	Severity    AlertSeverity          `json:"severity"`
-	Title       string                 `json:"title"`
-	Message     string                 `json:"message"`
-	Timestamp   time.Time              `json:"timestamp"`
-	Metadata    map[string]interface{} `json:"metadata"`
-	Resolved    bool                   `json:"resolved"`
-	ResolvedAt  *time.Time             `json:"resolved_at,omitempty"`
+	ID         string                 `json:"id"`
+	Type       AlertType              `json:"type"`
+	Severity   AlertSeverity          `json:"severity"`
+	Title      string                 `json:"title"`
+	Message    string                 `json:"message"`
+	Timestamp  time.Time              `json:"timestamp"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	Resolved   bool                   `json:"resolved"`
+	ResolvedAt *time.Time             `json:"resolved_at,omitempty"`
 }
 
 // AlertType represents the type of alert
@@ -111,12 +111,12 @@ const (
 
 // SystemMetrics represents system resource metrics
 type SystemMetrics struct {
-	CPUPercent    float64 `json:"cpu_percent"`
-	MemoryMB      float64 `json:"memory_mb"`
-	Goroutines    int     `json:"goroutines"`
-	HeapMB        float64 `json:"heap_mb"`
-	GCPauseMS     float64 `json:"gc_pause_ms"`
-	Uptime        time.Duration `json:"uptime"`
+	CPUPercent float64       `json:"cpu_percent"`
+	MemoryMB   float64       `json:"memory_mb"`
+	Goroutines int           `json:"goroutines"`
+	HeapMB     float64       `json:"heap_mb"`
+	GCPauseMS  float64       `json:"gc_pause_ms"`
+	Uptime     time.Duration `json:"uptime"`
 }
 
 // NewMonitor creates a new monitor
@@ -379,7 +379,7 @@ func (m *Monitor) collectMetrics() {
 
 	// Collect system metrics
 	sysMetrics := m.GetSystemMetrics()
-	
+
 	m.metrics.SetGauge("system_memory_mb", sysMetrics.MemoryMB, nil)
 	m.metrics.SetGauge("system_goroutines", float64(sysMetrics.Goroutines), nil)
 	m.metrics.SetGauge("system_heap_mb", sysMetrics.HeapMB, nil)
@@ -387,16 +387,16 @@ func (m *Monitor) collectMetrics() {
 
 	// Check thresholds
 	if sysMetrics.MemoryMB > m.config.AlertThresholds.MemoryMB {
-		m.CreateAlert(AlertTypeSystem, AlertSeverityWarning, 
-			"High Memory Usage", 
-			fmt.Sprintf("Memory usage: %.2f MB", sysMetrics.MemoryMB), 
+		m.CreateAlert(AlertTypeSystem, AlertSeverityWarning,
+			"High Memory Usage",
+			fmt.Sprintf("Memory usage: %.2f MB", sysMetrics.MemoryMB),
 			map[string]interface{}{"memory_mb": sysMetrics.MemoryMB})
 	}
 
 	if sysMetrics.Goroutines > m.config.AlertThresholds.GoroutinesMax {
-		m.CreateAlert(AlertTypeSystem, AlertSeverityWarning, 
-			"High Goroutine Count", 
-			fmt.Sprintf("Goroutines: %d", sysMetrics.Goroutines), 
+		m.CreateAlert(AlertTypeSystem, AlertSeverityWarning,
+			"High Goroutine Count",
+			fmt.Sprintf("Goroutines: %d", sysMetrics.Goroutines),
 			map[string]interface{}{"goroutines": sysMetrics.Goroutines})
 	}
 
@@ -406,13 +406,13 @@ func (m *Monitor) collectMetrics() {
 
 func (m *Monitor) checkHealth(ctx context.Context) {
 	status := m.GetHealthStatus(ctx)
-	
+
 	// Create alerts for unhealthy services
 	for service, state := range status.Services {
 		if state == HealthStateUnhealthy {
-			m.CreateAlert(AlertTypeHealth, AlertSeverityError, 
-				"Service Unhealthy", 
-				fmt.Sprintf("Service %s is unhealthy", service), 
+			m.CreateAlert(AlertTypeHealth, AlertSeverityError,
+				"Service Unhealthy",
+				fmt.Sprintf("Service %s is unhealthy", service),
 				map[string]interface{}{"service": service})
 		}
 	}
@@ -450,7 +450,7 @@ func (m *Monitor) notifyMetricsUpdate() {
 	}
 
 	metrics := m.metrics.GetAllMetrics()
-	
+
 	m.mu.RLock()
 	subscribers := make([]MonitorSubscriber, len(m.subscribers))
 	copy(subscribers, m.subscribers)

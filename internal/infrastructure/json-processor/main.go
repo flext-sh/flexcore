@@ -11,7 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-plugin"
+	"github.com/flext/flexcore/pkg/plugin"
+	hashicorpPlugin "github.com/hashicorp/go-plugin"
 )
 
 // init registers types for gob encoding/decoding
@@ -40,23 +41,11 @@ type JSONProcessor struct {
 	stats  ProcessingStats
 }
 
-// ProcessingStats tracks plugin performance
-type ProcessingStats struct {
-	RecordsProcessed   int64     `json:"records_processed"`
-	RecordsTransformed int64     `json:"records_transformed"`
-	ProcessingTimeMs   int64     `json:"processing_time_ms"`
-	LastProcessedAt    time.Time `json:"last_processed_at"`
-}
+// ProcessingStats type alias for unified plugin stats
+type ProcessingStats = plugin.ProcessingStats
 
-// PluginInfo contains plugin metadata
-type PluginInfo struct {
-	Name        string   `json:"name"`
-	Version     string   `json:"version"`
-	Description string   `json:"description"`
-	Author      string   `json:"author"`
-	Type        string   `json:"type"`
-	Capabilities []string `json:"capabilities"`
-}
+// PluginInfo type alias for unified plugin info
+type PluginInfo = plugin.PluginInfo
 
 // DataProcessorPlugin interface
 type DataProcessorPlugin interface {
@@ -71,7 +60,9 @@ type DataProcessorPlugin interface {
 func (jp *JSONProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
 	log.Printf("[JSONProcessor] Initializing with config: %+v", config)
 	jp.config = config
-	jp.stats = ProcessingStats{}
+	jp.stats = ProcessingStats{
+		StartTime: time.Now(),
+	}
 	return nil
 }
 
@@ -79,8 +70,8 @@ func (jp *JSONProcessor) Initialize(ctx context.Context, config map[string]inter
 func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
 	startTime := time.Now()
 	defer func() {
-		jp.stats.ProcessingTimeMs = time.Since(startTime).Milliseconds()
-		jp.stats.LastProcessedAt = time.Now()
+		jp.stats.DurationMs = time.Since(startTime).Milliseconds()
+		jp.stats.EndTime = time.Now()
 	}()
 
 	log.Printf("[JSONProcessor] Processing input with %d keys", len(input))
@@ -98,7 +89,7 @@ func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface
 			result["data"] = data
 		} else {
 			result["data"] = transformed
-			jp.stats.RecordsTransformed++
+			jp.stats.ProcessedOK++
 		}
 	} else if jsonStr, ok := input["json_string"].(string); ok {
 		// Parse JSON string
@@ -108,7 +99,7 @@ func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface
 			result["data"] = jsonStr
 		} else {
 			result["data"] = parsed
-			jp.stats.RecordsTransformed++
+			jp.stats.ProcessedOK++
 		}
 	} else {
 		// Process raw input
@@ -117,13 +108,15 @@ func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface
 
 	// Add processing stats
 	result["stats"] = map[string]interface{}{
-		"records_processed":   jp.stats.RecordsProcessed,
-		"records_transformed": jp.stats.RecordsTransformed,
-		"processing_time_ms":  jp.stats.ProcessingTimeMs,
-		"last_processed_at":   jp.stats.LastProcessedAt.Unix(),
+		"total_records":   jp.stats.TotalRecords,
+		"processed_ok":    jp.stats.ProcessedOK,
+		"processed_error": jp.stats.ProcessedError,
+		"duration_ms":     jp.stats.DurationMs,
+		"records_per_sec": jp.stats.RecordsPerSec,
 	}
 
-	jp.stats.RecordsProcessed++
+	jp.stats.TotalRecords++
+	jp.stats.ProcessedOK++
 	return result, nil
 }
 
@@ -184,7 +177,7 @@ func (jp *JSONProcessor) validateJSON(data interface{}) (interface{}, error) {
 	return map[string]interface{}{
 		"is_valid": err == nil,
 		"data":     data,
-		"error":    func() string {
+		"error": func() string {
 			if err != nil {
 				return err.Error()
 			}
@@ -315,30 +308,28 @@ func (jp *JSONProcessor) toSnakeCase(s string) string {
 // GetInfo returns plugin metadata
 func (jp *JSONProcessor) GetInfo() PluginInfo {
 	return PluginInfo{
+		ID:          "json-processor",
 		Name:        "json-processor",
 		Version:     "1.0.0",
 		Description: "JSON data processing plugin with transformation capabilities",
 		Author:      "FlexCore Team",
 		Type:        "processor",
-		Capabilities: []string{
-			"json_prettify",
-			"json_minify",
-			"json_validate",
-			"json_transform",
-			"string_processing",
-		},
+		Tags:        []string{"json_prettify", "json_minify", "json_validate", "json_transform", "string_processing"},
+		Status:      "active",
+		LoadedAt:    time.Now(),
+		Health:      "healthy",
 	}
 }
 
 // HealthCheck verifies plugin health
 func (jp *JSONProcessor) HealthCheck(ctx context.Context) error {
-	log.Printf("[JSONProcessor] Health check - processed %d records", jp.stats.RecordsProcessed)
+	log.Printf("[JSONProcessor] Health check - processed %d records", jp.stats.TotalRecords)
 	return nil
 }
 
 // Cleanup releases resources
 func (jp *JSONProcessor) Cleanup() error {
-	log.Printf("[JSONProcessor] Cleanup called - processed %d records total", jp.stats.RecordsProcessed)
+	log.Printf("[JSONProcessor] Cleanup called - processed %d records total", jp.stats.TotalRecords)
 
 	// Save statistics to file (optional)
 	if statsFile, ok := jp.config["stats_file"].(string); ok {
@@ -387,11 +378,11 @@ func (rpc *JSONProcessorRPC) Cleanup(args interface{}, resp *error) error {
 // Plugin implementation for HashiCorp go-plugin
 type JSONProcessorPlugin struct{}
 
-func (JSONProcessorPlugin) Server(*plugin.MuxBroker) (interface{}, error) {
+func (JSONProcessorPlugin) Server(*hashicorpPlugin.MuxBroker) (interface{}, error) {
 	return &JSONProcessorRPC{Impl: &JSONProcessor{}}, nil
 }
 
-func (JSONProcessorPlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
+func (JSONProcessorPlugin) Client(b *hashicorpPlugin.MuxBroker, c *rpc.Client) (interface{}, error) {
 	return &JSONProcessorRPC{}, nil
 }
 
@@ -403,19 +394,19 @@ func main() {
 	log.Println("Starting JSON processor plugin...")
 
 	// Handshake configuration
-	handshakeConfig := plugin.HandshakeConfig{
+	handshakeConfig := hashicorpPlugin.HandshakeConfig{
 		ProtocolVersion:  1,
 		MagicCookieKey:   "FLEXCORE_PLUGIN",
 		MagicCookieValue: "flexcore-plugin-magic-cookie",
 	}
 
 	// Plugin map
-	pluginMap := map[string]plugin.Plugin{
+	pluginMap := map[string]hashicorpPlugin.Plugin{
 		"flexcore": &JSONProcessorPlugin{},
 	}
 
 	// Serve the plugin
-	plugin.Serve(&plugin.ServeConfig{
+	hashicorpPlugin.Serve(&hashicorpPlugin.ServeConfig{
 		HandshakeConfig: handshakeConfig,
 		Plugins:         pluginMap,
 	})

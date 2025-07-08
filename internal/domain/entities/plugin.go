@@ -4,11 +4,28 @@ package entities
 import (
 	"time"
 
-	"github.com/flext/flexcore/internal/domain"
-	"github.com/flext/flexcore/pkg/errors"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
+	"github.com/flext/flexcore/shared/result"
 	"github.com/google/uuid"
 )
+
+// DomainEvent represents a domain event
+type DomainEvent struct {
+	ID        string                 `json:"id"`
+	Type      string                 `json:"type"`
+	Data      map[string]interface{} `json:"data"`
+	Timestamp time.Time              `json:"timestamp"`
+}
+
+// CreatePluginEvent creates a plugin-related domain event
+func CreatePluginEvent(eventType, aggregateID string, data map[string]interface{}) DomainEvent {
+	return DomainEvent{
+		ID:        uuid.New().String(),
+		Type:      eventType,
+		Data:      data,
+		Timestamp: time.Now(),
+	}
+}
 
 // PluginID represents a unique plugin identifier
 type PluginID string
@@ -77,17 +94,17 @@ func (s PluginStatus) String() string {
 
 // Plugin represents a plugin in the domain
 type Plugin struct {
-	id          PluginID
-	name        string
-	version     string
-	description string
-	pluginType  PluginType
-	status      PluginStatus
-	config      map[string]interface{}
+	id           PluginID
+	name         string
+	version      string
+	description  string
+	pluginType   PluginType
+	status       PluginStatus
+	config       map[string]interface{}
 	capabilities []string
-	createdAt   time.Time
-	updatedAt   time.Time
-	events      []domain.DomainEvent
+	createdAt    time.Time
+	updatedAt    time.Time
+	events       []DomainEvent
 }
 
 // NewPlugin creates a new plugin
@@ -102,21 +119,21 @@ func NewPlugin(name, version, description string, pluginType PluginType) result.
 
 	now := time.Now()
 	plugin := &Plugin{
-		id:          NewPluginID(),
-		name:        name,
-		version:     version,
-		description: description,
-		pluginType:  pluginType,
-		status:      PluginStatusRegistered,
-		config:      make(map[string]interface{}),
+		id:           NewPluginID(),
+		name:         name,
+		version:      version,
+		description:  description,
+		pluginType:   pluginType,
+		status:       PluginStatusRegistered,
+		config:       make(map[string]interface{}),
 		capabilities: make([]string, 0),
-		createdAt:   now,
-		updatedAt:   now,
-		events:      make([]domain.DomainEvent, 0),
+		createdAt:    now,
+		updatedAt:    now,
+		events:       make([]DomainEvent, 0),
 	}
 
 	// Add domain event
-	event := domain.CreatePluginEvent("PluginCreated", plugin.id.String(), map[string]interface{}{
+	event := CreatePluginEvent("PluginCreated", plugin.id.String(), map[string]interface{}{
 		"plugin_id":  plugin.id.String(),
 		"name":       plugin.name,
 		"version":    plugin.version,
@@ -200,7 +217,7 @@ func (p *Plugin) Activate() result.Result[bool] {
 	p.updatedAt = time.Now()
 
 	// Add domain event
-	event := domain.CreatePluginEvent("PluginActivated", p.id.String(), map[string]interface{}{
+	event := CreatePluginEvent("PluginActivated", p.id.String(), map[string]interface{}{
 		"plugin_id":    p.id.String(),
 		"name":         p.name,
 		"activated_at": p.updatedAt,
@@ -220,7 +237,7 @@ func (p *Plugin) Deactivate() result.Result[bool] {
 	p.updatedAt = time.Now()
 
 	// Add domain event
-	event := domain.CreatePluginEvent("PluginDeactivated", p.id.String(), map[string]interface{}{
+	event := CreatePluginEvent("PluginDeactivated", p.id.String(), map[string]interface{}{
 		"plugin_id":      p.id.String(),
 		"name":           p.name,
 		"deactivated_at": p.updatedAt,
@@ -236,7 +253,7 @@ func (p *Plugin) SetError(errorMessage string) {
 	p.updatedAt = time.Now()
 
 	// Add domain event
-	event := domain.CreatePluginEvent("PluginError", p.id.String(), map[string]interface{}{
+	event := CreatePluginEvent("PluginError", p.id.String(), map[string]interface{}{
 		"plugin_id": p.id.String(),
 		"name":      p.name,
 		"error":     errorMessage,
@@ -258,7 +275,7 @@ func (p *Plugin) UpdateConfig(config map[string]interface{}) result.Result[bool]
 	p.updatedAt = time.Now()
 
 	// Add domain event
-	event := domain.CreatePluginEvent("PluginConfigUpdated", p.id.String(), map[string]interface{}{
+	event := CreatePluginEvent("PluginConfigUpdated", p.id.String(), map[string]interface{}{
 		"plugin_id":  p.id.String(),
 		"name":       p.name,
 		"updated_at": p.updatedAt,
@@ -311,17 +328,17 @@ func (p *Plugin) HasCapability(capability string) bool {
 }
 
 // GetEvents returns the domain events
-func (p *Plugin) GetEvents() []domain.DomainEvent {
+func (p *Plugin) GetEvents() []DomainEvent {
 	return p.events
 }
 
 // ClearEvents clears the domain events
 func (p *Plugin) ClearEvents() {
-	p.events = make([]domain.DomainEvent, 0)
+	p.events = make([]DomainEvent, 0)
 }
 
 // addEvent adds a domain event
-func (p *Plugin) addEvent(event domain.DomainEvent) {
+func (p *Plugin) addEvent(event DomainEvent) {
 	p.events = append(p.events, event)
 }
 

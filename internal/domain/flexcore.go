@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/flext/flexcore/shared/result"
 	"github.com/google/uuid"
-	"github.com/flext/flexcore/pkg/result"
 )
 
 // FlexCoreConfig represents the configuration for FlexCore
@@ -155,11 +155,11 @@ func (fc *FlexCore) GetWorkflowStatus(ctx context.Context, jobID string) result.
 
 // ClusterStatus represents the status of the cluster
 type ClusterStatus struct {
-	NodeID    string              `json:"node_id"`
-	Cluster   string              `json:"cluster"`
-	Nodes     []NodeStatus        `json:"nodes"`
-	Health    string              `json:"health"`
-	Timestamp time.Time           `json:"timestamp"`
+	NodeID    string       `json:"node_id"`
+	Cluster   string       `json:"cluster"`
+	Nodes     []NodeStatus `json:"nodes"`
+	Health    string       `json:"health"`
+	Timestamp time.Time    `json:"timestamp"`
 }
 
 // NodeStatus represents the status of a cluster node

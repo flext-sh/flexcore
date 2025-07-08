@@ -12,7 +12,7 @@ import (
 func TestNewEntity(t *testing.T) {
 	id := "test-id-123"
 	entity := domain.NewEntity(id)
-	
+
 	assert.Equal(t, id, entity.ID)
 	assert.NotZero(t, entity.CreatedAt)
 	assert.NotZero(t, entity.UpdatedAt)
@@ -24,12 +24,12 @@ func TestEntityTouch(t *testing.T) {
 	entity := domain.NewEntity("test-id")
 	originalUpdatedAt := entity.UpdatedAt
 	originalVersion := entity.Version
-	
+
 	// Wait a bit to ensure time difference
 	time.Sleep(10 * time.Millisecond)
-	
+
 	entity.Touch()
-	
+
 	assert.Equal(t, "test-id", entity.ID)
 	assert.NotEqual(t, originalUpdatedAt, entity.UpdatedAt)
 	assert.Equal(t, originalVersion+1, entity.Version)
@@ -40,7 +40,7 @@ func TestEntityEquals(t *testing.T) {
 	entity1 := domain.NewEntity("id-1")
 	entity2 := domain.NewEntity("id-2")
 	entity3 := domain.NewEntity("id-1")
-	
+
 	assert.True(t, entity1.Equals(entity3))
 	assert.False(t, entity1.Equals(entity2))
 }
@@ -48,7 +48,7 @@ func TestEntityEquals(t *testing.T) {
 func TestNewAggregateRoot(t *testing.T) {
 	id := "aggregate-id"
 	ar := domain.NewAggregateRoot(id)
-	
+
 	assert.Equal(t, id, ar.Entity.ID)
 	assert.NotNil(t, ar.DomainEvents())
 	assert.Empty(t, ar.DomainEvents())
@@ -56,13 +56,13 @@ func TestNewAggregateRoot(t *testing.T) {
 
 func TestAggregateRootRaiseEvent(t *testing.T) {
 	ar := domain.NewAggregateRoot("test-id")
-	
+
 	event1 := &testDomainEvent{id: "event-1"}
 	event2 := &testDomainEvent{id: "event-2"}
-	
+
 	ar.RaiseEvent(event1)
 	ar.RaiseEvent(event2)
-	
+
 	events := ar.DomainEvents()
 	assert.Len(t, events, 2)
 	assert.Equal(t, event1, events[0])
@@ -71,17 +71,17 @@ func TestAggregateRootRaiseEvent(t *testing.T) {
 
 func TestAggregateRootClearEvents(t *testing.T) {
 	ar := domain.NewAggregateRoot("test-id")
-	
+
 	ar.RaiseEvent(&testDomainEvent{id: "event-1"})
 	assert.Len(t, ar.DomainEvents(), 1)
-	
+
 	ar.ClearEvents()
 	assert.Empty(t, ar.DomainEvents())
 }
 
 func TestBaseDomainEvent(t *testing.T) {
 	event := domain.NewBaseDomainEvent("TestEvent", "aggregate-123")
-	
+
 	assert.NotEmpty(t, event.EventID())
 	assert.Equal(t, "TestEvent", event.EventType())
 	assert.Equal(t, "aggregate-123", event.AggregateID())
@@ -94,29 +94,29 @@ func TestBaseSpecification(t *testing.T) {
 	greaterThan10 := domain.NewSpecification(func(n int) bool {
 		return n > 10
 	})
-	
+
 	lessThan100 := domain.NewSpecification(func(n int) bool {
 		return n < 100
 	})
-	
+
 	// Test individual specifications
 	assert.True(t, greaterThan10.IsSatisfiedBy(20))
 	assert.False(t, greaterThan10.IsSatisfiedBy(5))
 	assert.True(t, lessThan100.IsSatisfiedBy(50))
 	assert.False(t, lessThan100.IsSatisfiedBy(150))
-	
+
 	// Test And
 	between10And100 := greaterThan10.And(lessThan100)
 	assert.True(t, between10And100.IsSatisfiedBy(50))
 	assert.False(t, between10And100.IsSatisfiedBy(5))
 	assert.False(t, between10And100.IsSatisfiedBy(150))
-	
+
 	// Test Or
 	notBetween10And100 := greaterThan10.Or(lessThan100)
 	assert.True(t, notBetween10And100.IsSatisfiedBy(5))
 	assert.True(t, notBetween10And100.IsSatisfiedBy(50))
 	assert.True(t, notBetween10And100.IsSatisfiedBy(150))
-	
+
 	// Test Not
 	notGreaterThan10 := greaterThan10.Not()
 	assert.False(t, notGreaterThan10.IsSatisfiedBy(20))
@@ -165,7 +165,7 @@ func BenchmarkNewEntity(b *testing.B) {
 
 func BenchmarkEntityTouch(b *testing.B) {
 	entity := domain.NewEntity("test-id")
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		entity.Touch()
@@ -175,7 +175,7 @@ func BenchmarkEntityTouch(b *testing.B) {
 func BenchmarkAggregateRootRaiseEvent(b *testing.B) {
 	ar := domain.NewAggregateRoot("test-id")
 	event := &testDomainEvent{id: "event-1"}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ar.RaiseEvent(event)
@@ -188,7 +188,7 @@ func BenchmarkAggregateRootRaiseEvent(b *testing.B) {
 func BenchmarkSpecificationAnd(b *testing.B) {
 	spec1 := domain.NewSpecification(func(n int) bool { return n > 10 })
 	spec2 := domain.NewSpecification(func(n int) bool { return n < 100 })
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		combined := spec1.And(spec2)

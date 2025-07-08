@@ -4,18 +4,18 @@ package cqrs
 import (
 	"context"
 	"fmt"
-	"time"
 	"github.com/google/uuid"
+	"time"
 )
 
 // Example Commands
 type CreatePipelineCommand struct {
-	CommandIDField   string                 `json:"command_id"`
-	AggregateIDField string                 `json:"aggregate_id"`
-	Name             string                 `json:"name"`
-	Description      string                 `json:"description"`
+	CommandIDField   string                   `json:"command_id"`
+	AggregateIDField string                   `json:"aggregate_id"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description"`
 	Steps            []map[string]interface{} `json:"steps"`
-	MetadataField    map[string]interface{} `json:"metadata"`
+	MetadataField    map[string]interface{}   `json:"metadata"`
 }
 
 func (c *CreatePipelineCommand) CommandID() string {
@@ -84,8 +84,8 @@ func (c *UpdatePipelineStatusCommand) Metadata() map[string]interface{} {
 
 // Example Queries
 type GetPipelineQuery struct {
-	QueryIDField   string                 `json:"query_id"`
-	PipelineID     string                 `json:"pipeline_id"`
+	QueryIDField    string                 `json:"query_id"`
+	PipelineID      string                 `json:"pipeline_id"`
 	ParametersField map[string]interface{} `json:"parameters"`
 }
 

@@ -1,0 +1,172 @@
+// Package config - Pure Viper implementation for FlexCore
+package config
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/spf13/viper"
+)
+
+// Global Viper instance
+var V *viper.Viper
+
+// Global configuration instance
+var Current *Config
+
+// Config structure for type-safe access
+type Config struct {
+	App struct {
+		Name        string `mapstructure:"name"`
+		Version     string `mapstructure:"version"`
+		Environment string `mapstructure:"environment"`
+		Debug       bool   `mapstructure:"debug"`
+		Port        int    `mapstructure:"port"`
+	} `mapstructure:"app"`
+
+	Database struct {
+		Type         string        `mapstructure:"type"`
+		Host         string        `mapstructure:"host"`
+		Port         int           `mapstructure:"port"`
+		Name         string        `mapstructure:"name"`
+		User         string        `mapstructure:"user"`
+		Password     string        `mapstructure:"password"`
+		SSLMode      string        `mapstructure:"ssl_mode"`
+		MaxOpenConns int           `mapstructure:"max_open_conns"`
+		MaxIdleConns int           `mapstructure:"max_idle_conns"`
+		MaxLifetime  time.Duration `mapstructure:"max_lifetime"`
+		AutoMigrate  bool          `mapstructure:"auto_migrate"`
+	} `mapstructure:"database"`
+
+	Server struct {
+		Host         string        `mapstructure:"host"`
+		Port         int           `mapstructure:"port"`
+		ReadTimeout  time.Duration `mapstructure:"read_timeout"`
+		WriteTimeout time.Duration `mapstructure:"write_timeout"`
+		IdleTimeout  time.Duration `mapstructure:"idle_timeout"`
+	} `mapstructure:"server"`
+
+	Logging struct {
+		Level      string `mapstructure:"level"`
+		Format     string `mapstructure:"format"`
+		Output     string `mapstructure:"output"`
+		Structured bool   `mapstructure:"structured"`
+	} `mapstructure:"logging"`
+}
+
+// Initialize sets up Viper with defaults and loads config
+func Initialize() error {
+	V = viper.New()
+
+	// Set configuration sources
+	V.SetConfigName("config")
+	V.SetConfigType("yaml")
+	V.AddConfigPath(".")
+	V.AddConfigPath("./configs")
+	V.AddConfigPath("./configs/development")
+	V.AddConfigPath("./configs/production")
+	V.AddConfigPath("/etc/flexcore/")
+
+	// Environment variables (12-factor app)
+	V.SetEnvPrefix("FLEXCORE")
+	V.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	V.AutomaticEnv()
+
+	// Set enterprise defaults
+	setDefaults()
+
+	// Read config file and unmarshal
+	if err := V.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return fmt.Errorf("error reading config file: %w", err)
+		}
+	}
+
+	Current = &Config{}
+	if err := V.Unmarshal(Current); err != nil {
+		return fmt.Errorf("error unmarshaling config: %w", err)
+	}
+
+	return validate()
+}
+
+// setDefaults sets default configuration values
+func setDefaults() {
+	// App defaults
+	V.SetDefault("app.name", "flexcore")
+	V.SetDefault("app.version", "1.0.0")
+	V.SetDefault("app.environment", "development")
+	V.SetDefault("app.debug", true)
+	V.SetDefault("app.port", 8080)
+
+	// Database defaults
+	V.SetDefault("database.type", "memory")
+	V.SetDefault("database.host", "localhost")
+	V.SetDefault("database.port", 5432)
+	V.SetDefault("database.name", "flexcore")
+	V.SetDefault("database.user", "postgres")
+	V.SetDefault("database.password", "")
+	V.SetDefault("database.ssl_mode", "disable")
+	V.SetDefault("database.max_open_conns", 25)
+	V.SetDefault("database.max_idle_conns", 5)
+	V.SetDefault("database.max_lifetime", 5*time.Minute)
+	V.SetDefault("database.auto_migrate", true)
+
+	// Server defaults
+	V.SetDefault("server.host", "0.0.0.0")
+	V.SetDefault("server.port", 8080)
+	V.SetDefault("server.read_timeout", 15*time.Second)
+	V.SetDefault("server.write_timeout", 15*time.Second)
+	V.SetDefault("server.idle_timeout", 60*time.Second)
+
+	// Logging defaults
+	V.SetDefault("logging.level", "info")
+	V.SetDefault("logging.format", "json")
+	V.SetDefault("logging.output", "stdout")
+	V.SetDefault("logging.structured", true)
+}
+
+// validate validates the configuration
+func validate() error {
+	if Current.App.Name == "" {
+		return fmt.Errorf("app.name cannot be empty")
+	}
+
+	if Current.App.Port <= 0 || Current.App.Port > 65535 {
+		return fmt.Errorf("app.port must be between 1 and 65535")
+	}
+
+	return nil
+}
+
+// Watch enables configuration hot reloading
+func Watch() {
+	V.WatchConfig()
+	// In a real implementation, you'd have a callback to update Current
+}
+
+// Get returns a configuration value by key
+func Get(key string) interface{} {
+	return V.Get(key)
+}
+
+// GetString returns a string configuration value
+func GetString(key string) string {
+	return V.GetString(key)
+}
+
+// GetInt returns an integer configuration value
+func GetInt(key string) int {
+	return V.GetInt(key)
+}
+
+// GetBool returns a boolean configuration value
+func GetBool(key string) bool {
+	return V.GetBool(key)
+}
+
+// Set sets a configuration value
+func Set(key string, value interface{}) {
+	V.Set(key, value)
+}

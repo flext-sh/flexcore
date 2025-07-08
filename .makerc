@@ -1,0 +1,19 @@
+# FlexCore Make Configuration
+# This file contains default settings for the Makefile
+
+# Default build mode (dev, release)
+BUILD_MODE=dev
+
+# Rust compilation settings
+CARGO_INCREMENTAL=1
+RUST_LOG=info
+
+# Performance settings
+MAKEFLAGS+=--jobs=$(shell nproc)
+
+# Windmill specific settings
+SQLX_OFFLINE=true
+
+# Development convenience
+export FLEXCORE_DEV_MODE=1
+export WINDMILL_BASE_URL=http://localhost:8000

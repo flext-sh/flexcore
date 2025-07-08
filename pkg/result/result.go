@@ -176,7 +176,7 @@ func Try[T any](fn func() T) Result[T] {
 // TryAsync executes a function asynchronously that might panic
 func TryAsync[T any](fn func() T) *Async[T] {
 	async := NewAsync[T]()
-	
+
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {

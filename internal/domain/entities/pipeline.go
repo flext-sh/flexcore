@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/flext/flexcore/internal/domain"
-	"github.com/flext/flexcore/pkg/errors"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext/flexcore/shared/errors"
+	"github.com/flext/flexcore/shared/result"
 	"github.com/google/uuid"
 )
 
@@ -60,16 +60,16 @@ func (s PipelineStatus) String() string {
 
 // PipelineStep represents a step in a pipeline
 type PipelineStep struct {
-	ID          string
-	Name        string
-	Type        string
-	Config      map[string]interface{}
-	DependsOn   []string
-	RetryCount  int
-	MaxRetries  int
-	Timeout     time.Duration
-	IsEnabled   bool
-	CreatedAt   time.Time
+	ID         string
+	Name       string
+	Type       string
+	Config     map[string]interface{}
+	DependsOn  []string
+	RetryCount int
+	MaxRetries int
+	Timeout    time.Duration
+	IsEnabled  bool
+	CreatedAt  time.Time
 }
 
 // NewPipelineStep creates a new pipeline step
@@ -159,7 +159,7 @@ func (p *Pipeline) AddStep(step PipelineStep) result.Result[bool] {
 	}
 
 	p.Steps = append(p.Steps, step)
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineStepAddedEvent(p.ID, step.ID, step.Name)
@@ -193,7 +193,7 @@ func (p *Pipeline) RemoveStep(stepName string) result.Result[bool] {
 
 	// Remove the step
 	p.Steps = append(p.Steps[:stepIndex], p.Steps[stepIndex+1:]...)
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineStepRemovedEvent(p.ID, stepName)
@@ -213,7 +213,7 @@ func (p *Pipeline) Activate() result.Result[bool] {
 	}
 
 	p.Status = PipelineStatusActive
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineActivatedEvent(p.ID, p.Name)
@@ -229,7 +229,7 @@ func (p *Pipeline) Deactivate() result.Result[bool] {
 	}
 
 	p.Status = PipelineStatusDraft
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineDeactivatedEvent(p.ID, p.Name)
@@ -251,7 +251,7 @@ func (p *Pipeline) Start() result.Result[bool] {
 	p.Status = PipelineStatusRunning
 	now := time.Now()
 	p.LastRunAt = &now
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineStartedEvent(p.ID, p.Name, now)
@@ -267,7 +267,7 @@ func (p *Pipeline) Complete() result.Result[bool] {
 	}
 
 	p.Status = PipelineStatusCompleted
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineCompletedEvent(p.ID, p.Name, time.Now())
@@ -283,7 +283,7 @@ func (p *Pipeline) Fail(reason string) result.Result[bool] {
 	}
 
 	p.Status = PipelineStatusFailed
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineFailedEvent(p.ID, p.Name, reason, time.Now())
@@ -304,7 +304,7 @@ func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bo
 		IsEnabled:      true,
 		CreatedAt:      time.Now(),
 	}
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineScheduleSetEvent(p.ID, cronExpression, timezone)
@@ -316,7 +316,7 @@ func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bo
 // ClearSchedule removes the pipeline schedule
 func (p *Pipeline) ClearSchedule() {
 	p.Schedule = nil
-	p.Touch()
+	p.Entity.Touch()
 
 	// Raise domain event
 	event := NewPipelineScheduleClearedEvent(p.ID)
@@ -331,7 +331,7 @@ func (p *Pipeline) AddTag(tag string) {
 		}
 	}
 	p.Tags = append(p.Tags, tag)
-	p.Touch()
+	p.Entity.Touch()
 }
 
 // RemoveTag removes a tag from the pipeline
@@ -339,7 +339,7 @@ func (p *Pipeline) RemoveTag(tag string) {
 	for i, existingTag := range p.Tags {
 		if existingTag == tag {
 			p.Tags = append(p.Tags[:i], p.Tags[i+1:]...)
-			p.Touch()
+			p.Entity.Touch()
 			break
 		}
 	}

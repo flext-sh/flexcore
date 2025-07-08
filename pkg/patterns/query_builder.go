@@ -112,15 +112,15 @@ func (q *QueryBuilder) Having(condition string, value interface{}) *QueryBuilder
 func (q *QueryBuilder) Build() (string, []interface{}) {
 	// Build SQL query
 	query := fmt.Sprintf("SELECT %s FROM %s", strings.Join(q.columns, ", "), q.table)
-	
+
 	var args []interface{}
 	argIndex := 1
-	
+
 	// Add JOINs
 	for _, join := range q.joins {
 		query += fmt.Sprintf(" %s JOIN %s ON %s", join.Type, join.Table, join.Condition)
 	}
-	
+
 	// Add WHERE clauses
 	if len(q.where) > 0 {
 		whereClauses := make([]string, 0, len(q.where))
@@ -133,10 +133,10 @@ func (q *QueryBuilder) Build() (string, []interface{}) {
 					args = append(args, v)
 					argIndex++
 				}
-				whereClauses = append(whereClauses, fmt.Sprintf("%s IN (%s)", 
+				whereClauses = append(whereClauses, fmt.Sprintf("%s IN (%s)",
 					clause.Column, strings.Join(placeholders, ", ")))
 			} else {
-				whereClauses = append(whereClauses, fmt.Sprintf("%s %s $%d", 
+				whereClauses = append(whereClauses, fmt.Sprintf("%s %s $%d",
 					clause.Column, clause.Operator, argIndex))
 				args = append(args, clause.Value)
 				argIndex++
@@ -144,12 +144,12 @@ func (q *QueryBuilder) Build() (string, []interface{}) {
 		}
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
-	
+
 	// Add GROUP BY
 	if len(q.groupBy) > 0 {
 		query += " GROUP BY " + strings.Join(q.groupBy, ", ")
 	}
-	
+
 	// Add HAVING
 	if len(q.having) > 0 {
 		havingClauses := make([]string, len(q.having))
@@ -160,7 +160,7 @@ func (q *QueryBuilder) Build() (string, []interface{}) {
 		}
 		query += " HAVING " + strings.Join(havingClauses, " AND ")
 	}
-	
+
 	// Add ORDER BY
 	if len(q.orderBy) > 0 {
 		orderClauses := make([]string, len(q.orderBy))
@@ -173,7 +173,7 @@ func (q *QueryBuilder) Build() (string, []interface{}) {
 		}
 		query += " ORDER BY " + strings.Join(orderClauses, ", ")
 	}
-	
+
 	// Add LIMIT and OFFSET
 	if q.limit > 0 {
 		query += fmt.Sprintf(" LIMIT %d", q.limit)
@@ -181,7 +181,7 @@ func (q *QueryBuilder) Build() (string, []interface{}) {
 	if q.offset > 0 {
 		query += fmt.Sprintf(" OFFSET %d", q.offset)
 	}
-	
+
 	return query, args
 }
 
@@ -198,13 +198,13 @@ func (q *QueryBuilder) Clone() *QueryBuilder {
 		groupBy: make([]string, len(q.groupBy)),
 		having:  make([]HavingClause, len(q.having)),
 	}
-	
+
 	copy(clone.columns, q.columns)
 	copy(clone.where, q.where)
 	copy(clone.orderBy, q.orderBy)
 	copy(clone.joins, q.joins)
 	copy(clone.groupBy, q.groupBy)
 	copy(clone.having, q.having)
-	
+
 	return clone
 }
