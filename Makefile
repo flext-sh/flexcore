@@ -86,16 +86,15 @@ test-e2e:
 build: clean
 	@echo "Building application..."
 	mkdir -p $(BUILD_DIR)
-	$(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/$(APP_NAME) ./cmd/flexcore
-	$(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/$(APP_NAME)-node ./cmd/flexcore-node
+	$(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/$(APP_NAME) ./cmd/server
 
 ## build-all: Build for all platforms
 build-all: clean
 	@echo "Building for all platforms..."
 	mkdir -p $(DIST_DIR)
-	GOOS=linux GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) -o $(DIST_DIR)/$(APP_NAME)-linux-amd64 ./cmd/flexcore
-	GOOS=darwin GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) -o $(DIST_DIR)/$(APP_NAME)-darwin-amd64 ./cmd/flexcore
-	GOOS=windows GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) -o $(DIST_DIR)/$(APP_NAME)-windows-amd64.exe ./cmd/flexcore
+	GOOS=linux GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) -o $(DIST_DIR)/$(APP_NAME)-linux-amd64 ./cmd/server
+	GOOS=darwin GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) -o $(DIST_DIR)/$(APP_NAME)-darwin-amd64 ./cmd/server
+	GOOS=windows GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) -o $(DIST_DIR)/$(APP_NAME)-windows-amd64.exe ./cmd/server
 
 ## docker: Build Docker images
 docker:

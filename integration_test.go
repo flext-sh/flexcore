@@ -306,10 +306,10 @@ func TestIntegration_ErrorHandling(t *testing.T) {
 
 func TestIntegration_ConcurrentRequests(t *testing.T) {
 	const numRequests = 10
-	
+
 	// Create a channel to collect results
 	results := make(chan bool, numRequests)
-	
+
 	// Send concurrent health check requests
 	for i := 0; i < numRequests; i++ {
 		go func() {
@@ -322,7 +322,7 @@ func TestIntegration_ConcurrentRequests(t *testing.T) {
 			results <- resp.StatusCode == 200
 		}()
 	}
-	
+
 	// Collect results
 	successCount := 0
 	for i := 0; i < numRequests; i++ {
@@ -330,7 +330,7 @@ func TestIntegration_ConcurrentRequests(t *testing.T) {
 			successCount++
 		}
 	}
-	
+
 	assert.Equal(t, numRequests, successCount, "All concurrent requests should succeed")
 }
 

@@ -1,0 +1,167 @@
+# FlexCore Docker Compose - Production Configuration
+# Use: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+version: '3.8'
+
+services:
+  # Production PostgreSQL with performance tuning
+  postgres:
+    environment:
+      POSTGRES_DB: windmill_prod
+      POSTGRES_USER: windmill_prod
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./deployments/config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # Production Redis with persistence
+  redis:
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_prod_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Production Windmill with optimizations
+  windmill-backend:
+    environment:
+      - DATABASE_URL=postgres://windmill_prod:$$POSTGRES_PASSWORD@postgres:5432/windmill_prod
+      - REDIS_URL=redis://redis:6379
+      - RUST_LOG=info
+      - WINDMILL_WORKER_GROUPS=prod,default
+      - WINDMILL_WORKERS=4
+    secrets:
+      - postgres_password
+    volumes:
+      - ./third_party/windmill/windmill-backend:/windmill/windmill-backend:ro
+      - windmill_prod_data:/tmp/windmill
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # Production FlexCore API
+  flexcore-api:
+    environment:
+      - DATABASE_URL=postgres://windmill_prod:$$POSTGRES_PASSWORD@postgres:5432/windmill_prod
+      - REDIS_URL=redis://redis:6379
+      - WINDMILL_BASE_URL=http://windmill-backend:8000
+      - LOG_LEVEL=info
+      - GIN_MODE=release
+    secrets:
+      - postgres_password
+    volumes:
+      - ./build/flexcore:/flexcore/flexcore:ro
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # Production monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployments/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - flexcore-network
+    profiles:
+      - monitoring
+
+  # Production metrics with Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD_FILE=/run/secrets/grafana_password
+    secrets:
+      - grafana_password
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployments/config/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - flexcore-network
+    profiles:
+      - monitoring
+
+  # Production load balancer
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployments/config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployments/config/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - windmill-backend
+      - flexcore-api
+    networks:
+      - flexcore-network
+    profiles:
+      - loadbalancer
+
+secrets:
+  postgres_password:
+    file: ./deployments/secrets/postgres_password.txt
+  grafana_password:
+    file: ./deployments/secrets/grafana_password.txt
+
+volumes:
+  postgres_prod_data:
+    name: flexcore_postgres_prod_data
+  redis_prod_data:
+    name: flexcore_redis_prod_data
+  windmill_prod_data:
+    name: flexcore_windmill_prod_data
+  prometheus_data:
+    name: flexcore_prometheus_data
+  grafana_data:
+    name: flexcore_grafana_data

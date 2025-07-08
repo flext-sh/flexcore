@@ -253,7 +253,7 @@ func (c *Container) Scope() *Container {
 	defer c.mu.RUnlock()
 
 	child := NewContainer()
-	
+
 	// Copy service descriptors (but not instances)
 	for name, descriptor := range c.services {
 		child.services[name] = descriptor

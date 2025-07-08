@@ -2,8 +2,8 @@
 package patterns
 
 import (
+	"github.com/flext/flexcore/pkg/result"
 	"github.com/flext/flexcore/shared/errors"
-	"github.com/flext/flexcore/shared/result"
 )
 
 // Railway represents a computation that can succeed or fail
@@ -31,11 +31,11 @@ func (r Railway[T]) Then(fn func(T) error) Railway[T] {
 	if r.result.IsFailure() {
 		return r
 	}
-	
+
 	if err := fn(r.result.Value()); err != nil {
 		return Failure[T](err)
 	}
-	
+
 	return r
 }
 
@@ -44,7 +44,7 @@ func (r Railway[T]) Map(fn func(T) T) Railway[T] {
 	if r.result.IsFailure() {
 		return r
 	}
-	
+
 	return Success(fn(r.result.Value()))
 }
 
@@ -53,7 +53,7 @@ func (r Railway[T]) FlatMap(fn func(T) Railway[T]) Railway[T] {
 	if r.result.IsFailure() {
 		return r
 	}
-	
+
 	return fn(r.result.Value())
 }
 
@@ -62,7 +62,7 @@ func (r Railway[T]) Recover(fn func(error) T) Railway[T] {
 	if r.result.IsSuccess() {
 		return r
 	}
-	
+
 	return Success(fn(r.result.Error()))
 }
 
@@ -76,11 +76,11 @@ func (r Railway[T]) Validate(predicate func(T) bool, errorMsg string) Railway[T]
 	if r.result.IsFailure() {
 		return r
 	}
-	
+
 	if !predicate(r.result.Value()) {
 		return Failure[T](errors.New(errorMsg))
 	}
-	
+
 	return r
 }
 

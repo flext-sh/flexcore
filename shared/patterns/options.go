@@ -263,8 +263,8 @@ func (l *Lazy[T]) Reset() {
 
 // Either represents a value that can be one of two types
 type Either[L, R any] struct {
-	left  L
-	right R
+	left   L
+	right  R
 	isLeft bool
 }
 

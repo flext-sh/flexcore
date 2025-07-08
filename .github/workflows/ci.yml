@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: 🚀 FlexCore CI/CD Pipeline
 
 on:
   push:
@@ -9,6 +9,8 @@ on:
 env:
   GO_VERSION: '1.21'
   GOLANGCI_LINT_VERSION: v1.54.2
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   test:

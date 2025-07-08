@@ -12,8 +12,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/hashicorp/go-plugin"
+	hashicorpPlugin "github.com/hashicorp/go-plugin"
 	_ "github.com/lib/pq"
+
+	"github.com/flext/flexcore/pkg/plugin"
 )
 
 // init registers types for gob encoding/decoding
@@ -32,40 +34,22 @@ func init() {
 	gob.Register(time.Time{})
 
 	// Register plugin types
-	gob.Register(PluginInfo{})
-	gob.Register(ProcessingStats{})
+	gob.Register(plugin.PluginInfo{})
+	gob.Register(plugin.ProcessingStats{})
 }
 
 // PostgresProcessor implements a PostgreSQL data processing plugin
 type PostgresProcessor struct {
 	config map[string]interface{}
 	db     *sql.DB
-	stats  ProcessingStats
-}
-
-// ProcessingStats tracks plugin performance
-type ProcessingStats struct {
-	RecordsProcessed int64     `json:"records_processed"`
-	RecordsExtracted int64     `json:"records_extracted"`
-	ProcessingTimeMs int64     `json:"processing_time_ms"`
-	LastProcessedAt  time.Time `json:"last_processed_at"`
-}
-
-// PluginInfo contains plugin metadata
-type PluginInfo struct {
-	Name        string   `json:"name"`
-	Version     string   `json:"version"`
-	Description string   `json:"description"`
-	Author      string   `json:"author"`
-	Type        string   `json:"type"`
-	Capabilities []string `json:"capabilities"`
+	stats  plugin.ProcessingStats
 }
 
 // DataProcessorPlugin interface
 type DataProcessorPlugin interface {
 	Initialize(ctx context.Context, config map[string]interface{}) error
 	Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error)
-	GetInfo() PluginInfo
+	GetInfo() plugin.PluginInfo
 	HealthCheck(ctx context.Context) error
 	Cleanup() error
 }
@@ -75,7 +59,7 @@ func (pp *PostgresProcessor) Initialize(ctx context.Context, config map[string]i
 	log.Printf("[PostgresProcessor] Initializing with config: %+v", config)
 
 	pp.config = config
-	pp.stats = ProcessingStats{}
+	pp.stats = plugin.ProcessingStats{}
 
 	// Try to connect to PostgreSQL if config provided
 	if host, ok := config["postgres_host"].(string); ok {
@@ -125,8 +109,8 @@ func (pp *PostgresProcessor) Initialize(ctx context.Context, config map[string]i
 func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
 	startTime := time.Now()
 	defer func() {
-		pp.stats.ProcessingTimeMs = time.Since(startTime).Milliseconds()
-		pp.stats.LastProcessedAt = time.Now()
+		pp.stats.DurationMs = time.Since(startTime).Milliseconds()
+		pp.stats.EndTime = time.Now()
 	}()
 
 	log.Printf("[PostgresProcessor] Processing input with %d keys", len(input))
@@ -145,7 +129,7 @@ func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]inter
 			result["data"] = input
 		} else {
 			result["data"] = queryResult
-			pp.stats.RecordsExtracted = int64(len(queryResult))
+			pp.stats.ProcessedOK = int64(len(queryResult))
 		}
 	} else if data, ok := input["data"]; ok {
 		// Process data without database
@@ -173,14 +157,16 @@ func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]inter
 
 	// Add processing stats
 	result["stats"] = map[string]interface{}{
-		"records_processed":   pp.stats.RecordsProcessed,
-		"records_extracted":   pp.stats.RecordsExtracted,
-		"processing_time_ms":  pp.stats.ProcessingTimeMs,
-		"last_processed_at":   pp.stats.LastProcessedAt.Unix(),
-		"database_connected":  pp.db != nil,
+		"total_records":      pp.stats.TotalRecords,
+		"processed_ok":       pp.stats.ProcessedOK,
+		"processed_error":    pp.stats.ProcessedError,
+		"duration_ms":        pp.stats.DurationMs,
+		"records_per_sec":    pp.stats.RecordsPerSec,
+		"database_connected": pp.db != nil,
 	}
 
-	pp.stats.RecordsProcessed++
+	pp.stats.TotalRecords++
+	pp.stats.ProcessedOK++
 	return result, nil
 }
 
@@ -226,25 +212,24 @@ func (pp *PostgresProcessor) executeQuery(ctx context.Context, query string) ([]
 }
 
 // GetInfo returns plugin metadata
-func (pp *PostgresProcessor) GetInfo() PluginInfo {
-	return PluginInfo{
+func (pp *PostgresProcessor) GetInfo() plugin.PluginInfo {
+	return plugin.PluginInfo{
+		ID:          "postgres-processor",
 		Name:        "postgres-processor",
 		Version:     "1.0.0",
 		Description: "PostgreSQL data processing plugin with SQL execution capabilities",
 		Author:      "FlexCore Team",
 		Type:        "processor",
-		Capabilities: []string{
-			"sql_query",
-			"data_extraction",
-			"postgres_connection",
-			"result_processing",
-		},
+		Tags:        []string{"sql_query", "data_extraction", "postgres_connection", "result_processing"},
+		Status:      "active",
+		LoadedAt:    time.Now(),
+		Health:      "healthy",
 	}
 }
 
 // HealthCheck verifies plugin health
 func (pp *PostgresProcessor) HealthCheck(ctx context.Context) error {
-	log.Printf("[PostgresProcessor] Health check - processed %d records", pp.stats.RecordsProcessed)
+	log.Printf("[PostgresProcessor] Health check - processed %d records", pp.stats.TotalRecords)
 
 	// Check database connection if available
 	if pp.db != nil {
@@ -258,7 +243,7 @@ func (pp *PostgresProcessor) HealthCheck(ctx context.Context) error {
 
 // Cleanup releases resources
 func (pp *PostgresProcessor) Cleanup() error {
-	log.Printf("[PostgresProcessor] Cleanup called - processed %d records total", pp.stats.RecordsProcessed)
+	log.Printf("[PostgresProcessor] Cleanup called - processed %d records total", pp.stats.TotalRecords)
 
 	if pp.db != nil {
 		pp.db.Close()
@@ -331,7 +316,7 @@ func (rpc *PostgresProcessorRPC) Execute(args map[string]interface{}, resp *map[
 	return nil
 }
 
-func (rpc *PostgresProcessorRPC) GetInfo(args interface{}, resp *PluginInfo) error {
+func (rpc *PostgresProcessorRPC) GetInfo(args interface{}, resp *plugin.PluginInfo) error {
 	*resp = rpc.Impl.GetInfo()
 	return nil
 }
@@ -349,11 +334,11 @@ func (rpc *PostgresProcessorRPC) Cleanup(args interface{}, resp *error) error {
 // Plugin implementation for HashiCorp go-plugin
 type PostgresProcessorPlugin struct{}
 
-func (PostgresProcessorPlugin) Server(*plugin.MuxBroker) (interface{}, error) {
+func (PostgresProcessorPlugin) Server(*hashicorpPlugin.MuxBroker) (interface{}, error) {
 	return &PostgresProcessorRPC{Impl: &PostgresProcessor{}}, nil
 }
 
-func (PostgresProcessorPlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
+func (PostgresProcessorPlugin) Client(b *hashicorpPlugin.MuxBroker, c *rpc.Client) (interface{}, error) {
 	return &PostgresProcessorRPC{}, nil
 }
 
@@ -365,19 +350,19 @@ func main() {
 	log.Println("Starting postgres processor plugin...")
 
 	// Handshake configuration
-	handshakeConfig := plugin.HandshakeConfig{
+	handshakeConfig := hashicorpPlugin.HandshakeConfig{
 		ProtocolVersion:  1,
 		MagicCookieKey:   "FLEXCORE_PLUGIN",
 		MagicCookieValue: "flexcore-plugin-magic-cookie",
 	}
 
 	// Plugin map
-	pluginMap := map[string]plugin.Plugin{
+	pluginMap := map[string]hashicorpPlugin.Plugin{
 		"flexcore": &PostgresProcessorPlugin{},
 	}
 
 	// Serve the plugin
-	plugin.Serve(&plugin.ServeConfig{
+	hashicorpPlugin.Serve(&hashicorpPlugin.ServeConfig{
 		HandshakeConfig: handshakeConfig,
 		Plugins:         pluginMap,
 	})
