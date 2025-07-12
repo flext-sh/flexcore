@@ -88,12 +88,12 @@ func TestPipelineService_CreatePipeline(t *testing.T) {
     // Arrange
     ctx := context.Background()
     service := setupPipelineService(t)
-    
+
     // Act
     pipeline, err := service.CreatePipeline(ctx, CreatePipelineCommand{
         Name: "test-pipeline",
     })
-    
+
     // Assert
     assert.NoError(t, err)
     assert.NotNil(t, pipeline)
@@ -122,20 +122,24 @@ func TestPipelineService_CreatePipeline(t *testing.T) {
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests pass
 - [ ] Integration tests pass
 - [ ] Manual testing completed
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Documentation updated
@@ -147,6 +151,7 @@ Brief description of changes
 ### Bug Reports
 
 Include:
+
 - Go version
 - Operating system
 - Minimal reproduction steps
@@ -156,6 +161,7 @@ Include:
 ### Feature Requests
 
 Include:
+
 - Use case description
 - Proposed solution
 - Alternative solutions considered

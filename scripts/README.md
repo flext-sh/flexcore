@@ -152,6 +152,7 @@ All master scripts support environment variables for configuration:
 ## Logging and Output
 
 All master scripts provide:
+
 - Color-coded output for easy reading
 - Progress tracking with counters
 - Detailed error reporting

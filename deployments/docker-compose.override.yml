@@ -2,7 +2,7 @@
 # This file extends docker-compose.yml with development-specific settings
 # Use: docker-compose up (automatically includes override)
 
-version: '3.8'
+version: "3.8"
 
 services:
   # Development overrides for PostgreSQL
@@ -12,7 +12,7 @@ services:
       POSTGRES_USER: windmill_dev
       POSTGRES_PASSWORD: dev_password
     ports:
-      - "5433:5432"  # Different port for dev
+      - "5433:5432" # Different port for dev
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
       - ./scripts/utilities/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
@@ -20,7 +20,7 @@ services:
   # Development overrides for Redis
   redis:
     ports:
-      - "6380:6379"  # Different port for dev
+      - "6380:6379" # Different port for dev
 
   # Development overrides for Windmill
   windmill-backend:
@@ -35,7 +35,7 @@ services:
       - windmill_dev_data:/tmp/windmill
       - ./.makerc:/windmill/.env:ro
     ports:
-      - "8001:8000"  # Different port for dev
+      - "8001:8000" # Different port for dev
 
   # Development overrides for FlexCore API
   flexcore-api:
@@ -49,7 +49,7 @@ services:
       - ./build/flexcore:/flexcore/flexcore:ro
       - ./.makerc:/flexcore/.env:ro
     ports:
-      - "3002:3001"  # Different port for dev
+      - "3002:3001" # Different port for dev
 
   # Development tools
   REDACTED_LDAP_BIND_PASSWORDer:

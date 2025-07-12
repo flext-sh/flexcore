@@ -20,27 +20,27 @@ echo "📂 Project root: $PROJECT_ROOT"
 
 # Test if Docker is available
 if ! command -v docker >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  Docker not available, skipping E2E test${NC}"
-    exit 0
+	echo -e "${YELLOW}⚠️  Docker not available, skipping E2E test${NC}"
+	exit 0
 fi
 
 echo "🔍 Testing Docker availability..."
 if docker info >/dev/null 2>&1; then
-    echo -e "${GREEN}✅ Docker is available${NC}"
+	echo -e "${GREEN}✅ Docker is available${NC}"
 else
-    echo -e "${YELLOW}⚠️  Docker not running, skipping E2E test${NC}"
-    exit 0
+	echo -e "${YELLOW}⚠️  Docker not running, skipping E2E test${NC}"
+	exit 0
 fi
 
 # Test basic PostgreSQL container
 echo "🐳 Testing basic PostgreSQL container..."
 docker run --rm -d \
-    --name flexcore-test-postgres \
-    -e POSTGRES_DB=flexcore_test \
-    -e POSTGRES_USER=flexcore \
-    -e POSTGRES_PASSWORD=flexcore \
-    -p 15432:5432 \
-    postgres:15-alpine >/dev/null
+	--name flexcore-test-postgres \
+	-e POSTGRES_DB=flexcore_test \
+	-e POSTGRES_USER=flexcore \
+	-e POSTGRES_PASSWORD=flexcore \
+	-p 15432:5432 \
+	postgres:15-alpine >/dev/null
 
 # Wait for PostgreSQL to be ready
 echo "⏳ Waiting for PostgreSQL to be ready..."
@@ -48,22 +48,22 @@ sleep 5
 
 # Test connection
 if docker exec flexcore-test-postgres pg_isready -U flexcore >/dev/null 2>&1; then
-    echo -e "${GREEN}✅ PostgreSQL container is ready${NC}"
+	echo -e "${GREEN}✅ PostgreSQL container is ready${NC}"
 else
-    echo -e "${YELLOW}⚠️  PostgreSQL not ready, continuing anyway${NC}"
+	echo -e "${YELLOW}⚠️  PostgreSQL not ready, continuing anyway${NC}"
 fi
 
 # Test postgres-extractor plugin against PostgreSQL
 echo "🔧 Testing postgres-extractor plugin..."
 if [ -f "./dist/plugins/postgres-extractor" ]; then
-    echo -e "${GREEN}✅ postgres-extractor plugin exists${NC}"
-    
-    # Test plugin startup (it should show the "plugin" message)
-    timeout 3s ./dist/plugins/postgres-extractor 2>&1 | grep -q "plugin" && \
-        echo -e "${GREEN}✅ postgres-extractor responds correctly${NC}" || \
-        echo -e "${YELLOW}⚠️  postgres-extractor response unclear${NC}"
+	echo -e "${GREEN}✅ postgres-extractor plugin exists${NC}"
+
+	# Test plugin startup (it should show the "plugin" message)
+	timeout 3s ./dist/plugins/postgres-extractor 2>&1 | grep -q "plugin" &&
+		echo -e "${GREEN}✅ postgres-extractor responds correctly${NC}" ||
+		echo -e "${YELLOW}⚠️  postgres-extractor response unclear${NC}"
 else
-    echo -e "${YELLOW}⚠️  postgres-extractor plugin not found${NC}"
+	echo -e "${YELLOW}⚠️  postgres-extractor plugin not found${NC}"
 fi
 
 # Clean up PostgreSQL container

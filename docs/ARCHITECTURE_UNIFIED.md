@@ -34,7 +34,7 @@ Inspirada nas melhores práticas do Python (lato, dependency-injector) e padrõe
 ### 2. Domain-Driven Design (DDD)
 
 - **Bounded Contexts**: Clear boundaries between different business domains
-- **Aggregates**: Consistency boundaries for domain operations  
+- **Aggregates**: Consistency boundaries for domain operations
 - **Domain Events**: Communication mechanism between aggregates
 - **Value Objects**: Immutable domain concepts
 - **Entities**: Objects with identity and lifecycle
@@ -65,7 +65,7 @@ type Pipeline struct {
     Events      []DomainEvent
 }
 
-// Plugin Context - Extension management  
+// Plugin Context - Extension management
 type Plugin struct {
     ID          PluginID
     Name        string
@@ -255,7 +255,7 @@ func (r *EventSourcingPipelineRepository) FindByID(ctx context.Context, id Pipel
     if err != nil {
         return nil, err
     }
-    
+
     pipeline := &Pipeline{}
     return pipeline.LoadFromHistory(events), nil
 }
@@ -326,13 +326,13 @@ services:
       - DATABASE_URL=postgres://...
       - EVENT_STORE_URL=postgres://...
       - MESSAGE_QUEUE_URL=redis://...
-    
+
   flexcore-worker:
     image: flexcore/worker:latest
     environment:
       - MESSAGE_QUEUE_URL=redis://...
       - PLUGIN_REGISTRY_URL=http://plugin-registry:8080
-    
+
   flexcore-projection:
     image: flexcore/projection:latest
     environment:
@@ -362,13 +362,13 @@ type WindmillExecutor struct {
 func (e *WindmillExecutor) ExecutePipeline(ctx context.Context, pipeline *Pipeline) (*ExecutionResult, error) {
     // Convert FlexCore pipeline to Windmill workflow
     workflow := e.converter.ToWindmillWorkflow(pipeline)
-    
+
     // Execute in Windmill
     job, err := e.client.CreateJob(ctx, workflow)
     if err != nil {
         return nil, err
     }
-    
+
     // Monitor execution
     return e.monitor.WaitForCompletion(ctx, job.ID)
 }
@@ -410,17 +410,17 @@ metrics.RecordTimer("pipeline.execution.duration", executionTime, map[string]str
 func (s *PipelineService) ExecutePipeline(ctx context.Context, cmd ExecutePipelineCommand) (*ExecutionResult, error) {
     span, ctx := opentracing.StartSpanFromContext(ctx, "pipeline.execute")
     defer span.Finish()
-    
+
     span.SetTag("pipeline.id", cmd.PipelineID)
     span.SetTag("pipeline.version", pipeline.Version)
-    
+
     // Execution logic with trace propagation
     result, err := s.executor.Execute(ctx, pipeline)
     if err != nil {
         span.SetTag("error", true)
         span.LogFields(log.Error(err))
     }
-    
+
     return result, err
 }
 ```
@@ -458,7 +458,7 @@ func (s *PipelineService) ExecutePipeline(ctx context.Context, cmd ExecutePipeli
     if !secCtx.HasPermission("pipeline.execute") {
         return nil, ErrUnauthorized
     }
-    
+
     // Execution logic
 }
 ```
@@ -483,7 +483,7 @@ func TestPipeline_Execute(t *testing.T) {
     assert.Equal(t, expectedOutput, result)
 }
 
-// Integration Tests - Repository Layer  
+// Integration Tests - Repository Layer
 func TestPipelineRepository_Save(t *testing.T) {
     repo := NewPostgresPipelineRepository(db)
     pipeline := testPipeline()

@@ -10,7 +10,7 @@ FlexCore is a production-ready, event-driven distributed system built in Go, des
 ## ✨ Features
 
 - **🔄 Event Sourcing** - Complete audit trail and state reconstruction
-- **⚡ CQRS Pattern** - Separate read/write models for optimal performance  
+- **⚡ CQRS Pattern** - Separate read/write models for optimal performance
 - **🔌 Plugin System** - HashiCorp-style plugin architecture with dynamic loading
 - **🌐 Distributed Cluster** - Multi-node coordination with Redis/etcd
 - **📊 Observability** - Prometheus metrics, Grafana dashboards, and distributed tracing
@@ -80,18 +80,21 @@ docker-compose -f deployments/docker/production/docker-compose.production.yml up
 ## 📦 Módulos
 
 ### Domain Layer
+
 - Entidades principais do negócio
 - Value objects imutáveis
 - Aggregate roots para consistência
 - Domain events para comunicação
 
 ### Application Layer
+
 - Command/Query handlers (CQRS)
 - Application services
 - Use cases orquestration
 - Business workflows
 
 ### Infrastructure Layer
+
 - Event bus com Windmill
 - Workflow engine com luno/workflow
 - Repositories e adapters
@@ -122,10 +125,10 @@ type CreatePipelineCommand struct {
 
 func (h *PipelineCommandHandler) Handle(cmd CreatePipelineCommand) *flexcore.Result[Pipeline] {
     pipeline := NewPipeline(cmd.Name)
-    
+
     // Emitir domain event
     pipeline.Emit(PipelineCreatedEvent{ID: pipeline.ID})
-    
+
     // Salvar via repository
     return h.repo.Save(pipeline)
 }

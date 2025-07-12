@@ -7,16 +7,19 @@
 ## 🏗️ SINGLE RESPONSIBILITY PRINCIPLE (SRP) ✅
 
 ### DOMAIN LAYER
+
 - **entities/pipeline.go**: ÚNICA responsabilidade - Gerenciar estado e comportamento de pipelines
-- **entities/plugin.go**: ÚNICA responsabilidade - Gerenciar estado e comportamento de plugins  
+- **entities/plugin.go**: ÚNICA responsabilidade - Gerenciar estado e comportamento de plugins
 - **domain/base.go**: ÚNICA responsabilidade - Fornecer abstrações base para DDD
 
 ### APPLICATION LAYER
+
 - **app/application.go**: ÚNICA responsabilidade - Orquestrar dependências da aplicação
 - **app/commands/command_bus.go**: ÚNICA responsabilidade - Processar comandos
 - **app/queries/query_bus.go**: ÚNICA responsabilidade - Processar consultas
 
 ### INFRASTRUCTURE LAYER
+
 - **adapters/primary/http/rest/server.go**: ÚNICA responsabilidade - Interface HTTP REST
 - **adapters/secondary/persistence/memory**: ÚNICA responsabilidade - Persistência em memória
 
@@ -25,6 +28,7 @@
 ## 🔓 OPEN/CLOSED PRINCIPLE (OCP) ✅
 
 ### EXTENSIBILIDADE SEM MODIFICAÇÃO
+
 ```go
 // Domain Repository Interface - FECHADO para modificação, ABERTO para extensão
 type Repository[T any, ID comparable] interface {
@@ -40,6 +44,7 @@ type PostgreSQLPipelineRepository struct {}
 ```
 
 ### COMMAND/QUERY BUS - EXTENSÍVEL
+
 ```go
 // CommandBus permite novos handlers sem modificar código existente
 func (cb *CommandBus) RegisterHandler[T any](commandType string, handler func(T) result.Result[any])
@@ -50,6 +55,7 @@ func (cb *CommandBus) RegisterHandler[T any](commandType string, handler func(T)
 ## 🔄 LISKOV SUBSTITUTION PRINCIPLE (LSP) ✅
 
 ### SUBSTITUIÇÃO PERFEITA DE IMPLEMENTAÇÕES
+
 ```go
 // Qualquer implementação Repository pode substituir outra
 var repo domain.Repository[*entities.Pipeline, entities.PipelineID]
@@ -63,6 +69,7 @@ result := repo.Save(pipeline) // Sempre funciona corretamente
 ```
 
 ### AGREGADOS DDD - CONSISTÊNCIA COMPORTAMENTAL
+
 ```go
 // AggregateRoot[T] - Qualquer tipo T mantém contratos
 type AggregateRoot[T comparable] struct {
@@ -78,6 +85,7 @@ type AggregateRoot[T comparable] struct {
 ## 🎯 INTERFACE SEGREGATION PRINCIPLE (ISP) ✅
 
 ### INTERFACES ESPECÍFICAS E FOCADAS
+
 ```go
 // Repository - Interface mínima e específica
 type Repository[T any, ID comparable] interface {
@@ -106,6 +114,7 @@ type CommandHandler[T any] interface {
 ## ⬇️ DEPENDENCY INVERSION PRINCIPLE (DIP) ✅
 
 ### INVERSÃO COMPLETA DE DEPENDÊNCIAS
+
 ```go
 // HIGH-LEVEL (Application) depende de ABSTRAÇÕES
 type Application struct {
@@ -123,7 +132,7 @@ type InMemoryPipelineRepository struct {
 // Dependency Injection na criação
 func NewApplication(cfg *config.Config) (*Application, error) {
     var pipelineRepo domain.Repository[*entities.Pipeline, entities.PipelineID]
-    
+
     // DIP: Escolha de implementação baseada em configuração
     if cfg.App.Environment == "production" {
         pipelineRepo = postgres.NewPostgreSQLPipelineRepository() // ✅
@@ -140,6 +149,7 @@ func NewApplication(cfg *config.Config) (*Application, error) {
 ### SIMPLICIDADE EM CADA CAMADA
 
 #### DOMAIN - SIMPLES E CLARO
+
 ```go
 // Pipeline creation - Simples e direto
 func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
@@ -162,6 +172,7 @@ func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
 ```
 
 #### APPLICATION - ORCHESTRAÇÃO SIMPLES
+
 ```go
 // Application creation - Configuração clara
 func NewApplication(cfg *config.Config) (*Application, error) {
@@ -183,6 +194,7 @@ func NewApplication(cfg *config.Config) (*Application, error) {
 ### ELIMINAÇÃO COMPLETA DE DUPLICAÇÃO
 
 #### SHARED KERNEL - REUTILIZAÇÃO
+
 ```go
 // shared/errors/ - Error handling reutilizável
 func ValidationError(message string) *FlexError
@@ -201,6 +213,7 @@ type Maybe[T any] struct { /* ... */ }
 ```
 
 #### BASE DOMAIN - ABSTRAÇÕES REUTILIZÁVEIS
+
 ```go
 // domain/base.go - Padrões DDD reutilizados
 type Entity[T comparable] struct {
@@ -219,6 +232,7 @@ type AggregateRoot[T comparable] struct {
 ```
 
 #### INFRASTRUCTURE - ABSTRAÇÕES COMUNS
+
 ```go
 // persistence/memory/ - Padrão repository reutilizado
 type InMemoryRepository[T any, ID comparable] struct {
@@ -234,17 +248,20 @@ type InMemoryRepository[T any, ID comparable] struct {
 ## 📊 MÉTRICAS DE QUALIDADE OBJETIVAS
 
 ### COBERTURA DE TESTES
+
 - **Domain Layer**: 53.3% (entities críticas testadas)
 - **Application Layer**: 74.2% (orquestração testada)
 - **HTTP Adapters**: 93.2% (interface REST completa)
 - **Error Handling**: 94.9% (tratamento robusto)
 
 ### COMPLEXITY METRICS
+
 - **Cyclomatic Complexity**: Baixa (métodos < 10 caminhos)
 - **Coupling**: Baixo (interfaces bem definidas)
 - **Cohesion**: Alta (responsabilidades bem definidas)
 
 ### ARCHITECTURE METRICS
+
 - **Dependency Graph**: Acíclico ✅
 - **Layer Violations**: Zero ✅
 - **Interface Compliance**: 100% ✅
@@ -252,6 +269,7 @@ type InMemoryRepository[T any, ID comparable] struct {
 ## ⚡ PERFORMANCE E ESCALABILIDADE
 
 ### BENCHMARKS EXECUTADOS
+
 ```
 BenchmarkApplication_PipelineCreation-8    10000    1205 ns/op
 BenchmarkHTTPServer_HealthCheck-8          50000     245 ns/op
@@ -259,6 +277,7 @@ BenchmarkErrorHandling-8                  100000     120 ns/op
 ```
 
 ### ESCALABILIDADE
+
 - **Concurrent Operations**: 100 goroutines simultâneas ✅
 - **Memory Efficiency**: Estruturas otimizadas ✅
 - **Zero Copy**: Interfaces bem projetadas ✅
@@ -266,12 +285,14 @@ BenchmarkErrorHandling-8                  100000     120 ns/op
 ## 🔬 EVIDÊNCIAS TÉCNICAS VERIFICÁVEIS
 
 ### 1. DEPENDENCY ANALYSIS
+
 ```bash
 # Verificação de dependências com go mod graph
 go mod graph | grep -v "→ std" | wc -l  # Dependências externas mínimas
 ```
 
 ### 2. STATIC ANALYSIS
+
 ```bash
 # Análise estática de qualidade
 go vet ./...           # Zero warnings
@@ -280,6 +301,7 @@ go fmt -l ./...        # Código formatado
 ```
 
 ### 3. COMPILATION VERIFICATION
+
 ```bash
 # Compilação limpa
 go build ./cmd/server  # ✅ Success
@@ -289,6 +311,7 @@ go test ./...          # ✅ All tests pass
 ## 🏆 VALIDAÇÃO FINAL 100%
 
 ### SOLID PRINCIPLES
+
 - ✅ **Single Responsibility**: Cada classe uma responsabilidade
 - ✅ **Open/Closed**: Extensível sem modificação
 - ✅ **Liskov Substitution**: Subtipos sempre substituíveis
@@ -296,10 +319,12 @@ go test ./...          # ✅ All tests pass
 - ✅ **Dependency Inversion**: Alto nível independe de baixo nível
 
 ### DESIGN PRINCIPLES
+
 - ✅ **KISS**: Simplicidade máxima, zero over-engineering
 - ✅ **DRY**: Zero duplicação, máximo reuso
 
 ### ARCHITECTURE QUALITY
+
 - ✅ **Clean Architecture**: Camadas bem separadas
 - ✅ **Domain-Driven Design**: Domínio rico e expressivo
 - ✅ **Hexagonal Architecture**: Portas e adaptadores corretos
@@ -307,6 +332,7 @@ go test ./...          # ✅ All tests pass
 - ✅ **Event Sourcing**: Eventos de domínio implementados
 
 ### TECHNICAL EXCELLENCE
+
 - ✅ **Performance**: Benchmarks dentro dos limites
 - ✅ **Scalability**: Concorrência testada e funcional
 - ✅ **Testability**: Cobertura alta nas camadas críticas

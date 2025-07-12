@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 # FlexCore REAL Distributed Production Deployment
 # Complete Redis + etcd + Multi-Node Cluster Setup
@@ -48,7 +48,14 @@ services:
     networks:
       - flexcore-cluster
     healthcheck:
-      test: ["CMD", "/usr/local/bin/etcdctl", "endpoint", "health", "--endpoints=http://localhost:2379"]
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/etcdctl",
+          "endpoint",
+          "health",
+          "--endpoints=http://localhost:2379",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -198,11 +205,11 @@ services:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--storage.tsdb.retention.time=15d'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--storage.tsdb.retention.time=15d"
     networks:
       - flexcore-cluster
     restart: unless-stopped

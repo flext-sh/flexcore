@@ -19,6 +19,7 @@ The Windmill integration provides a complete workflow engine solution for FlexCo
 The integration follows all SOLID principles:
 
 1. **Single Responsibility Principle (SRP)**:
+
    - `ScriptService`: Manages only script operations
    - `FlowService`: Manages only flow operations
    - `ExecutionService`: Manages only execution operations
@@ -26,14 +27,17 @@ The integration follows all SOLID principles:
    - `BuildManager`: Manages only Windmill binary building
 
 2. **Open/Closed Principle (OCP)**:
+
    - Interfaces allow extension without modification
    - New workflow types can be added by implementing interfaces
 
 3. **Liskov Substitution Principle (LSP)**:
+
    - All implementations properly implement their interfaces
    - Services can be substituted without breaking functionality
 
 4. **Interface Segregation Principle (ISP)**:
+
    - Separate interfaces for different concerns (ScriptManager, FlowManager, etc.)
    - Clients depend only on interfaces they use
 
@@ -201,7 +205,7 @@ healthResult := engine.Health(ctx)
 if healthResult.IsSuccess() {
     health := healthResult.Value()
     fmt.Printf("Status: %s\n", health.Status)
-    
+
     for name, check := range health.Checks {
         fmt.Printf("- %s: %s\n", name, check.Status)
     }
@@ -316,7 +320,7 @@ result := engine.CreateScript(ctx, req)
 if !result.IsSuccess() {
     err := result.Error()
     fmt.Printf("Error: %v\n", err)
-    
+
     // Handle specific error types
     switch err.(type) {
     case *workflow.ScriptExistsError:
@@ -377,11 +381,13 @@ The interface-based design allows easy migration:
 ### Common Issues
 
 1. **Build Failures**
+
    - Ensure Rust toolchain is installed
    - Check disk space availability
    - Verify source directory exists
 
 2. **Connection Issues**
+
    - Verify database connectivity
    - Check port availability
    - Validate configuration settings

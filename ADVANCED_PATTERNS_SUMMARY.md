@@ -7,17 +7,20 @@ This document summarizes the advanced Go patterns and libraries researched and i
 ## 1. HashiCorp go-plugin Implementation
 
 ### Key Features
+
 - **Process Isolation**: Plugins run as separate processes, preventing crashes from affecting the main application
 - **Language Agnostic**: Plugins can be written in any language that supports the protocol
 - **Version Negotiation**: Built-in version compatibility checking
 - **Multiple Protocols**: Supports both net/RPC and gRPC
 
 ### Implementation Files
+
 - `/pkg/adapter/types.go` - Core adapter interfaces and types
 - `/examples/plugin/main.go` - Example plugin implementation
 - `/examples/plugin_host/main.go` - Plugin host/loader implementation
 
 ### Usage Example
+
 ```go
 // Plugin implementation
 adapter := &SimpleAdapter{}
@@ -37,13 +40,16 @@ adapter, _ := host.GetPlugin("simple-adapter")
 ## 2. Viper Configuration Management
 
 ### Key Features
+
 - **Multiple Sources**: Files, environment variables, remote config servers
 - **Hot Reloading**: Automatic configuration updates without restart
 - **Type Safety**: Unmarshal into structs with validation
 - **Hierarchical**: Support for nested configuration
 
 ### Implementation
+
 See `ADVANCED_GO_PATTERNS.md` for the complete ConfigManager implementation with:
+
 - Automatic environment variable binding
 - File watching with callbacks
 - Remote configuration support (Consul, etcd)
@@ -52,6 +58,7 @@ See `ADVANCED_GO_PATTERNS.md` for the complete ConfigManager implementation with
 ## 3. Advanced Handler Patterns
 
 ### Middleware Chain
+
 ```go
 chain := NewChain(
     RequestID(),
@@ -63,12 +70,14 @@ handler := chain.Then(myHandler)
 ```
 
 ### Request/Response Transformers
+
 - Type-safe request parsing with validation
 - Automatic response encoding
 - Error handling built-in
 - Support for different content types
 
 ### OpenTelemetry Integration
+
 - Automatic tracing for all operations
 - Span attributes and error recording
 - Context propagation
@@ -77,6 +86,7 @@ handler := chain.Then(myHandler)
 ## 4. Modern Go Patterns
 
 ### Functional Options Pattern
+
 ```go
 client := NewHTTPClient("https://api.example.com",
     WithTimeout(10*time.Second),
@@ -87,6 +97,7 @@ client := NewHTTPClient("https://api.example.com",
 ```
 
 ### Builder Pattern with Method Chaining
+
 ```go
 pipeline, err := NewPipelineBuilder("data-pipeline").
     WithDescription("ETL pipeline for user data").
@@ -100,11 +111,13 @@ pipeline, err := NewPipelineBuilder("data-pipeline").
 ```
 
 ### Result/Option Types
+
 - **Result[T]**: Explicit error handling without exceptions
 - **Option[T]**: Null-safe optional values
 - **Railway Pattern**: Chain operations with automatic error propagation
 
 ### Railway-Oriented Programming
+
 ```go
 result := Track(validateOrder(order)).
     Then(checkInventory).
@@ -116,14 +129,18 @@ result := Track(validateOrder(order)).
 ## 5. Practical Implementation
 
 ### Base Adapter Pattern
+
 The `BaseAdapter` provides:
+
 - Common configuration handling
 - Automatic tracing and metrics
 - Hook system for lifecycle events
 - Validation support
 
 ### Adapter Builder
+
 Simplifies adapter creation:
+
 ```go
 adapter, _ := NewAdapterBuilder("my-adapter", "1.0.0").
     WithExtract(extractFunc).
@@ -134,7 +151,9 @@ adapter, _ := NewAdapterBuilder("my-adapter", "1.0.0").
 ```
 
 ### PostgreSQL Adapter Example
+
 Complete implementation showing:
+
 - Configuration with Viper
 - Railway pattern for error handling
 - Query builder for SQL generation
@@ -185,6 +204,7 @@ flexcore/
 ## Conclusion
 
 These patterns provide a robust foundation for adapter development in FlexCore. They emphasize:
+
 - **Safety**: Through type safety and process isolation
 - **Simplicity**: Through functional patterns and builders
 - **Observability**: Through built-in tracing and metrics

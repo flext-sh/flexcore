@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database
@@ -183,7 +183,7 @@ services:
     image: haproxy:2.8-alpine
     ports:
       - "8080:8080"
-      - "8404:8404"  # Stats page
+      - "8404:8404" # Stats page
     volumes:
       - ./docker/haproxy/haproxy-cluster.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:

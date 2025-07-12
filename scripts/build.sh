@@ -28,77 +28,77 @@ mkdir -p "$DIST_DIR"
 
 # Function to build a plugin
 build_plugin() {
-    local plugin_name="$1"
-    local plugin_dir="$PLUGINS_DIR/$plugin_name"
-    
-    echo -e "\n🔨 Building plugin: ${BLUE}$plugin_name${NC}"
-    
-    if [ ! -d "$plugin_dir" ]; then
-        echo -e "${RED}❌ Plugin directory not found: $plugin_dir${NC}"
-        return 1
-    fi
-    
-    if [ ! -f "$plugin_dir/main.go" ]; then
-        echo -e "${RED}❌ main.go not found in: $plugin_dir${NC}"
-        return 1
-    fi
-    
-    # Change to plugin directory
-    cd "$plugin_dir"
-    
-    # Initialize go module if go.mod doesn't exist
-    if [ ! -f "go.mod" ]; then
-        echo "📦 Initializing go module for $plugin_name"
-        go mod init "github.com/flext/flexcore/plugins/$plugin_name"
-        go mod edit -replace github.com/flext/flexcore=../..
-    fi
-    
-    # Download dependencies
-    echo "📦 Downloading dependencies for $plugin_name"
-    go mod tidy
-    
-    # Build the plugin
-    echo "🔨 Compiling $plugin_name"
-    output_binary="$DIST_DIR/$plugin_name"
-    
-    # Build with proper flags
-    CGO_ENABLED=1 go build \
-        -ldflags="-s -w -X main.version=1.0.0 -X main.buildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" \
-        -tags netgo \
-        -o "$output_binary" \
-        .
-    
-    # Make executable
-    chmod +x "$output_binary"
-    
-    # Verify the binary
-    if [ -f "$output_binary" ]; then
-        file_info=$(file "$output_binary")
-        size=$(du -h "$output_binary" | cut -f1)
-        echo -e "${GREEN}✅ Successfully built: $plugin_name${NC}"
-        echo -e "   📁 Location: $output_binary"
-        echo -e "   📊 Size: $size"
-        echo -e "   🔍 Type: $file_info"
-        
-        # Test if binary can start (basic smoke test)
-        echo "🧪 Testing plugin startup..."
-        timeout 2s "$output_binary" || true
-        echo -e "${GREEN}✅ Plugin startup test completed${NC}"
-    else
-        echo -e "${RED}❌ Failed to build: $plugin_name${NC}"
-        return 1
-    fi
-    
-    # Return to project root
-    cd "$PROJECT_ROOT"
+	local plugin_name="$1"
+	local plugin_dir="$PLUGINS_DIR/$plugin_name"
+
+	echo -e "\n🔨 Building plugin: ${BLUE}$plugin_name${NC}"
+
+	if [ ! -d "$plugin_dir" ]; then
+		echo -e "${RED}❌ Plugin directory not found: $plugin_dir${NC}"
+		return 1
+	fi
+
+	if [ ! -f "$plugin_dir/main.go" ]; then
+		echo -e "${RED}❌ main.go not found in: $plugin_dir${NC}"
+		return 1
+	fi
+
+	# Change to plugin directory
+	cd "$plugin_dir"
+
+	# Initialize go module if go.mod doesn't exist
+	if [ ! -f "go.mod" ]; then
+		echo "📦 Initializing go module for $plugin_name"
+		go mod init "github.com/flext/flexcore/plugins/$plugin_name"
+		go mod edit -replace github.com/flext/flexcore=../..
+	fi
+
+	# Download dependencies
+	echo "📦 Downloading dependencies for $plugin_name"
+	go mod tidy
+
+	# Build the plugin
+	echo "🔨 Compiling $plugin_name"
+	output_binary="$DIST_DIR/$plugin_name"
+
+	# Build with proper flags
+	CGO_ENABLED=1 go build \
+		-ldflags="-s -w -X main.version=1.0.0 -X main.buildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" \
+		-tags netgo \
+		-o "$output_binary" \
+		.
+
+	# Make executable
+	chmod +x "$output_binary"
+
+	# Verify the binary
+	if [ -f "$output_binary" ]; then
+		file_info=$(file "$output_binary")
+		size=$(du -h "$output_binary" | cut -f1)
+		echo -e "${GREEN}✅ Successfully built: $plugin_name${NC}"
+		echo -e "   📁 Location: $output_binary"
+		echo -e "   📊 Size: $size"
+		echo -e "   🔍 Type: $file_info"
+
+		# Test if binary can start (basic smoke test)
+		echo "🧪 Testing plugin startup..."
+		timeout 2s "$output_binary" || true
+		echo -e "${GREEN}✅ Plugin startup test completed${NC}"
+	else
+		echo -e "${RED}❌ Failed to build: $plugin_name${NC}"
+		return 1
+	fi
+
+	# Return to project root
+	cd "$PROJECT_ROOT"
 }
 
 # Function to create plugin manifest
 create_manifest() {
-    local manifest_file="$DIST_DIR/plugins.json"
-    echo "📋 Creating plugin manifest: $manifest_file"
-    
-    cat > "$manifest_file" << EOF
+	local manifest_file="$DIST_DIR/plugins.json"
+	echo "📋 Creating plugin manifest: $manifest_file"
+
+	cat >"$manifest_file" <<EOF
 {
     "version": "1.0.0",
     "build_time": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
@@ -152,16 +152,16 @@ create_manifest() {
     ]
 }
 EOF
-    
-    echo -e "${GREEN}✅ Plugin manifest created${NC}"
+
+	echo -e "${GREEN}✅ Plugin manifest created${NC}"
 }
 
 # Function to create installation script
 create_install_script() {
-    local install_script="$DIST_DIR/install.sh"
-    echo "📦 Creating installation script: $install_script"
-    
-    cat > "$install_script" << 'EOF'
+	local install_script="$DIST_DIR/install.sh"
+	echo "📦 Creating installation script: $install_script"
+
+	cat >"$install_script" <<'EOF'
 #!/bin/bash
 
 # FlexCore Plugin Installation Script
@@ -217,9 +217,9 @@ echo ""
 echo "Or add to your FlexCore configuration:"
 echo "\"plugin_directory\": \"$INSTALL_DIR\""
 EOF
-    
-    chmod +x "$install_script"
-    echo -e "${GREEN}✅ Installation script created${NC}"
+
+	chmod +x "$install_script"
+	echo -e "${GREEN}✅ Installation script created${NC}"
 }
 
 # Main build process
@@ -227,9 +227,9 @@ echo -e "\n🏗️  Starting plugin build process..."
 
 # List of plugins to build
 PLUGINS=(
-    "postgres-extractor"
-    "json-transformer"
-    "api-loader"
+	"postgres-extractor"
+	"json-transformer"
+	"api-loader"
 )
 
 # Build each plugin
@@ -237,11 +237,11 @@ success_count=0
 total_count=${#PLUGINS[@]}
 
 for plugin in "${PLUGINS[@]}"; do
-    if build_plugin "$plugin"; then
-        ((success_count++))
-    else
-        echo -e "${RED}❌ Failed to build $plugin${NC}"
-    fi
+	if build_plugin "$plugin"; then
+		((success_count++))
+	else
+		echo -e "${RED}❌ Failed to build $plugin${NC}"
+	fi
 done
 
 # Create manifest and installation script
@@ -249,7 +249,7 @@ create_manifest
 create_install_script
 
 # Create README for distribution
-cat > "$DIST_DIR/README.md" << EOF
+cat >"$DIST_DIR/README.md" <<EOF
 # FlexCore Plugins
 
 This directory contains compiled FlexCore plugins.
@@ -296,11 +296,11 @@ echo -e "   ✅ Successfully built: ${GREEN}$success_count${NC}/$total_count plu
 echo -e "   📂 Distribution directory: $DIST_DIR"
 
 if [ $success_count -eq $total_count ]; then
-    echo -e "\n${GREEN}🎉 All plugins built successfully!${NC}"
-    echo -e "\n📦 To install plugins, run:"
-    echo -e "   cd $DIST_DIR && ./install.sh"
-    exit 0
+	echo -e "\n${GREEN}🎉 All plugins built successfully!${NC}"
+	echo -e "\n📦 To install plugins, run:"
+	echo -e "   cd $DIST_DIR && ./install.sh"
+	exit 0
 else
-    echo -e "\n${YELLOW}⚠️  Some plugins failed to build${NC}"
-    exit 1
+	echo -e "\n${YELLOW}⚠️  Some plugins failed to build${NC}"
+	exit 1
 fi

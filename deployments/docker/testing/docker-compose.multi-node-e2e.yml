@@ -48,8 +48,8 @@ services:
     image: haproxy:alpine
     container_name: flexcore-haproxy
     ports:
-      - "8080:8080"  # Cluster endpoint
-      - "8404:8404"  # Stats page
+      - "8080:8080" # Cluster endpoint
+      - "8404:8404" # Stats page
     volumes:
       - ./docker/haproxy/haproxy-cluster.cfg:/usr/local/etc/haproxy/haproxy.cfg
     depends_on:

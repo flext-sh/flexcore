@@ -3,6 +3,7 @@
 ## Overview
 
 The FlexCore Makefile is a comprehensive build system that supports:
+
 - **Native Windmill builds** (Rust backend + Go client)
 - **Go application development**
 - **Docker integration**
@@ -29,6 +30,7 @@ make dev-windmill
 ## Core Commands
 
 ### Development
+
 - `make build` - Build FlexCore application
 - `make run` - Run application locally
 - `make dev` - Start development environment
@@ -37,6 +39,7 @@ make dev-windmill
 - `make lint` - Run linting
 
 ### Windmill (Native)
+
 - `make windmill` - Build complete Windmill stack
 - `make windmill-backend` - Build Rust backend only
 - `make windmill-backend-fast` - Quick incremental build
@@ -46,6 +49,7 @@ make dev-windmill
 - `make dev-windmill` - Development with native Windmill
 
 ### Quality & CI
+
 - `make check` - Run all quality checks
 - `make security` - Security analysis
 - `make audit` - Dependency audit
@@ -53,12 +57,14 @@ make dev-windmill
 - `make windmill-validate-native` - Native system validation
 
 ### Production
+
 - `make build-prod` - Production build
 - `make build-all` - Multi-platform builds
 - `make docker` - Build Docker image
 - `make release` - Create production release
 
 ### Utilities
+
 - `make status` - Show project status
 - `make info` - Show build information
 - `make version` - Show version only
@@ -68,10 +74,12 @@ make dev-windmill
 ## Build Modes
 
 Set `BUILD_MODE` environment variable:
+
 - `BUILD_MODE=dev` (default) - Fast development builds
 - `BUILD_MODE=release` - Optimized production builds
 
 Examples:
+
 ```bash
 # Development build (fast)
 make windmill BUILD_MODE=dev
@@ -92,12 +100,14 @@ make windmill BUILD_MODE=release
 The Makefile builds Windmill components natively without Docker:
 
 ### Rust Backend
+
 - Compiles Windmill backend from source
 - SQLx offline mode for faster builds
 - Debug/release profiles
 - Typical build time: ~1.5 minutes (clean), ~0.6s (incremental)
 
 ### Go Client
+
 - Generates OpenAPI client from Windmill spec
 - ~75K lines of generated Go code
 - Full type safety and API coverage
@@ -121,6 +131,7 @@ scripts/
 ## Configuration
 
 Create `.makerc` for project-specific settings:
+
 ```bash
 BUILD_MODE=dev
 CARGO_INCREMENTAL=1
@@ -146,6 +157,7 @@ RUST_LOG=info
 ## Architecture
 
 The Makefile follows professional software development practices:
+
 - **Modular design** with clear separation of concerns
 - **DRY principles** with no code duplication
 - **Performance optimization** with parallel builds
@@ -155,6 +167,7 @@ The Makefile follows professional software development practices:
 ## Examples
 
 ### Full Development Workflow
+
 ```bash
 # Setup
 make deps
@@ -172,6 +185,7 @@ make dev-windmill
 ```
 
 ### Quick Iteration Cycle
+
 ```bash
 # Fast development builds
 make windmill-backend-fast
@@ -180,6 +194,7 @@ make run-dev
 ```
 
 ### Production Deployment
+
 ```bash
 # Full production pipeline
 make ci

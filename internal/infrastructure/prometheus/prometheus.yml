@@ -10,55 +10,55 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          - alertmanager:9093
+            - alertmanager:9093
 
 scrape_configs:
   # FlexCore Cluster Nodes
-  - job_name: 'flexcore-cluster'
+  - job_name: "flexcore-cluster"
     scrape_interval: 5s
     static_configs:
       - targets:
-        - 'localhost:8081'
-        - 'localhost:8082'
-        - 'localhost:8083'
-    metrics_path: '/metrics'
+          - "localhost:8081"
+          - "localhost:8082"
+          - "localhost:8083"
+    metrics_path: "/metrics"
 
   # Windmill Server
-  - job_name: 'windmill-server'
+  - job_name: "windmill-server"
     scrape_interval: 10s
     static_configs:
-      - targets: ['localhost:3000']
-    metrics_path: '/metrics'
+      - targets: ["localhost:3000"]
+    metrics_path: "/metrics"
 
   # Integration API
-  - job_name: 'integration-api'
+  - job_name: "integration-api"
     scrape_interval: 10s
     static_configs:
-      - targets: ['internal.invalid:8090']
-    metrics_path: '/metrics'
+      - targets: ["internal.invalid:8090"]
+    metrics_path: "/metrics"
 
   # Redis Coordination
-  - job_name: 'redis'
+  - job_name: "redis"
     scrape_interval: 30s
     static_configs:
-      - targets: ['localhost:6379']
+      - targets: ["localhost:6379"]
 
   # System Metrics
-  - job_name: 'node-exporter'
+  - job_name: "node-exporter"
     scrape_interval: 15s
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ["localhost:9100"]
 
   # CQRS Metrics
-  - job_name: 'cqrs-metrics'
+  - job_name: "cqrs-metrics"
     scrape_interval: 5s
     static_configs:
-      - targets: ['localhost:8090']
-    metrics_path: '/api/cqrs/metrics'
+      - targets: ["localhost:8090"]
+    metrics_path: "/api/cqrs/metrics"
 
   # Event Sourcing Metrics
-  - job_name: 'eventsourcing-metrics'
+  - job_name: "eventsourcing-metrics"
     scrape_interval: 5s
     static_configs:
-      - targets: ['localhost:8090']
-    metrics_path: '/api/events/metrics'
+      - targets: ["localhost:8090"]
+    metrics_path: "/api/events/metrics"

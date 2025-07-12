@@ -8,28 +8,28 @@ rule_files:
 
 scrape_configs:
   # FlexCore Node 1 metrics
-  - job_name: 'flexcore-node1'
+  - job_name: "flexcore-node1"
     static_configs:
-      - targets: ['flexcore-node1:9090']
+      - targets: ["flexcore-node1:9090"]
     scrape_interval: 5s
     metrics_path: /metrics
 
-  # FlexCore Node 2 metrics  
-  - job_name: 'flexcore-node2'
+  # FlexCore Node 2 metrics
+  - job_name: "flexcore-node2"
     static_configs:
-      - targets: ['flexcore-node2:9090']
+      - targets: ["flexcore-node2:9090"]
     scrape_interval: 5s
     metrics_path: /metrics
 
   # Redis metrics
-  - job_name: 'redis'
+  - job_name: "redis"
     static_configs:
-      - targets: ['redis:6379']
+      - targets: ["redis:6379"]
     scrape_interval: 10s
 
   # Windmill metrics
-  - job_name: 'windmill'
+  - job_name: "windmill"
     static_configs:
-      - targets: ['windmill:8000']
+      - targets: ["windmill:8000"]
     scrape_interval: 10s
     metrics_path: /metrics

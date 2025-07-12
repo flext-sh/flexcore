@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Windmill Database
@@ -31,8 +31,8 @@ services:
       - DISABLE_SERVER=false
       - METRICS_ADDR=0.0.0.0:8001
     ports:
-      - "8000:8000"  # Windmill UI and API
-      - "8001:8001"  # Metrics
+      - "8000:8000" # Windmill UI and API
+      - "8001:8001" # Metrics
     depends_on:
       windmill-db:
         condition: service_healthy
