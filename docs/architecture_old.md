@@ -7,18 +7,21 @@ FlexCore is a distributed, event-driven architecture designed for enterprise-sca
 ## Architecture Principles
 
 ### 1. Domain-Driven Design (DDD)
+
 - **Bounded Contexts**: Clear boundaries between different business domains
 - **Aggregates**: Consistency boundaries for domain operations
 - **Domain Events**: Communication mechanism between aggregates
 - **Value Objects**: Immutable domain concepts
 
 ### 2. Event Sourcing
+
 - **Event Store**: Immutable log of all domain events
 - **Event Streams**: Ordered sequences of events per aggregate
 - **Projections**: Read-optimized views derived from events
 - **Snapshots**: Performance optimization for aggregate reconstruction
 
 ### 3. CQRS (Command Query Responsibility Segregation)
+
 - **Command Side**: Handles write operations and business logic
 - **Query Side**: Optimized read models for different use cases
 - **Separate Models**: Different data models for reads and writes
@@ -35,50 +38,50 @@ graph TB
         API[REST API]
         WEB[Web Dashboard]
     end
-    
+
     subgraph "Application Layer"
         GW[API Gateway]
         AUTH[Authentication]
         RATE[Rate Limiter]
     end
-    
+
     subgraph "Domain Services"
         CMD[Command Bus]
         QRY[Query Bus]
         EVT[Event Bus]
         WF[Workflow Engine]
     end
-    
+
     subgraph "Infrastructure"
         ES[Event Store]
         RM[Read Models]
         CACHE[Cache Layer]
         QUEUE[Message Queue]
     end
-    
+
     subgraph "External Systems"
         DB[(PostgreSQL)]
         REDIS[(Redis)]
         WIND[Windmill]
     end
-    
+
     CLI --> GW
     API --> GW
     WEB --> GW
-    
+
     GW --> AUTH
     GW --> RATE
     AUTH --> CMD
     AUTH --> QRY
-    
+
     CMD --> EVT
     QRY --> RM
     EVT --> WF
-    
+
     EVT --> ES
     RM --> CACHE
     WF --> QUEUE
-    
+
     ES --> DB
     CACHE --> REDIS
     WF --> WIND
@@ -87,6 +90,7 @@ graph TB
 ### Service Responsibilities
 
 #### API Gateway
+
 - **Purpose**: Single entry point for all client requests
 - **Responsibilities**:
   - Request routing and load balancing
@@ -96,6 +100,7 @@ graph TB
   - Metrics collection and logging
 
 #### Command Bus
+
 - **Purpose**: Handles all write operations
 - **Responsibilities**:
   - Command validation and authorization
@@ -103,7 +108,8 @@ graph TB
   - Domain logic execution
   - Event publication
 
-#### Query Bus  
+#### Query Bus
+
 - **Purpose**: Handles all read operations
 - **Responsibilities**:
   - Query optimization
@@ -112,6 +118,7 @@ graph TB
   - Performance monitoring
 
 #### Event Store
+
 - **Purpose**: Persistent event storage
 - **Responsibilities**:
   - Event persistence and retrieval
@@ -120,6 +127,7 @@ graph TB
   - Event versioning
 
 #### Workflow Engine
+
 - **Purpose**: Process orchestration
 - **Responsibilities**:
   - Workflow definition and execution
@@ -139,7 +147,7 @@ sequenceDiagram
     participant A as Aggregate
     participant ES as Event Store
     participant EB as Event Bus
-    
+
     C->>GW: Send Command
     GW->>CB: Route Command
     CB->>A: Load Aggregate
@@ -160,7 +168,7 @@ sequenceDiagram
     participant QB as Query Bus
     participant RM as Read Model
     participant CACHE as Cache
-    
+
     C->>GW: Send Query
     GW->>QB: Route Query
     QB->>CACHE: Check Cache
@@ -297,16 +305,16 @@ spec:
         app: flexcore-api
     spec:
       containers:
-      - name: flexcore-api
-        image: flexcore:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: flexcore-secrets
-              key: database-url
+        - name: flexcore-api
+          image: flexcore:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: flexcore-secrets
+                  key: database-url
 ```
 
 ### Infrastructure as Code

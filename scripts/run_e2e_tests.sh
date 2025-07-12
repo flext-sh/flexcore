@@ -26,72 +26,72 @@ TOTAL_TESTS=0
 
 # Functions
 log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+	echo -e "${BLUE}[INFO]${NC} $1"
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-    ((TESTS_PASSED++))
+	echo -e "${GREEN}[SUCCESS]${NC} $1"
+	((TESTS_PASSED++))
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-    ((TESTS_FAILED++))
+	echo -e "${RED}[ERROR]${NC} $1"
+	((TESTS_FAILED++))
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+	echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
 run_test() {
-    local test_name="$1"
-    local test_command="$2"
-    
-    ((TOTAL_TESTS++))
-    log_info "Running test: $test_name"
-    
-    if eval "$test_command" > /tmp/test_output.log 2>&1; then
-        log_success "$test_name"
-        return 0
-    else
-        log_error "$test_name"
-        cat /tmp/test_output.log
-        return 1
-    fi
+	local test_name="$1"
+	local test_command="$2"
+
+	((TOTAL_TESTS++))
+	log_info "Running test: $test_name"
+
+	if eval "$test_command" >/tmp/test_output.log 2>&1; then
+		log_success "$test_name"
+		return 0
+	else
+		log_error "$test_name"
+		cat /tmp/test_output.log
+		return 1
+	fi
 }
 
 wait_for_service() {
-    local service_name="$1"
-    local url="$2"
-    local timeout=30
-    
-    log_info "Waiting for $service_name to be ready..."
-    
-    for i in $(seq 1 $timeout); do
-        if curl -sf "$url" > /dev/null 2>&1; then
-            log_success "$service_name is ready"
-            return 0
-        fi
-        sleep 1
-    done
-    
-    log_error "$service_name failed to start within ${timeout}s"
-    return 1
+	local service_name="$1"
+	local url="$2"
+	local timeout=30
+
+	log_info "Waiting for $service_name to be ready..."
+
+	for i in $(seq 1 $timeout); do
+		if curl -sf "$url" >/dev/null 2>&1; then
+			log_success "$service_name is ready"
+			return 0
+		fi
+		sleep 1
+	done
+
+	log_error "$service_name failed to start within ${timeout}s"
+	return 1
 }
 
 cleanup() {
-    log_info "Cleaning up test environment..."
-    
-    # Stop FlexCore instances
-    pkill -f "flexcore" || true
-    
-    # Clean Docker containers if they exist
-    docker stop flexcore-test-redis flexcore-test-postgres 2>/dev/null || true
-    docker rm flexcore-test-redis flexcore-test-postgres 2>/dev/null || true
-    
-    # Clean test data
-    rm -f /tmp/flexcore-test-*
-    rm -f /tmp/test_output.log
+	log_info "Cleaning up test environment..."
+
+	# Stop FlexCore instances
+	pkill -f "flexcore" || true
+
+	# Clean Docker containers if they exist
+	docker stop flexcore-test-redis flexcore-test-postgres 2>/dev/null || true
+	docker rm flexcore-test-redis flexcore-test-postgres 2>/dev/null || true
+
+	# Clean test data
+	rm -f /tmp/flexcore-test-*
+	rm -f /tmp/test_output.log
 }
 
 # Trap cleanup on exit
@@ -102,21 +102,21 @@ log_info "Setting up test environment..."
 
 # Start Redis
 if ! docker ps --format "table {{.Names}}" | grep -q flexcore-test-redis; then
-    log_info "Starting Redis for testing..."
-    docker run -d --name flexcore-test-redis -p 6379:6379 redis:alpine
-    sleep 2
+	log_info "Starting Redis for testing..."
+	docker run -d --name flexcore-test-redis -p 6379:6379 redis:alpine
+	sleep 2
 fi
 
 # Start PostgreSQL
 if ! docker ps --format "table {{.Names}}" | grep -q flexcore-test-postgres; then
-    log_info "Starting PostgreSQL for testing..."
-    docker run -d --name flexcore-test-postgres \
-        -e POSTGRES_PASSWORD=flexcore123 \
-        -e POSTGRES_DB=flexcore \
-        -e POSTGRES_USER=flexcore \
-        -p 5432:5432 \
-        postgres:15-alpine
-    sleep 5
+	log_info "Starting PostgreSQL for testing..."
+	docker run -d --name flexcore-test-postgres \
+		-e POSTGRES_PASSWORD=flexcore123 \
+		-e POSTGRES_DB=flexcore \
+		-e POSTGRES_USER=flexcore \
+		-p 5432:5432 \
+		postgres:15-alpine
+	sleep 5
 fi
 
 # Build FlexCore
@@ -128,11 +128,11 @@ go build -o flexcore-test ./cmd/flexcore/
 log_info "Building plugins..."
 mkdir -p plugins-built
 if [ -d "plugins/data-processor" ]; then
-    cd plugins/data-processor
-    go mod init data-processor-plugin 2>/dev/null || true
-    go get github.com/hashicorp/go-plugin
-    go build -o ../../plugins-built/data-processor
-    cd ../..
+	cd plugins/data-processor
+	go mod init data-processor-plugin 2>/dev/null || true
+	go get github.com/hashicorp/go-plugin
+	go build -o ../../plugins-built/data-processor
+	cd ../..
 fi
 
 # Start FlexCore nodes
@@ -140,26 +140,26 @@ log_info "Starting FlexCore nodes..."
 
 # Node 1 - Primary
 FLEXCORE_PORT=8080 \
-FLEXCORE_NODE_ID=node-1 \
-REDIS_ADDR=localhost:6379 \
-PLUGIN_DIR=./plugins-built \
-./flexcore-test > /tmp/flexcore-node-1.log 2>&1 &
+	FLEXCORE_NODE_ID=node-1 \
+	REDIS_ADDR=localhost:6379 \
+	PLUGIN_DIR=./plugins-built \
+	./flexcore-test >/tmp/flexcore-node-1.log 2>&1 &
 NODE1_PID=$!
 
-# Node 2 - Secondary  
+# Node 2 - Secondary
 FLEXCORE_PORT=8081 \
-FLEXCORE_NODE_ID=node-2 \
-REDIS_ADDR=localhost:6379 \
-PLUGIN_DIR=./plugins-built \
-./flexcore-test -port 8081 -node node-2 > /tmp/flexcore-node-2.log 2>&1 &
+	FLEXCORE_NODE_ID=node-2 \
+	REDIS_ADDR=localhost:6379 \
+	PLUGIN_DIR=./plugins-built \
+	./flexcore-test -port 8081 -node node-2 >/tmp/flexcore-node-2.log 2>&1 &
 NODE2_PID=$!
 
 # Node 3 - Tertiary
 FLEXCORE_PORT=8082 \
-FLEXCORE_NODE_ID=node-3 \
-REDIS_ADDR=localhost:6379 \
-PLUGIN_DIR=./plugins-built \
-./flexcore-test -port 8082 -node node-3 > /tmp/flexcore-node-3.log 2>&1 &
+	FLEXCORE_NODE_ID=node-3 \
+	REDIS_ADDR=localhost:6379 \
+	PLUGIN_DIR=./plugins-built \
+	./flexcore-test -port 8082 -node node-3 >/tmp/flexcore-node-3.log 2>&1 &
 NODE3_PID=$!
 
 # Wait for services
@@ -428,19 +428,19 @@ echo -e "Passed: ${GREEN}$TESTS_PASSED${NC}"
 echo -e "Failed: ${RED}$TESTS_FAILED${NC}"
 
 if [ $TESTS_FAILED -eq 0 ]; then
-    echo -e "\n${GREEN}🎉 ALL TESTS PASSED! FlexCore system is fully functional!${NC}"
-    exit 0
+	echo -e "\n${GREEN}🎉 ALL TESTS PASSED! FlexCore system is fully functional!${NC}"
+	exit 0
 else
-    echo -e "\n${RED}❌ $TESTS_FAILED tests failed. Check logs above.${NC}"
-    
-    # Show node logs for debugging
-    echo -e "\n${YELLOW}=== NODE LOGS ===${NC}"
-    for i in 1 2 3; do
-        if [ -f "/tmp/flexcore-node-$i.log" ]; then
-            echo -e "\n${BLUE}Node $i logs:${NC}"
-            tail -20 "/tmp/flexcore-node-$i.log"
-        fi
-    done
-    
-    exit 1
+	echo -e "\n${RED}❌ $TESTS_FAILED tests failed. Check logs above.${NC}"
+
+	# Show node logs for debugging
+	echo -e "\n${YELLOW}=== NODE LOGS ===${NC}"
+	for i in 1 2 3; do
+		if [ -f "/tmp/flexcore-node-$i.log" ]; then
+			echo -e "\n${BLUE}Node $i logs:${NC}"
+			tail -20 "/tmp/flexcore-node-$i.log"
+		fi
+	done
+
+	exit 1
 fi

@@ -1,7 +1,7 @@
 # FlexCore Docker Compose - Main Configuration
 # This is the primary docker-compose file with production-ready defaults
 
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database

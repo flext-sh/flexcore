@@ -7,6 +7,7 @@ FlexCore now includes embedded Windmill v1.502.2 as a submodule for advanced wor
 ## Architecture
 
 ### Submodule Structure
+
 ```
 flexcore/
 ├── vendor/
@@ -24,6 +25,7 @@ flexcore/
 ### Integration Components
 
 1. **EmbeddedWindmillManager**: Main integration component that:
+
    - Builds Windmill from source when needed
    - Provides high-level API for script/flow management
    - Handles lifecycle management of the embedded instance
@@ -37,12 +39,14 @@ flexcore/
 ## Features
 
 ### Workflow Management
+
 - **Script Management**: Create, execute, and manage Python, TypeScript, Go, Bash, SQL scripts
 - **Flow Management**: Design and execute multi-step workflows with conditional logic
 - **Resource Management**: Secure storage and usage of credentials and connections
 - **Job Scheduling**: Trigger scripts and flows on schedules or events
 
 ### OpenSource Only
+
 - Uses only AGPLv3 licensed features
 - No enterprise features or dependencies
 - Self-contained build from source
@@ -67,9 +71,9 @@ func main() {
         DatabaseURL: "postgresql://user:pass@localhost:5432/windmill",
         Port:        8000,
     }
-    
+
     manager := windmill.NewEmbeddedWindmillManager(config)
-    
+
     // Initialize (builds Windmill if needed)
     result := manager.Initialize(context.Background())
     if result.IsSuccess() {
@@ -105,7 +109,7 @@ steps := []map[string]interface{}{
     },
     {
         "id":     "step2",
-        "type":   "transform", 
+        "type":   "transform",
         "code":   "return process_data(input)",
     },
 }
@@ -121,6 +125,7 @@ execResult := manager.ExecuteFlow(ctx, "my/workflow", map[string]interface{}{
 ## Build Process
 
 ### Automatic Build
+
 The Windmill binary is built automatically when running `make build`. The build process:
 
 1. Checks if binary already exists
@@ -128,6 +133,7 @@ The Windmill binary is built automatically when running `make build`. The build 
 3. Places the binary at `vendor/windmill/backend/target/release/windmill`
 
 ### Manual Build
+
 ```bash
 # Build only Windmill
 make build-windmill
@@ -140,6 +146,7 @@ make clean
 ```
 
 ### Build Requirements
+
 - Rust toolchain (for Windmill backend)
 - Cargo (Rust package manager)
 - Build tools (gcc, etc.)
@@ -147,6 +154,7 @@ make clean
 ## Testing
 
 ### Integration Test
+
 Run the integration test to verify the Windmill integration:
 
 ```bash
@@ -156,13 +164,15 @@ go build -o windmill-test ./cmd/windmill-test/
 ```
 
 The test validates:
+
 - ✅ Manager initialization
 - ✅ Script creation and execution
-- ✅ Flow creation and execution  
+- ✅ Flow creation and execution
 - ✅ Health checks
 - ✅ Graceful shutdown
 
 ### Test Output Example
+
 ```
 🌪️ Testing Windmill Integration
 Initializing Windmill manager...
@@ -203,12 +213,14 @@ This ensures FlexCore remains functional even without a working Windmill build.
 ## Configuration
 
 ### Environment Variables
+
 - `WINDMILL_BINARY_PATH`: Override default binary path
 - `WINDMILL_WORKSPACE_ID`: Default workspace identifier
 - `WINDMILL_DATABASE_URL`: PostgreSQL connection string
 - `WINDMILL_PORT`: Server port (default: 8000)
 
 ### Performance Tuning
+
 - Rust compilation uses `RUSTFLAGS=-C target-cpu=native` for optimization
 - Release build with thin LTO for smaller binaries
 - Build artifacts cached for faster subsequent builds
@@ -216,12 +228,14 @@ This ensures FlexCore remains functional even without a working Windmill build.
 ## Monitoring and Health
 
 ### Health Checks
+
 ```go
 healthResult := manager.Health(ctx)
 // Returns: status, binary_path, workspace, timestamp
 ```
 
 ### Execution Status
+
 ```go
 statusResult := manager.GetExecutionStatus(ctx, "execution-id")
 // Returns: execution_id, status, progress, logs, updated_at
@@ -239,23 +253,27 @@ statusResult := manager.GetExecutionStatus(ctx, "execution-id")
 
 - **Windmill Version**: v1.502.2 (Latest stable as of 2025-07-06)
 - **License**: AGPLv3 (OpenSource only)
-- **Repository**: https://github.com/windmill-labs/windmill
+- **Repository**: <https://github.com/windmill-labs/windmill>
 - **Integration**: Git submodule at `vendor/windmill`
 
 ## Troubleshooting
 
 ### Build Issues
+
 1. **Missing Rust**: Install Rust toolchain via rustup
 2. **Compilation Errors**: Check available disk space and memory
 3. **Long Build Times**: Windmill has many dependencies, initial build can take 10+ minutes
 
 ### Runtime Issues
+
 1. **Binary Not Found**: Run `make build-windmill` to rebuild
 2. **Port Conflicts**: Change `WINDMILL_PORT` environment variable
 3. **Database Issues**: Verify PostgreSQL connection in `WINDMILL_DATABASE_URL`
 
 ### Fallback Mode
+
 If using fallback mode (simulated functionality):
+
 - Check Rust installation: `cargo --version`
 - Verify build directory permissions
 - Review build logs in make output

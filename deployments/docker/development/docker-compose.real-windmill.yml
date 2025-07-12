@@ -86,8 +86,8 @@ services:
     image: haproxy:alpine
     container_name: flexcore-haproxy
     ports:
-      - "8080:8080"  # Cluster endpoint
-      - "8404:8404"  # Stats page
+      - "8080:8080" # Cluster endpoint
+      - "8404:8404" # Stats page
     volumes:
       - ./docker/haproxy/haproxy-fixed.cfg:/usr/local/etc/haproxy/haproxy.cfg
     depends_on:
@@ -166,7 +166,7 @@ services:
       retries: 3
       start_period: 60s
 
-  # FlexCore Node 3 (Worker) with REAL Windmill  
+  # FlexCore Node 3 (Worker) with REAL Windmill
   flexcore-node3:
     build:
       context: .

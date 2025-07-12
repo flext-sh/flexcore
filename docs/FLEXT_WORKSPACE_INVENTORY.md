@@ -1,4 +1,5 @@
 # 📊 FLEXT WORKSPACE COMPLETE INVENTORY
+
 **Data**: 2025-07-02  
 **Escopo**: Todos os projetos e submódulos do workspace FLEXT  
 **Total**: 31 repositórios Git + 1 projeto principal
@@ -8,6 +9,7 @@
 ## 🏗️ ESTRUTURA HIERÁRQUICA COMPLETA
 
 ### **📁 FLEXT WORKSPACE ROOT** (`/home/marlonsc/flext/`)
+
 ```
 Repository: flext (workspace principal)
 ├── .git (workspace root)
@@ -19,7 +21,8 @@ Repository: flext (workspace principal)
 
 ## 🔧 PROJETOS ATIVOS PRINCIPAIS
 
-### **⚡ FLEXCORE - DISTRIBUTED ARCHITECTURE** 
+### **⚡ FLEXCORE - DISTRIBUTED ARCHITECTURE**
+
 ```
 flexcore/
 ├── Repository: git@github.com:flext-sh/flexcore.git
@@ -30,6 +33,7 @@ flexcore/
 ```
 
 **Funcionalidades Operacionais:**
+
 - ✅ HTTP API Server (11 endpoints)
 - ✅ Event processing system
 - ✅ Message queues
@@ -42,6 +46,7 @@ flexcore/
 ## 🚀 FLEXT FRAMEWORK MODULES (11 repositórios)
 
 ### **Core Framework Components**
+
 ```
 flext-core/
 ├── Repository: https://github.com/flext-sh/flext-core.git
@@ -99,6 +104,7 @@ flext-meltano/
 ```
 
 ### **Extension Modules**
+
 ```
 flext-ldap/
 ├── Repository: https://github.com/flext-sh/flext-ldap.git
@@ -124,6 +130,7 @@ flext-db-oracle/
 ## 🎵 SINGER/MELTANO PROTOCOL PROJECTS (8 repositórios)
 
 ### **Data Extraction (Taps)**
+
 ```
 flext-tap-ldap/
 ├── Repository: git@github.com:flext-sh/flext-tap-ldap.git
@@ -145,6 +152,7 @@ flext-tap-oracle-wms/
 ```
 
 ### **Data Loading (Targets)**
+
 ```
 flext-target-ldap/
 ├── Repository: git@github.com:flext-sh/flext-target-ldap.git
@@ -174,6 +182,7 @@ flext-target-oracle-wms/
 ```
 
 ### **Data Transformation (dbt)**
+
 ```
 flext-dbt-ldap/
 ├── Repository: git@github.com:flext-sh/flext-dbt-ldap.git
@@ -183,6 +192,7 @@ flext-dbt-ldap/
 ```
 
 ### **Extensions**
+
 ```
 flext-oracle-oic-ext/
 ├── Repository: git@github.com:flext-sh/flext-oracle-oic-ext.git
@@ -196,6 +206,7 @@ flext-oracle-oic-ext/
 ## 🏢 ENTERPRISE INTEGRATION PROJECTS (2 repositórios)
 
 ### **ALGAR Integration**
+
 ```
 algar-oud-mig/
 ├── Repository: git@github.com:datacosmos-br/algar-oud-mig.git
@@ -207,9 +218,10 @@ algar-oud-mig/
 ```
 
 ### **GrupoNOS Integration**
+
 ```
-gruponos-poc-oic-wms/
-├── Repository: git@github.com:datacosmos-br/gruponos-poc-oic-wms.git
+gruponos-meltane-native/
+├── Repository: git@github.com:datacosmos-br/gruponos-meltane-native.git
 ├── Commit: 075d56b74f6e26e92671ce22d4a911e71c6d0d94
 ├── Branch: heads/main
 ├── Organization: datacosmos-br (original)
@@ -225,108 +237,42 @@ gruponos-meltano-native/
 
 ---
 
-## 📦 LEGACY PROJECTS (9 repositórios)
-
-### **Legacy Framework (FLX)**
-```
-legacy/flx/
-├── Repository: https://github.com/flext-sh/flx.git
-├── Commit: 9237e1d2d2a4de19aeb9546da49cc0e44bb8e5cc
-├── Branch: heads/main
-└── Status: ✅ Legacy archived
-
-legacy/flx-adapter-example/
-├── Repository: git@github.com:flext-sh/flx-adapter-example.git
-├── Commit: 7774e05ec7bb196f1ff9b01d11d25d29ce6342c2
-├── Branch: heads/main
-└── Status: ✅ Legacy archived
-
-legacy/flx-database-oracle/
-├── Repository: git@github.com:flext-sh/flx-database-oracle.git
-├── Commit: b512c761a356c673c23f107ec6024b724465b483
-├── Branch: heads/main
-└── Status: ✅ Legacy archived (still referenced by gruponos-poc-oic-wms)
-```
-
-### **Legacy HTTP Adapters**
-```
-legacy/flx-http-oracle-oic/
-├── Repository: git@github.com:flext-sh/flx-http-oracle-oic.git
-├── Commit: 990e1e067813d2fd3d5dc1f495a562d10d0a5286
-├── Branch: heads/main
-└── Status: ✅ Legacy archived
-
-legacy/flx-http-oracle-wms/
-├── Repository: git@github.com:flext-sh/flx-http-oracle-wms.git
-├── Commit: c15cba09379d1ad2aa76eee61316c1fef90682fd
-├── Branch: heads/main
-└── Status: ✅ Legacy archived
-```
-
-### **Legacy Oracle Integrations**
-```
-legacy/flx-oracle-oic/
-├── Repository: git@github.com:flext-sh/flx-oracle-oic.git
-├── Commit: 15e7051c5e31e99a86025a3f490b42118594dee3
-├── Branch: heads/main
-└── Status: ✅ Legacy archived
-
-legacy/flx-oracle-wms/
-├── Repository: git@github.com:flext-sh/flx-oracle-wms.git
-├── Commit: 7b06683e713d4ae6c6f25f93362225bc0f6251fe
-├── Branch: heads/main
-└── Status: ✅ Legacy archived
-```
-
-### **Legacy LDAP & Meltano**
-```
-legacy/flx-ldap/
-├── Repository: git@github.com:flext-sh/flx-ldap.git
-├── Commit: 1d2f4ba1a04385f28a0e405920b6a99f955d0ff8
-├── Branch: heads/main
-└── Status: ✅ Legacy archived
-
-legacy/flx-meltano-enterprise/
-├── Repository: git@github.com:flext-sh/flx-meltano-enterprise.git
-├── Commit: 931114be7d89ee3a7e737ffcb41d7c838b2c9adb
-├── Branch: heads/main
-└── Status: ✅ Legacy archived
-```
-
----
-
 ## 📊 ESTATÍSTICAS DO WORKSPACE
 
 ### **Distribuição por Organização**
-| Organização | Repositórios | Percentual |
-|------------|--------------|------------|
-| flext-sh | 26 | 83.9% |
-| datacosmos-br | 2 | 6.5% |
-| **TOTAL** | **31 + workspace** | **100%** |
+
+| Organização   | Repositórios       | Percentual |
+| ------------- | ------------------ | ---------- |
+| flext-sh      | 26                 | 83.9%      |
+| datacosmos-br | 2                  | 6.5%       |
+| **TOTAL**     | **31 + workspace** | **100%**   |
 
 ### **Distribuição por Categoria**
-| Categoria | Repositórios | Status |
-|-----------|--------------|---------|
-| FlexCore (Main) | 1 | ✅ Functional |
-| FLEXT Framework | 11 | ⚠️ Needs assessment |
-| Singer/Meltano | 8 | ⚠️ Needs assessment |
-| Enterprise | 2 | ⚠️ Needs assessment |
-| Legacy | 9 | ✅ Archived |
-| **TOTAL** | **31** | **Mixed** |
+
+| Categoria       | Repositórios | Status              |
+| --------------- | ------------ | ------------------- |
+| FlexCore (Main) | 1            | ✅ Functional       |
+| FLEXT Framework | 11           | ⚠️ Needs assessment |
+| Singer/Meltano  | 8            | ⚠️ Needs assessment |
+| Enterprise      | 2            | ⚠️ Needs assessment |
+| Legacy          | 9            | ✅ Archived         |
+| **TOTAL**       | **31**       | **Mixed**           |
 
 ### **Status de Branches**
-| Branch Pattern | Count | Nota |
-|----------------|-------|------|
-| heads/main | 23 | Padrão principal |
-| heads/master | 2 | FlexCore + target-oracle |
-| heads/main-N-gHASH | 3 | Branches com commits específicos |
-| heads/new-project | 1 | target-oracle-wms em desenvolvimento |
+
+| Branch Pattern     | Count | Nota                                 |
+| ------------------ | ----- | ------------------------------------ |
+| heads/main         | 23    | Padrão principal                     |
+| heads/master       | 2     | FlexCore + target-oracle             |
+| heads/main-N-gHASH | 3     | Branches com commits específicos     |
+| heads/new-project  | 1     | target-oracle-wms em desenvolvimento |
 
 ### **Modificações Pendentes (+ prefix)**
-| Projeto | Status | Descrição |
-|---------|--------|-----------|
-| algar-oud-mig | + prefix | Modificações não commitadas |
-| flext-target-oracle | + prefix | Modificações não commitadas |
+
+| Projeto                 | Status   | Descrição                   |
+| ----------------------- | -------- | --------------------------- |
+| algar-oud-mig           | + prefix | Modificações não commitadas |
+| flext-target-oracle     | + prefix | Modificações não commitadas |
 | flext-target-oracle-wms | + prefix | Modificações não commitadas |
 
 ---
@@ -334,12 +280,14 @@ legacy/flx-meltano-enterprise/
 ## 🔧 CONFIGURAÇÃO TÉCNICA
 
 ### **URLs de Repositório**
+
 - **SSH (flext-sh)**: `git@github.com:flext-sh/[repo].git` (19 repos)
 - **HTTPS (flext-sh)**: `https://github.com/flext-sh/[repo].git` (7 repos)
 - **SSH (datacosmos-br)**: `git@github.com:datacosmos-br/[repo].git` (2 repos)
 - **HTTPS (datacosmos-br)**: `https://github.com/datacosmos-br/[repo].git` (0 repos)
 
 ### **Estrutura .gitmodules**
+
 - ✅ 31 submodules configurados
 - ✅ Organizados por categoria
 - ✅ URLs consistentes por organização
@@ -350,17 +298,20 @@ legacy/flx-meltano-enterprise/
 ## 🎯 RECOMENDAÇÕES PARA GESTÃO
 
 ### **🔥 Ação Imediata**
+
 1. **Commit modificações pendentes** (3 repos com + prefix)
 2. **Assess FLEXT Framework modules** (11 repos sem status)
 3. **Validate Singer/Meltano projects** (8 repos sem validação)
 
 ### **📊 Análise Prioritária**
+
 1. **flext-core**: Verificar se funciona independentemente
 2. **flext-meltano**: Validar integração Singer protocol
 3. **flext-auth**: Verificar sistema de autenticação
 4. **flext-api**: Validar REST API gateway
 
 ### **🧹 Limpeza Recomendada**
+
 1. **Legacy projects**: Manter apenas para referência
 2. **Documentação**: Consolidar em workspace principal
 3. **Dependencies**: Verificar circular references
@@ -370,6 +321,7 @@ legacy/flx-meltano-enterprise/
 ## 📝 CONCLUSÃO
 
 **FLEXT Workspace** é um **ecossistema completo** com:
+
 - ✅ **1 projeto principal funcional** (FlexCore)
 - ⚠️ **21 projetos ativos** precisando avaliação
 - ✅ **9 projetos legacy** adequadamente arquivados

@@ -55,6 +55,7 @@ FlexCore implements event-driven patterns:
 ### 🔧 Core Components
 
 #### FlexCore Engine
+
 - **Location**: `internal/domain/flexcore.go`
 - **Purpose**: Main system orchestrator
 - **Responsibilities**:
@@ -64,6 +65,7 @@ FlexCore implements event-driven patterns:
   - Cluster management
 
 #### Event System
+
 - **Location**: `internal/domain/`
 - **Components**:
   - Event Bus
@@ -72,6 +74,7 @@ FlexCore implements event-driven patterns:
   - Domain Events
 
 #### Plugin System
+
 - **Location**: `internal/infrastructure/plugins/`
 - **Features**:
   - HashiCorp plugin architecture
@@ -97,16 +100,19 @@ FlexCore implements event-driven patterns:
 ### 🏗️ Infrastructure
 
 #### Persistence
+
 - **Primary**: PostgreSQL for transactional data
 - **Cache**: Redis for session and temporary data
 - **Events**: Event Store for event sourcing
 
 #### Communication
+
 - **Sync**: HTTP/REST APIs
 - **Async**: Redis pub/sub and message queues
 - **Inter-service**: gRPC for internal communication
 
 #### Observability
+
 - **Metrics**: Prometheus + Grafana
 - **Tracing**: Jaeger distributed tracing
 - **Logging**: Structured logging with logrus
@@ -153,11 +159,13 @@ FlexCore supports multiple clustering modes:
 ### 📈 Scalability Patterns
 
 #### Horizontal Scaling
+
 - **Stateless nodes**: All state externalized to databases
 - **Load balancing**: Round-robin and health-based routing
 - **Auto-scaling**: Kubernetes HPA support
 
 #### Vertical Scaling
+
 - **Resource pools**: Configurable worker pools
 - **Memory management**: Efficient object pooling
 - **CPU optimization**: Goroutine-based concurrency
@@ -167,16 +175,19 @@ FlexCore supports multiple clustering modes:
 ### 🔒 Security Layers
 
 1. **Network Security**
+
    - TLS encryption for all communications
    - Network segmentation
    - Firewall rules
 
 2. **Authentication & Authorization**
+
    - JWT-based authentication
    - RBAC (Role-Based Access Control)
    - API key management
 
 3. **Data Security**
+
    - Encryption at rest
    - Secure key management
    - Data masking for sensitive information

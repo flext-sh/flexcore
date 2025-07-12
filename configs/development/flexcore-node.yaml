@@ -40,7 +40,7 @@ monitoring:
   metrics_port: 9090
   health_port: 8080
   log_level: "debug"
-  
+
 logging:
   level: "debug"
   format: "json"

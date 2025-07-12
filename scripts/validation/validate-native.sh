@@ -8,12 +8,12 @@ echo "=========================="
 ERRORS=0
 
 check() {
-    if eval "$2"; then
-        echo "✅ $1"
-    else
-        echo "❌ $1"
-        ((ERRORS++))
-    fi
+	if eval "$2"; then
+		echo "✅ $1"
+	else
+		echo "❌ $1"
+		((ERRORS++))
+	fi
 }
 
 # Essential functionality tests
@@ -72,12 +72,12 @@ echo "📊 VALIDATION RESULTS"
 echo "===================="
 
 if [ $ERRORS -eq 0 ]; then
-    echo "🎉 SUCCESS: All validations passed!"
-    echo "✅ Native system is 100% functional"
-    echo "🚀 Ready for production deployment"
-    exit 0
+	echo "🎉 SUCCESS: All validations passed!"
+	echo "✅ Native system is 100% functional"
+	echo "🚀 Ready for production deployment"
+	exit 0
 else
-    echo "❌ FAILED: $ERRORS validation(s) failed"
-    echo "🔧 Review and fix issues before deployment"
-    exit 1
+	echo "❌ FAILED: $ERRORS validation(s) failed"
+	echo "🔧 Review and fix issues before deployment"
+	exit 1
 fi

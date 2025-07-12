@@ -33,10 +33,10 @@ chmod +x ./runtime-plugins/real-data-processor
 # Test plugin binary exists and is executable
 echo "🧪 Verifying plugin binary..."
 if [ -x "./runtime-plugins/real-data-processor" ]; then
-    echo "✅ Plugin binary is executable and ready"
+	echo "✅ Plugin binary is executable and ready"
 else
-    echo "❌ Plugin binary verification failed"
-    exit 1
+	echo "❌ Plugin binary verification failed"
+	exit 1
 fi
 
 # Build test binaries

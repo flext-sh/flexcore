@@ -6,8 +6,14 @@ echo "🚀 FlexCore REAL Production Cluster Test - 100% Distributed System"
 echo "===================================================================="
 
 # Check prerequisites
-command -v docker >/dev/null 2>&1 || { echo "❌ Docker is required but not installed."; exit 1; }
-command -v docker-compose >/dev/null 2>&1 || { echo "❌ Docker Compose is required but not installed."; exit 1; }
+command -v docker >/dev/null 2>&1 || {
+	echo "❌ Docker is required but not installed."
+	exit 1
+}
+command -v docker-compose >/dev/null 2>&1 || {
+	echo "❌ Docker Compose is required but not installed."
+	exit 1
+}
 
 echo "✅ Prerequisites check passed"
 
@@ -25,8 +31,8 @@ echo "🔨 Building FlexCore production images..."
 docker-compose -f docker-compose.production.yml build --no-cache
 
 if [ $? -ne 0 ]; then
-    echo "❌ Failed to build production images"
-    exit 1
+	echo "❌ Failed to build production images"
+	exit 1
 fi
 
 echo "✅ Production images built successfully"
@@ -45,26 +51,26 @@ echo "🔍 Checking infrastructure health..."
 
 # Check Redis
 if docker-compose -f docker-compose.production.yml exec -T redis redis-cli ping | grep -q "PONG"; then
-    echo "  ✅ Redis: HEALTHY"
+	echo "  ✅ Redis: HEALTHY"
 else
-    echo "  ❌ Redis: UNHEALTHY"
-    exit 1
+	echo "  ❌ Redis: UNHEALTHY"
+	exit 1
 fi
 
 # Check etcd
 if docker-compose -f docker-compose.production.yml exec -T etcd etcdctl endpoint health | grep -q "healthy"; then
-    echo "  ✅ etcd: HEALTHY"
+	echo "  ✅ etcd: HEALTHY"
 else
-    echo "  ❌ etcd: UNHEALTHY"
-    exit 1
+	echo "  ❌ etcd: UNHEALTHY"
+	exit 1
 fi
 
 # Check PostgreSQL
 if docker-compose -f docker-compose.production.yml exec -T postgres pg_isready -U flexcore | grep -q "accepting connections"; then
-    echo "  ✅ PostgreSQL: HEALTHY"
+	echo "  ✅ PostgreSQL: HEALTHY"
 else
-    echo "  ❌ PostgreSQL: UNHEALTHY"
-    exit 1
+	echo "  ❌ PostgreSQL: UNHEALTHY"
+	exit 1
 fi
 
 # Start FlexCore nodes
@@ -92,13 +98,13 @@ nodes=("8081" "8082" "8083" "8084")
 healthy_nodes=0
 
 for port in "${nodes[@]}"; do
-    echo -n "  Checking Node on port $port: "
-    if curl -s -f "http://localhost:$port/health" >/dev/null 2>&1; then
-        echo "✅ HEALTHY"
-        ((healthy_nodes++))
-    else
-        echo "❌ UNHEALTHY"
-    fi
+	echo -n "  Checking Node on port $port: "
+	if curl -s -f "http://localhost:$port/health" >/dev/null 2>&1; then
+		echo "✅ HEALTHY"
+		((healthy_nodes++))
+	else
+		echo "❌ UNHEALTHY"
+	fi
 done
 
 echo "  📊 Healthy nodes: $healthy_nodes/4"
@@ -107,16 +113,16 @@ echo "  📊 Healthy nodes: $healthy_nodes/4"
 echo ""
 echo "📊 Test 2: Production Cluster Status"
 for port in "${nodes[@]}"; do
-    echo "  Node on port $port:"
-    if response=$(curl -s "http://localhost:$port/cluster/status" 2>/dev/null); then
-        node_id=$(echo "$response" | jq -r '.node_id // "unknown"')
-        is_leader=$(echo "$response" | jq -r '.is_leader // false')
-        active_nodes=$(echo "$response" | jq -r '.active_nodes // 0')
-        cluster_mode=$(echo "$response" | jq -r '.cluster_mode // "unknown"')
-        echo "    ID: $node_id | Leader: $is_leader | Nodes: $active_nodes | Mode: $cluster_mode"
-    else
-        echo "    ❌ Failed to get cluster status"
-    fi
+	echo "  Node on port $port:"
+	if response=$(curl -s "http://localhost:$port/cluster/status" 2>/dev/null); then
+		node_id=$(echo "$response" | jq -r '.node_id // "unknown"')
+		is_leader=$(echo "$response" | jq -r '.is_leader // false')
+		active_nodes=$(echo "$response" | jq -r '.active_nodes // 0')
+		cluster_mode=$(echo "$response" | jq -r '.cluster_mode // "unknown"')
+		echo "    ID: $node_id | Leader: $is_leader | Nodes: $active_nodes | Mode: $cluster_mode"
+	else
+		echo "    ❌ Failed to get cluster status"
+	fi
 done
 
 # Test 3: Redis Coordination Test
@@ -150,11 +156,11 @@ echo "🌐 Test 5: REAL Network Coordination Test"
 echo "  Testing network-based node (8084)..."
 
 if response=$(curl -s "http://localhost:8084/cluster/nodes" 2>/dev/null); then
-    network_nodes=$(echo "$response" | jq -r '.count // 0')
-    echo "    Network nodes discovered: $network_nodes"
-    echo "$response" | jq -r '.nodes[]? | "    - " + .id + " (" + .address + ")"' 2>/dev/null || echo "    No detailed node info available"
+	network_nodes=$(echo "$response" | jq -r '.count // 0')
+	echo "    Network nodes discovered: $network_nodes"
+	echo "$response" | jq -r '.nodes[]? | "    - " + .id + " (" + .address + ")"' 2>/dev/null || echo "    No detailed node info available"
 else
-    echo "    ❌ Failed to get network cluster nodes"
+	echo "    ❌ Failed to get network cluster nodes"
 fi
 
 # Test 6: Load Balancer Test
@@ -164,10 +170,10 @@ echo "  Testing HAProxy load balancing..."
 
 lb_responses=0
 for i in {1..5}; do
-    if curl -s -f "http://localhost/health" >/dev/null 2>&1; then
-        ((lb_responses++))
-    fi
-    sleep 1
+	if curl -s -f "http://localhost/health" >/dev/null 2>&1; then
+		((lb_responses++))
+	fi
+	sleep 1
 done
 
 echo "    Load balancer responses: $lb_responses/5"
@@ -181,7 +187,7 @@ echo "  Broadcasting events across all coordination types..."
 echo "  Broadcasting from Redis node (8081)..."
 curl -s -X POST "http://localhost:8081/events/test?type=production.redis.test" >/dev/null
 
-# Broadcast from etcd node  
+# Broadcast from etcd node
 echo "  Broadcasting from etcd node (8083)..."
 curl -s -X POST "http://localhost:8083/events/test?type=production.etcd.test" >/dev/null
 
@@ -200,37 +206,37 @@ leaders_found=()
 total_active_nodes=0
 
 for i in {1..6}; do
-    echo "  === Check $i/6 ==="
-    current_leaders=0
-    max_nodes=0
-    
-    for port in "${nodes[@]}"; do
-        if response=$(curl -s "http://localhost:$port/cluster/status" 2>/dev/null); then
-            node_id=$(echo "$response" | jq -r '.node_id // "unknown"')
-            is_leader=$(echo "$response" | jq -r '.is_leader // false')
-            active_nodes=$(echo "$response" | jq -r '.active_nodes // 0')
-            cluster_mode=$(echo "$response" | jq -r '.cluster_mode // "unknown"')
-            
-            if [ "$is_leader" = "true" ]; then
-                ((current_leaders++))
-                leaders_found+=("$node_id")
-            fi
-            
-            if [ "$active_nodes" -gt "$max_nodes" ]; then
-                max_nodes=$active_nodes
-            fi
-            
-            echo "    Port $port: $node_id | Leader: $is_leader | Nodes: $active_nodes | Mode: $cluster_mode"
-        fi
-    done
-    
-    echo "    Summary: $current_leaders leaders, $max_nodes active nodes"
-    
-    if [ "$max_nodes" -gt "$total_active_nodes" ]; then
-        total_active_nodes=$max_nodes
-    fi
-    
-    sleep 5
+	echo "  === Check $i/6 ==="
+	current_leaders=0
+	max_nodes=0
+
+	for port in "${nodes[@]}"; do
+		if response=$(curl -s "http://localhost:$port/cluster/status" 2>/dev/null); then
+			node_id=$(echo "$response" | jq -r '.node_id // "unknown"')
+			is_leader=$(echo "$response" | jq -r '.is_leader // false')
+			active_nodes=$(echo "$response" | jq -r '.active_nodes // 0')
+			cluster_mode=$(echo "$response" | jq -r '.cluster_mode // "unknown"')
+
+			if [ "$is_leader" = "true" ]; then
+				((current_leaders++))
+				leaders_found+=("$node_id")
+			fi
+
+			if [ "$active_nodes" -gt "$max_nodes" ]; then
+				max_nodes=$active_nodes
+			fi
+
+			echo "    Port $port: $node_id | Leader: $is_leader | Nodes: $active_nodes | Mode: $cluster_mode"
+		fi
+	done
+
+	echo "    Summary: $current_leaders leaders, $max_nodes active nodes"
+
+	if [ "$max_nodes" -gt "$total_active_nodes" ]; then
+		total_active_nodes=$max_nodes
+	fi
+
+	sleep 5
 done
 
 # Calculate final results
@@ -241,7 +247,7 @@ echo "📋 Production Test Results Summary:"
 echo "=================================="
 echo "🏥 Infrastructure Health:"
 echo "  ✅ Redis: Operational"
-echo "  ✅ etcd: Operational" 
+echo "  ✅ etcd: Operational"
 echo "  ✅ PostgreSQL: Operational"
 echo ""
 echo "🏗️ FlexCore Cluster:"
@@ -259,45 +265,45 @@ success_score=0
 total_tests=7
 
 if [ "$healthy_nodes" -eq 4 ]; then
-    echo "✅ Node Health: PASS (4/4 nodes healthy)"
-    ((success_score++))
+	echo "✅ Node Health: PASS (4/4 nodes healthy)"
+	((success_score++))
 else
-    echo "⚠️ Node Health: PARTIAL ($healthy_nodes/4 nodes healthy)"
+	echo "⚠️ Node Health: PARTIAL ($healthy_nodes/4 nodes healthy)"
 fi
 
 if [ "$unique_leaders" -eq 1 ]; then
-    echo "✅ Leader Election: PASS (exactly 1 leader)"
-    ((success_score++))
+	echo "✅ Leader Election: PASS (exactly 1 leader)"
+	((success_score++))
 else
-    echo "❌ Leader Election: FAIL ($unique_leaders leaders found)"
+	echo "❌ Leader Election: FAIL ($unique_leaders leaders found)"
 fi
 
 if [ "$total_active_nodes" -ge 3 ]; then
-    echo "✅ Node Discovery: PASS ($total_active_nodes nodes active)"
-    ((success_score++))
+	echo "✅ Node Discovery: PASS ($total_active_nodes nodes active)"
+	((success_score++))
 else
-    echo "⚠️ Node Discovery: PARTIAL ($total_active_nodes nodes active)"
+	echo "⚠️ Node Discovery: PARTIAL ($total_active_nodes nodes active)"
 fi
 
 if [ "$redis_nodes" -ge 1 ]; then
-    echo "✅ Redis Coordination: PASS ($redis_nodes nodes registered)"
-    ((success_score++))
+	echo "✅ Redis Coordination: PASS ($redis_nodes nodes registered)"
+	((success_score++))
 else
-    echo "❌ Redis Coordination: FAIL (0 nodes registered)"
+	echo "❌ Redis Coordination: FAIL (0 nodes registered)"
 fi
 
 if [ "$etcd_nodes" -ge 1 ]; then
-    echo "✅ etcd Coordination: PASS ($etcd_nodes nodes registered)"
-    ((success_score++))
+	echo "✅ etcd Coordination: PASS ($etcd_nodes nodes registered)"
+	((success_score++))
 else
-    echo "❌ etcd Coordination: FAIL (0 nodes registered)"
+	echo "❌ etcd Coordination: FAIL (0 nodes registered)"
 fi
 
 if [ "$lb_responses" -ge 3 ]; then
-    echo "✅ Load Balancing: PASS ($lb_responses/5 responses)"
-    ((success_score++))
+	echo "✅ Load Balancing: PASS ($lb_responses/5 responses)"
+	((success_score++))
 else
-    echo "⚠️ Load Balancing: PARTIAL ($lb_responses/5 responses)"
+	echo "⚠️ Load Balancing: PARTIAL ($lb_responses/5 responses)"
 fi
 
 echo "✅ Event Broadcasting: PASS (completed successfully)"
@@ -309,11 +315,11 @@ echo ""
 echo "🎯 OVERALL PRODUCTION SCORE: $success_score/$total_tests tests passed ($percentage%)"
 
 if [ "$percentage" -ge 85 ]; then
-    echo "🏆 PRODUCTION CLUSTER: SUCCESS - 100% REAL distributed system operational!"
+	echo "🏆 PRODUCTION CLUSTER: SUCCESS - 100% REAL distributed system operational!"
 elif [ "$percentage" -ge 70 ]; then
-    echo "⚡ PRODUCTION CLUSTER: GOOD - System operational with minor issues"
+	echo "⚡ PRODUCTION CLUSTER: GOOD - System operational with minor issues"
 else
-    echo "⚠️ PRODUCTION CLUSTER: NEEDS ATTENTION - Some components not fully operational"
+	echo "⚠️ PRODUCTION CLUSTER: NEEDS ATTENTION - Some components not fully operational"
 fi
 
 echo ""

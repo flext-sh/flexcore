@@ -1,6 +1,6 @@
 # FlexCore - Simplified Development Environment
 # For production, use: docker-compose -f deployments/docker/production/docker-compose.production.yml up
-version: '3.8'
+version: "3.8"
 
 services:
   # Main FlexCore Application

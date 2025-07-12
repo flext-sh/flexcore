@@ -23,19 +23,19 @@ total_tests=0
 
 # Helper function for tests
 run_test() {
-    local test_name="$1"
-    local test_command="$2"
-    total_tests=$((total_tests + 1))
-    
-    echo -e "${YELLOW}🔍 Testing: $test_name${NC}"
-    
-    if eval "$test_command"; then
-        echo -e "${GREEN}✅ PASS: $test_name${NC}"
-        success_count=$((success_count + 1))
-    else
-        echo -e "${RED}❌ FAIL: $test_name${NC}"
-    fi
-    echo ""
+	local test_name="$1"
+	local test_command="$2"
+	total_tests=$((total_tests + 1))
+
+	echo -e "${YELLOW}🔍 Testing: $test_name${NC}"
+
+	if eval "$test_command"; then
+		echo -e "${GREEN}✅ PASS: $test_name${NC}"
+		success_count=$((success_count + 1))
+	else
+		echo -e "${RED}❌ FAIL: $test_name${NC}"
+	fi
+	echo ""
 }
 
 # Test 1: Node Health Checks
@@ -216,19 +216,19 @@ echo -e "${GREEN}Passed: $success_count${NC}"
 echo -e "${RED}Failed: $((total_tests - success_count))${NC}"
 
 if [ $success_count -eq $total_tests ]; then
-    echo -e "${GREEN}🎉 ALL TESTS PASSED - 100% Real Distributed Functionality Verified!${NC}"
-    echo ""
-    echo "✅ Verified Real Features:"
-    echo "  🌊 Real Windmill server integration"
-    echo "  🔌 Real plugin execution with data processing"
-    echo "  ⚖️  Load balancing across multiple nodes"
-    echo "  💾 PostgreSQL database connectivity"
-    echo "  ⚡ Redis cache connectivity"
-    echo "  📡 Multi-node cluster coordination"
-    echo "  🎯 Event system functionality"
-    echo ""
-    echo "🚀 FlexCore distributed system is 100% operational!"
+	echo -e "${GREEN}🎉 ALL TESTS PASSED - 100% Real Distributed Functionality Verified!${NC}"
+	echo ""
+	echo "✅ Verified Real Features:"
+	echo "  🌊 Real Windmill server integration"
+	echo "  🔌 Real plugin execution with data processing"
+	echo "  ⚖️  Load balancing across multiple nodes"
+	echo "  💾 PostgreSQL database connectivity"
+	echo "  ⚡ Redis cache connectivity"
+	echo "  📡 Multi-node cluster coordination"
+	echo "  🎯 Event system functionality"
+	echo ""
+	echo "🚀 FlexCore distributed system is 100% operational!"
 else
-    echo -e "${RED}❌ Some tests failed. Check logs for details.${NC}"
-    exit 1
+	echo -e "${RED}❌ Some tests failed. Check logs for details.${NC}"
+	exit 1
 fi

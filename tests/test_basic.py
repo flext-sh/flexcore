@@ -1,1 +1,6 @@
-# Basic test template\nimport pytest\n\ndef test_basic():\n    assert True
+"""Basic test template."""
+
+
+def test_basic() -> None:
+    """Test basic functionality."""
+    assert True

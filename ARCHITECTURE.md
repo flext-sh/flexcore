@@ -53,12 +53,14 @@ type GetPipelineQuery struct {
 ### Domain Layer (`/domain`)
 
 **Responsabilidades:**
+
 - Modelos de domínio puros
 - Regras de negócio
 - Interfaces de repositórios
 - Eventos de domínio
 
 **Componentes:**
+
 - `base.go`: Tipos base (Entity, AggregateRoot, ValueObject)
 - `entities/`: Entidades do domínio
 - `events/`: Eventos de domínio
@@ -67,12 +69,14 @@ type GetPipelineQuery struct {
 ### Application Layer (`/application`)
 
 **Responsabilidades:**
+
 - Orquestração de casos de uso
 - Command/Query handlers
 - Serviços de aplicação
 - DTOs e transformações
 
 **Componentes:**
+
 - `commands/`: Command handlers e bus
 - `queries/`: Query handlers
 - `services/`: Serviços de aplicação
@@ -80,12 +84,14 @@ type GetPipelineQuery struct {
 ### Infrastructure Layer (`/infrastructure`)
 
 **Responsabilidades:**
+
 - Implementações concretas
 - Integrações externas
 - Persistência
 - Configuração
 
 **Componentes:**
+
 - `config/`: Gerenciamento de configuração (Viper)
 - `di/`: Container de injeção de dependência
 - `events/`: Event bus (Windmill)
@@ -95,11 +101,13 @@ type GetPipelineQuery struct {
 ### Shared Kernel (`/shared`)
 
 **Responsabilidades:**
+
 - Tipos compartilhados
 - Utilitários
 - Padrões funcionais
 
 **Componentes:**
+
 - `errors/`: Sistema de erros padronizado
 - `result/`: Result type para error handling
 - `patterns/`: Padrões funcionais (Maybe, Railway, Options)
@@ -116,13 +124,13 @@ type BaseAdapter struct {
     Initialize(ctx) error
     Start(ctx) error
     Stop(ctx) error
-    
+
     // Health checking
     HealthCheck(ctx) HealthStatus
-    
+
     // Configuration
     Config() *config.Manager
-    
+
     // Dependency injection
     Container() *di.AdvancedContainer
 }
@@ -364,18 +372,18 @@ func (h *MyCommandHandler) Handle(ctx context.Context, cmd MyCommand) result.Res
     if err := h.validate(cmd); err != nil {
         return result.Failure[interface{}](err)
     }
-    
+
     // Execução
     entity := NewEntity(cmd.Data)
-    
+
     // Persistência
     if err := h.repo.Save(ctx, entity); err != nil {
         return result.Failure[interface{}](err)
     }
-    
+
     // Eventos
     h.bus.Publish(ctx, EntityCreatedEvent{ID: entity.ID})
-    
+
     return result.Success[interface{}](entity)
 }
 ```

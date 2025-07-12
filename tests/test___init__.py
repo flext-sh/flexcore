@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def test_module_initialization() -> None:
-    """Test that module initializes correctly."""
+    """Test module initialization."""
     module_name = Path(__file__).stem.replace("test_", "")
     if module_name in sys.modules:
         module = sys.modules[module_name]
@@ -15,7 +15,7 @@ def test_module_initialization() -> None:
 
 
 def test_with_empty_inputs() -> None:
-    """Test functions handle empty inputs gracefully."""
+    """Test with empty inputs."""
     assert True
 
 

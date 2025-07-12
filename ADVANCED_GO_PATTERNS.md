@@ -3,6 +3,7 @@
 ## 1. HashiCorp go-plugin Pattern Implementation
 
 ### Overview
+
 The HashiCorp go-plugin pattern provides a robust plugin system using RPC over local sockets. This ensures plugin isolation and allows plugins to be written in any language.
 
 ### Implementation for FlexCore
@@ -131,11 +132,11 @@ func (pm *PluginManager) loadPlugin(path string) error {
     }
 
     adapter := raw.(Adapter)
-    
+
     // Get plugin metadata
     name := adapter.Name()
     version := adapter.Version()
-    
+
     pm.plugins[name] = &LoadedPlugin{
         Path:    path,
         Client:  client,
@@ -177,7 +178,7 @@ import (
     "fmt"
     "strings"
     "sync"
-    
+
     "github.com/fsnotify/fsnotify"
     "github.com/go-playground/validator/v10"
     "github.com/spf13/viper"
@@ -215,7 +216,7 @@ func NewConfigManager() *ConfigManager {
 
     // Set up configuration sources
     cm.setupViper()
-    
+
     return cm
 }
 
@@ -274,7 +275,7 @@ func (cm *ConfigManager) EnableHotReload() error {
     cm.viper.WatchConfig()
     cm.viper.OnConfigChange(func(e fsnotify.Event) {
         fmt.Printf("Config file changed: %s\n", e.Name)
-        
+
         if err := cm.Load(); err != nil {
             fmt.Printf("Failed to reload config: %v\n", err)
             return
@@ -380,10 +381,10 @@ func RequestID() Middleware {
             if id == "" {
                 id = generateRequestID()
             }
-            
+
             ctx := context.WithValue(r.Context(), "request-id", id)
             w.Header().Set("X-Request-ID", id)
-            
+
             next.ServeHTTP(w, r.WithContext(ctx))
         })
     }
@@ -395,7 +396,7 @@ func Timeout(duration time.Duration) Middleware {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             ctx, cancel := context.WithTimeout(r.Context(), duration)
             defer cancel()
-            
+
             next.ServeHTTP(w, r.WithContext(ctx))
         })
     }
@@ -410,12 +411,12 @@ func Recovery() Middleware {
                     // Log the error
                     requestID := r.Context().Value("request-id")
                     fmt.Printf("Panic recovered in request %v: %v\n", requestID, err)
-                    
+
                     // Return 500
                     http.Error(w, "Internal Server Error", http.StatusInternalServerError)
                 }
             }()
-            
+
             next.ServeHTTP(w, r)
         })
     }
@@ -453,17 +454,17 @@ func NewJSONRequestTransformer[T any](validator func(T) error) *JSONRequestTrans
 
 func (t *JSONRequestTransformer[T]) Transform(r *http.Request) result.Result[T] {
     var data T
-    
+
     if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
         return result.Failure[T](fmt.Errorf("invalid JSON: %w", err))
     }
-    
+
     if t.validator != nil {
         if err := t.validator(data); err != nil {
             return result.Failure[T](fmt.Errorf("validation failed: %w", err))
         }
     }
-    
+
     return result.Success(data)
 }
 
@@ -478,12 +479,12 @@ func NewJSONResponseTransformer[T any](pretty bool) *JSONResponseTransformer[T] 
 
 func (t *JSONResponseTransformer[T]) Transform(w http.ResponseWriter, data T) error {
     w.Header().Set("Content-Type", "application/json")
-    
+
     encoder := json.NewEncoder(w)
     if t.pretty {
         encoder.SetIndent("", "  ")
     }
-    
+
     return encoder.Encode(data)
 }
 
@@ -501,14 +502,14 @@ func (h *TransformHandler[TReq, TRes]) ServeHTTP(w http.ResponseWriter, r *http.
         http.Error(w, reqResult.Error().Error(), http.StatusBadRequest)
         return
     }
-    
+
     // Execute handler
     resResult := h.handler(r.Context(), reqResult.Value())
     if resResult.IsFailure() {
         http.Error(w, resResult.Error().Error(), http.StatusInternalServerError)
         return
     }
-    
+
     // Transform response
     if err := h.resTransformer.Transform(w, resResult.Value()); err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -525,7 +526,7 @@ package observability
 import (
     "context"
     "net/http"
-    
+
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/propagation"
@@ -548,13 +549,13 @@ func TraceMethod(ctx context.Context, name string, fn func(context.Context) erro
     tracer := otel.Tracer("flexcore")
     ctx, span := tracer.Start(ctx, name)
     defer span.End()
-    
+
     err := fn(ctx)
     if err != nil {
         span.RecordError(err)
         span.SetStatus(trace.Status{Code: trace.StatusCodeError})
     }
-    
+
     return err
 }
 
@@ -563,13 +564,13 @@ func TraceAsync[T any](ctx context.Context, name string, fn func(context.Context
     tracer := otel.Tracer("flexcore")
     ctx, span := tracer.Start(ctx, name)
     defer span.End()
-    
+
     result := fn(ctx)
     if result.IsFailure() {
         span.RecordError(result.Error())
         span.SetStatus(trace.Status{Code: trace.StatusCodeError})
     }
-    
+
     return result
 }
 
@@ -608,11 +609,11 @@ func NewHTTPClient(baseURL string, opts ...HTTPClientOption) *HTTPClient {
         headers: make(map[string]string),
         transport: http.DefaultTransport,
     }
-    
+
     for _, opt := range opts {
         opt(client)
     }
-    
+
     return client
 }
 
@@ -725,11 +726,11 @@ func (b *PipelineBuilder) Build() (Pipeline, error) {
     if b.err != nil {
         return nil, b.err
     }
-    
+
     if len(b.steps) == 0 {
         return nil, fmt.Errorf("pipeline must have at least one step")
     }
-    
+
     return &pipeline{
         name:        b.name,
         description: b.description,
@@ -744,13 +745,13 @@ func (b *PipelineBuilder) Validate() *PipelineBuilder {
     if b.err != nil {
         return b
     }
-    
+
     // Validate pipeline configuration
     if b.name == "" {
         b.err = fmt.Errorf("pipeline name is required")
         return b
     }
-    
+
     // Validate steps compatibility
     for i := 0; i < len(b.steps)-1; i++ {
         if !b.steps[i].OutputSchema().CompatibleWith(b.steps[i+1].InputSchema()) {
@@ -758,7 +759,7 @@ func (b *PipelineBuilder) Validate() *PipelineBuilder {
             return b
         }
     }
-    
+
     return b
 }
 ```
@@ -901,11 +902,11 @@ func (r Railway[T]) Then(fn func(T) error) Railway[T] {
     if r.result.IsFailure() {
         return r
     }
-    
+
     if err := fn(r.result.Value()); err != nil {
         return Failure[T](err)
     }
-    
+
     return r
 }
 
@@ -914,7 +915,7 @@ func (r Railway[T]) Map(fn func(T) T) Railway[T] {
     if r.result.IsFailure() {
         return r
     }
-    
+
     return Success(fn(r.result.Value()))
 }
 
@@ -923,7 +924,7 @@ func (r Railway[T]) FlatMap(fn func(T) Railway[T]) Railway[T] {
     if r.result.IsFailure() {
         return r
     }
-    
+
     return fn(r.result.Value())
 }
 
@@ -932,7 +933,7 @@ func (r Railway[T]) Recover(fn func(error) T) Railway[T] {
     if r.result.IsSuccess() {
         return r
     }
-    
+
     return Success(fn(r.result.Error()))
 }
 
@@ -1018,23 +1019,23 @@ func (a *OracleAdapter) Configure(config map[string]interface{}) error {
     // Use Viper for configuration
     v := viper.New()
     v.SetConfigType("yaml")
-    
+
     for k, val := range config {
         v.Set(k, val)
     }
-    
+
     var cfg Config
     if err := v.Unmarshal(&cfg); err != nil {
         return err
     }
-    
+
     // Validate configuration
     if err := validator.New().Struct(&cfg); err != nil {
         return err
     }
-    
+
     a.config = &cfg
-    
+
     // Initialize client with functional options
     a.client = NewOracleClient(
         cfg.ConnectionString,
@@ -1042,7 +1043,7 @@ func (a *OracleAdapter) Configure(config map[string]interface{}) error {
         WithBatchSize(cfg.BatchSize),
         WithRetryPolicy(ExponentialBackoff(3, 1*time.Second)),
     )
-    
+
     return nil
 }
 
@@ -1051,7 +1052,7 @@ func (a *OracleAdapter) Extract(ctx context.Context, req plugin.ExtractRequest) 
     // Start tracing
     ctx, span := otel.Tracer("oracle-adapter").Start(ctx, "Extract")
     defer span.End()
-    
+
     // Use Railway pattern for the operation
     result := patterns.Track(a.validateRequest(req)).
         FlatMap(func(req plugin.ExtractRequest) patterns.Railway[*QueryResult] {
@@ -1063,12 +1064,12 @@ func (a *OracleAdapter) Extract(ctx context.Context, req plugin.ExtractRequest) 
         Then(func(resp *plugin.ExtractResponse) error {
             return a.recordMetrics(resp)
         })
-    
+
     if result.Result().IsFailure() {
         span.RecordError(result.Result().Error())
         return nil, result.Result().Error()
     }
-    
+
     return result.Result().Value(), nil
 }
 
@@ -1084,7 +1085,7 @@ func (a *OracleAdapter) buildQuery(table string) *QueryBuilder {
 // Main function to register as plugin
 func main() {
     adapter := &OracleAdapter{}
-    
+
     plugin.Serve(&plugin.ServeConfig{
         HandshakeConfig: plugin.Handshake,
         Plugins: map[string]plugin.Plugin{

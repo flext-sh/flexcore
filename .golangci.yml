@@ -97,8 +97,8 @@ linters:
     - whitespace
 
   disable:
-    - maligned  # deprecated
-    - interfacer  # deprecated
+    - maligned # deprecated
+    - interfacer # deprecated
 
 issues:
   exclude-rules:
@@ -107,7 +107,7 @@ issues:
         - gomnd
         - funlen
         - dupl
-        
+
     - path: cmd/
       linters:
         - gocyclo
@@ -116,6 +116,6 @@ issues:
     - path: internal/infrastructure/
       linters:
         - nestif
-        
+
   max-issues-per-linter: 0
   max-same-issues: 0
