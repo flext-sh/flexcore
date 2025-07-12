@@ -18,6 +18,13 @@ format: ## Format code
 	poetry run ruff format src tests
 	poetry run black src tests
 
+check: lint type-check test ## Run all quality checks (lint, type-check, test)
+	@echo "✅ All quality checks passed!"
+
+type-check: ## Run type checking with mypy
+	@echo "🔍 Running type checking for flexcore..."
+	poetry run mypy src
+
 build: ## Build package
 	poetry build
 
