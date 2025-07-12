@@ -64,3 +64,8 @@ runtime-plugins/
 volumes/
 
 vendor/
+
+# Project specific Go binaries
+flexcore
+plugins/simple-processor/simple-processor
+plugins/*/simple-processor
