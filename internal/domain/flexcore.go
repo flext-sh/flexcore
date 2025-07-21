@@ -10,6 +10,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	// Workflow progress constants
+	completeProgressPercent = 100.0
+)
+
 // FlexCoreConfig represents the configuration for FlexCore
 type FlexCoreConfig struct {
 	NodeID            string
@@ -147,7 +152,7 @@ func (fc *FlexCore) GetWorkflowStatus(ctx context.Context, jobID string) result.
 	status := &WorkflowStatus{
 		JobID:     jobID,
 		Status:    "completed",
-		Progress:  100.0,
+		Progress:  completeProgressPercent,
 		StartTime: time.Now().Add(-time.Hour),
 	}
 	return result.Success(status)

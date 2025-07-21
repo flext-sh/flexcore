@@ -199,13 +199,21 @@ type Retry struct {
 	BackoffFactor float64
 }
 
+const (
+	// Default retry configuration constants
+	defaultMaxAttempts     = 3
+	defaultInitialDelayMs  = 100
+	defaultMaxDelaySeconds = 5
+	defaultBackoffFactor   = 2.0
+)
+
 // DefaultRetry returns default retry configuration
 func DefaultRetry() Retry {
 	return Retry{
-		MaxAttempts:   3,
-		InitialDelay:  100 * time.Millisecond,
-		MaxDelay:      5 * time.Second,
-		BackoffFactor: 2.0,
+		MaxAttempts:   defaultMaxAttempts,
+		InitialDelay:  defaultInitialDelayMs * time.Millisecond,
+		MaxDelay:      defaultMaxDelaySeconds * time.Second,
+		BackoffFactor: defaultBackoffFactor,
 	}
 }
 

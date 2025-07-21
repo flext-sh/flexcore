@@ -12,6 +12,11 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
+const (
+	// Processing simulation constants
+	processingDelayMs = 100
+)
+
 // PluginInterface defines the interface for FlexCore plugins
 type PluginInterface interface {
 	Name() string
@@ -70,7 +75,7 @@ func (p *DataTransformerPlugin) Execute(ctx context.Context, input interface{}) 
 	}
 
 	// Simulate processing time
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(processingDelayMs * time.Millisecond)
 
 	return result, nil
 }

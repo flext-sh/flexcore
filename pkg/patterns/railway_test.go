@@ -390,16 +390,16 @@ func TestRailway_TapError(t *testing.T) {
 // Test chaining multiple railway operations
 func TestRailway_Chaining(t *testing.T) {
 	t.Run("success chain", func(t *testing.T) {
-		result := Success("hello")
-			.Map(func(s string) string { return s + " world" })
-			.Then(func(s string) error {
+		result := Success("hello").
+			Map(func(s string) string { return s + " world" }).
+			Then(func(s string) error {
 				if len(s) < 5 {
 					return errors.New("too short")
 				}
 				return nil
-			})
-			.Validate(func(s string) bool { return len(s) > 10 }, "must be longer than 10")
-			.Tap(func(s string) {
+			}).
+			Validate(func(s string) bool { return len(s) > 10 }, "must be longer than 10").
+			Tap(func(s string) {
 				// Side effect
 			})
 
@@ -408,9 +408,9 @@ func TestRailway_Chaining(t *testing.T) {
 	})
 
 	t.Run("failure chain stops early", func(t *testing.T) {
-		result := Success("hi")
-			.Validate(func(s string) bool { return len(s) > 5 }, "too short")
-			.Map(func(s string) string {
+		result := Success("hi").
+			Validate(func(s string) bool { return len(s) > 5 }, "too short").
+			Map(func(s string) string {
 				// Should not be called
 				t.Error("Map should not be called after validation failure")
 				return s + " world"
@@ -421,9 +421,9 @@ func TestRailway_Chaining(t *testing.T) {
 	})
 
 	t.Run("recover and continue", func(t *testing.T) {
-		result := Failure[string](errors.New("initial error"))
-			.Recover(func(err error) string { return "recovered" })
-			.Map(func(s string) string { return s + " value" })
+		result := Failure[string](errors.New("initial error")).
+			Recover(func(err error) string { return "recovered" }).
+			Map(func(s string) string { return s + " value" })
 
 		assert.True(t, result.Result().IsSuccess())
 		assert.Equal(t, "recovered value", result.Result().Value())

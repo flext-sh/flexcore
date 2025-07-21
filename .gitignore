@@ -1,5 +1,13 @@
-# Binaries
-/bin/
+# ============================================================================
+# FLEXT GO PROJECT STANDARD .gitignore TEMPLATE
+# Go 1.24+ | Clean Architecture | Distributed Systems
+# ============================================================================
+
+# ============================================================================
+# GO BINARIES AND BUILD ARTIFACTS
+# ============================================================================
+
+# Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
@@ -9,63 +17,286 @@
 # Test binary, built with `go test -c`
 *.test
 
-# Output of the go coverage tool
+# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-coverage/
+
+# Dependency directories
+vendor/
 
 # Go workspace file
 go.work
 
-# IDE
+# ============================================================================
+# GO DEVELOPMENT TOOLS
+# ============================================================================
+
+# Debugging
+debug
+debug.test
+
+# Coverage reports
+coverage/
+coverage.html
+coverage.xml
+*.coverprofile
+
+# Go module cache
+go.sum
+
+# Air live reload
+.air/
+tmp/
+
+# ============================================================================
+# IDE AND EDITOR FILES
+# ============================================================================
+
+# Visual Studio Code
 .vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains GoLand
 .idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
 *.swp
 *.swo
+*~
 
-# OS
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Cursor AI
+.cursor/
+.cursorrules
+
+# ============================================================================
+# OS SPECIFIC FILES
+# ============================================================================
+
+# macOS
 .DS_Store
-Thumbs.db
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
 
-# Logs
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# LOGS AND TEMPORARY FILES
+# ============================================================================
+
+# Log files
 *.log
 logs/
-
-# Database files
-*.db
-*.sqlite
-
-# Redis dumps
-dump.rdb
+log/
 
 # Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
 temp/
 tmp/
-*.tmp
 
 # Runtime data
 *.pid
 *.lock
 
-# Archive
-archive/
+# ============================================================================
+# DATABASE FILES
+# ============================================================================
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+*.db3
+
+# Redis dumps
+dump.rdb
+
+# ============================================================================
+# DOCKER AND CONTAINERIZATION
+# ============================================================================
+
+# Docker
+.dockerignore.bak
+docker-compose.override.yml
+internal.invalid.yml
+
+# Kubernetes
+*.secret.yaml
+
+# ============================================================================
+# CONFIGURATION AND SECRETS
+# ============================================================================
+
+# Environment files
+.env
+.internal.invalid
+.env.*.local
+.env.production
+.env.prod
+
+# Secrets and credentials
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+*.jks
+secret*
+*.secret
+credentials.json
+auth.json
+service-account*.json
+
+# Configuration backups
+*.conf.bak
+*.config.bak
+*.yaml.bak
+*.yml.bak
+
+# ============================================================================
+# BUILD AND DISTRIBUTION
+# ============================================================================
 
 # Build artifacts
 build/
 dist/
+bin/
+
+# Archive directory
+archive/
 
 # Runtime plugins
 runtime-plugins/
 
-# Environment files
-.internal.invalid
-.env.production
+# ============================================================================
+# PROJECT SPECIFIC - GO SERVICE PATTERNS
+# ============================================================================
 
-# Docker volumes
-volumes/
+# Generated protobuf files (if auto-generated)
+*.pb.go
+*_grpc.pb.go
 
-vendor/
+# Swagger/OpenAPI generated files (if auto-generated)
+docs/swagger/
 
-# Project specific Go binaries
-flexcore
-plugins/simple-processor/simple-processor
-plugins/*/simple-processor
+# Migration files (if auto-generated)
+migrations/generated/
+
+# Wire dependency injection (if auto-generated)
+wire_gen.go
+
+# ============================================================================
+# MONITORING AND OBSERVABILITY
+# ============================================================================
+
+# Prometheus
+*.prom
+*.metrics
+
+# Grafana
+grafana/
+
+# Jaeger
+jaeger/
+
+# Health checks
+health_*.json
+status_*.json
+
+# ============================================================================
+# TESTING AND COVERAGE
+# ============================================================================
+
+# Test artifacts
+testdata/
+test_output/
+test_results/
+e2e_results/
+
+# Benchmark results
+*.bench
+benchmarks/
+
+# ============================================================================
+# DEVELOPMENT ARTIFACTS - FORBIDDEN PATTERNS
+# ============================================================================
+
+# Manual fix scripts - FORBIDDEN
+fix_*.go
+*_fix.go
+*_validation.go
+validate_*.go
+
+# AI-generated reports - FORBIDDEN
+*_REPORT.md
+*_ANALYSIS.md
+*_VALIDATION.md
+CONFIG_MIGRATION*.md
+DEVELOPMENT_STANDARDS.md
+DUPLICATION_REPORT.md
+
+# ============================================================================
+# AI ASSISTANT FILES
+# ============================================================================
+
+CLAUDE.md
+internal.invalid.md
+.claude/
+.cursor/
+
+# ============================================================================
+# ALWAYS INCLUDE EXCEPTIONS
+# ============================================================================
+
+# Important: Force include critical files
+!go.mod
+!go.sum
+!Makefile
+!README.md
+!.pre-commit-config.yaml
+!.env.example
+!Dockerfile
+!docker-compose.yml
+!.gitignore

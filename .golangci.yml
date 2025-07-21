@@ -6,7 +6,9 @@ run:
   modules-download-mode: readonly
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
+      path: stdout
   print-issued-lines: true
   print-linter-name: true
 
@@ -16,7 +18,7 @@ linters-settings:
     check-blank: true
 
   govet:
-    check-shadowing: true
+    shadow: true
     enable-all: true
 
   gocyclo:
@@ -56,10 +58,25 @@ linters-settings:
   nestif:
     min-complexity: 5
 
-  gomnd:
+  mnd:
     settings:
       mnd:
         checks: argument,case,condition,operation,return,assign
+
+  depguard:
+    rules:
+      main:
+        allow:
+          - $gostd
+          - github.com/flext/flexcore
+          - github.com/hashicorp/go-plugin
+          - github.com/lib/pq
+          - github.com/mattn/go-sqlite3
+          - github.com/google/uuid
+          - github.com/stretchr/testify
+          - go.uber.org/zap
+          - github.com/redis/go-redis/v9
+          - google.golang.org/grpc
 
 linters:
   enable:
@@ -70,9 +87,6 @@ linters:
     - staticcheck
     - typecheck
     - unused
-    - varcheck
-    - structcheck
-    - deadcode
     - gocyclo
     - gofmt
     - goimports
@@ -83,22 +97,19 @@ linters:
     - gocognit
     - funlen
     - nestif
-    - gomnd
-    - exportloopref
+    - mnd
+    - copyloopvar
     - depguard
     - dogsled
     - dupl
     - forbidigo
     - nakedret
     - prealloc
-    - scopelint
     - unconvert
     - unparam
     - whitespace
 
-  disable:
-    - maligned # deprecated
-    - interfacer # deprecated
+  disable: []
 
 issues:
   exclude-rules:

@@ -18,6 +18,11 @@ import (
 	"github.com/flext/flexcore/pkg/plugin"
 )
 
+const (
+	processorType   = "postgres-processor"
+	defaultFileMode = 0o644
+)
+
 // init registers types for gob encoding/decoding
 func init() {
 	// Register types for RPC serialization
@@ -56,57 +61,85 @@ type DataProcessorPlugin interface {
 
 // Initialize the plugin with configuration
 func (pp *PostgresProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[PostgresProcessor] Initializing with config: %+v", config)
 
 	pp.config = config
 	pp.stats = plugin.ProcessingStats{}
 
 	// Try to connect to PostgreSQL if config provided
-	if host, ok := config["postgres_host"].(string); ok {
-		port := "5432"
-		if p, ok := config["postgres_port"].(string); ok {
-			port = p
-		}
+	host, hasHost := config["postgres_host"].(string)
+	if !hasHost {
+		return nil
+	}
 
-		dbname := "postgres"
-		if db, ok := config["postgres_db"].(string); ok {
-			dbname = db
-		}
-
-		user := "postgres"
-		if u, ok := config["postgres_user"].(string); ok {
-			user = u
-		}
-
-		password := ""
-		if pw, ok := config["postgres_password"].(string); ok {
-			password = pw
-		}
-
-		connStr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
-			host, port, dbname, user, password)
-
-		db, err := sql.Open("postgres", connStr)
-		if err != nil {
-			log.Printf("[PostgresProcessor] Warning: PostgreSQL connection failed: %v", err)
-			// Don't fail - continue in test mode
-		} else {
-			// Test connection
-			if err := db.Ping(); err != nil {
-				log.Printf("[PostgresProcessor] Warning: PostgreSQL ping failed: %v", err)
-				db.Close()
-			} else {
-				pp.db = db
-				log.Printf("[PostgresProcessor] PostgreSQL connected successfully")
-			}
-		}
+	connConfig := pp.buildConnectionConfig(config, host)
+	if err := pp.connectToDatabase(connConfig); err != nil {
+		log.Printf("[PostgresProcessor] Warning: PostgreSQL connection failed: %v", err)
+		// Don't fail - continue in test mode
 	}
 
 	return nil
 }
 
+// buildConnectionConfig creates connection configuration from config map
+func (pp *PostgresProcessor) buildConnectionConfig(config map[string]interface{}, host string) string {
+	port := "5432"
+	if p, ok := config["postgres_port"].(string); ok {
+		port = p
+	}
+
+	dbname := "postgres"
+	if db, ok := config["postgres_db"].(string); ok {
+		dbname = db
+	}
+
+	user := "postgres"
+	if u, ok := config["postgres_user"].(string); ok {
+		user = u
+	}
+
+	password := ""
+	if pw, ok := config["postgres_password"].(string); ok {
+		password = pw
+	}
+
+	return fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
+		host, port, dbname, user, password)
+}
+
+// connectToDatabase establishes database connection
+func (pp *PostgresProcessor) connectToDatabase(connStr string) error {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return err
+	}
+
+	// Test connection
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return err
+	}
+
+	pp.db = db
+	log.Printf("[PostgresProcessor] PostgreSQL connected successfully")
+	return nil
+}
+
 // Execute processes data with PostgreSQL
-func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
+func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]interface{}) (
+	map[string]interface{}, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	startTime := time.Now()
 	defer func() {
 		pp.stats.DurationMs = time.Since(startTime).Milliseconds()
@@ -116,7 +149,7 @@ func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]inter
 	log.Printf("[PostgresProcessor] Processing input with %d keys", len(input))
 
 	result := make(map[string]interface{})
-	result["processor"] = "postgres-processor"
+	result["processor"] = processorType
 	result["timestamp"] = time.Now().Unix()
 	result["processed_by"] = "FlexCore PostgresProcessor v1.0"
 
@@ -214,8 +247,8 @@ func (pp *PostgresProcessor) executeQuery(ctx context.Context, query string) ([]
 // GetInfo returns plugin metadata
 func (pp *PostgresProcessor) GetInfo() plugin.PluginInfo {
 	return plugin.PluginInfo{
-		ID:          "postgres-processor",
-		Name:        "postgres-processor",
+		ID:          processorType,
+		Name:        processorType,
 		Version:     "1.0.0",
 		Description: "PostgreSQL data processing plugin with SQL execution capabilities",
 		Author:      "FlexCore Team",
@@ -234,7 +267,7 @@ func (pp *PostgresProcessor) HealthCheck(ctx context.Context) error {
 	// Check database connection if available
 	if pp.db != nil {
 		if err := pp.db.PingContext(ctx); err != nil {
-			log.Printf("[PostgresProcessor] Warning: Database ping failed: %v", err)
+			return fmt.Errorf("database health check failed: %w", err)
 		}
 	}
 
@@ -246,14 +279,21 @@ func (pp *PostgresProcessor) Cleanup() error {
 	log.Printf("[PostgresProcessor] Cleanup called - processed %d records total", pp.stats.TotalRecords)
 
 	if pp.db != nil {
-		pp.db.Close()
+		if err := pp.db.Close(); err != nil {
+			log.Printf("[PostgresProcessor] Warning: Failed to close database: %v", err)
+		}
 		log.Printf("[PostgresProcessor] Database connection closed")
 	}
 
 	// Save statistics to file (optional)
 	if statsFile, ok := pp.config["stats_file"].(string); ok {
-		data, _ := json.MarshalIndent(pp.stats, "", "  ")
-		os.WriteFile(statsFile, data, 0644)
+		data, err := json.MarshalIndent(pp.stats, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal stats: %w", err)
+		}
+		if err := os.WriteFile(statsFile, data, defaultFileMode); err != nil {
+			return fmt.Errorf("failed to write stats file: %w", err)
+		}
 	}
 
 	return nil
@@ -268,7 +308,7 @@ func (pp *PostgresProcessor) processArray(data []interface{}) []interface{} {
 		// Add metadata
 		if itemMap, ok := item.(map[string]interface{}); ok {
 			itemMap["_processed_at"] = time.Now().Unix()
-			itemMap["_processor"] = "postgres-processor"
+			itemMap["_processor"] = processorType
 			processed = append(processed, itemMap)
 		} else {
 			processed = append(processed, item)
@@ -287,7 +327,7 @@ func (pp *PostgresProcessor) processMap(data map[string]interface{}) map[string]
 
 	// Add metadata
 	processed["_processed_at"] = time.Now().Unix()
-	processed["_processor"] = "postgres-processor"
+	processed["_processor"] = processorType
 
 	return processed
 }
@@ -316,7 +356,7 @@ func (rpc *PostgresProcessorRPC) Execute(args map[string]interface{}, resp *map[
 	return nil
 }
 
-func (rpc *PostgresProcessorRPC) GetInfo(args interface{}, resp *plugin.PluginInfo) error {
+func (rpc *PostgresProcessorRPC) GetInfo(_ interface{}, resp *plugin.PluginInfo) error {
 	*resp = rpc.Impl.GetInfo()
 	return nil
 }

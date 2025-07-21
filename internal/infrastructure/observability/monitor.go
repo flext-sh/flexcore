@@ -12,18 +12,31 @@ import (
 	"github.com/flext/flexcore/shared/errors"
 )
 
+const (
+	// Default monitoring intervals
+	defaultMetricsIntervalSeconds  = 10
+	defaultHealthIntervalSeconds   = 30
+	defaultResourceIntervalSeconds = 5
+
+	// Memory and system constants
+	alertChannelBufferSize = 100
+	bytesToMB              = 1024
+	gcMaskForRing          = 255
+	nanosToMillis          = 1000000
+)
+
 // Monitor provides real-time system monitoring
 type Monitor struct {
 	mu             sync.RWMutex
+	config         MonitorConfig
 	metrics        *MetricsCollector
 	tracer         *Tracer
 	healthCheckers map[string]HealthChecker
 	alerts         []Alert
-	config         MonitorConfig
-	running        bool
+	subscribers    []MonitorSubscriber
 	stopCh         chan struct{}
 	alertCh        chan Alert
-	subscribers    []MonitorSubscriber
+	running        bool
 }
 
 // MonitorConfig configures the monitor
@@ -57,10 +70,10 @@ type Alert struct {
 	Severity   AlertSeverity          `json:"severity"`
 	Title      string                 `json:"title"`
 	Message    string                 `json:"message"`
-	Timestamp  time.Time              `json:"timestamp"`
 	Metadata   map[string]interface{} `json:"metadata"`
-	Resolved   bool                   `json:"resolved"`
 	ResolvedAt *time.Time             `json:"resolved_at,omitempty"`
+	Timestamp  time.Time              `json:"timestamp"`
+	Resolved   bool                   `json:"resolved"`
 }
 
 // AlertType represents the type of alert
@@ -122,13 +135,13 @@ type SystemMetrics struct {
 // NewMonitor creates a new monitor
 func NewMonitor(metrics *MetricsCollector, tracer *Tracer, config MonitorConfig) *Monitor {
 	if config.MetricsInterval == 0 {
-		config.MetricsInterval = 10 * time.Second
+		config.MetricsInterval = defaultMetricsIntervalSeconds * time.Second
 	}
 	if config.HealthInterval == 0 {
-		config.HealthInterval = 30 * time.Second
+		config.HealthInterval = defaultHealthIntervalSeconds * time.Second
 	}
 	if config.ResourceInterval == 0 {
-		config.ResourceInterval = 5 * time.Second
+		config.ResourceInterval = defaultResourceIntervalSeconds * time.Second
 	}
 	if config.MaxAlerts == 0 {
 		config.MaxAlerts = 1000
@@ -158,7 +171,7 @@ func NewMonitor(metrics *MetricsCollector, tracer *Tracer, config MonitorConfig)
 		alerts:         make([]Alert, 0),
 		config:         config,
 		stopCh:         make(chan struct{}),
-		alertCh:        make(chan Alert, 100),
+		alertCh:        make(chan Alert, alertChannelBufferSize),
 		subscribers:    make([]MonitorSubscriber, 0),
 	}
 }
@@ -301,10 +314,10 @@ func (m *Monitor) GetSystemMetrics() SystemMetrics {
 
 	return SystemMetrics{
 		CPUPercent: 0.0, // Would need additional CPU monitoring
-		MemoryMB:   float64(memStats.Alloc) / 1024 / 1024,
+		MemoryMB:   float64(memStats.Alloc) / bytesToMB / bytesToMB,
 		Goroutines: runtime.NumGoroutine(),
-		HeapMB:     float64(memStats.HeapAlloc) / 1024 / 1024,
-		GCPauseMS:  float64(memStats.PauseNs[(memStats.NumGC+255)%256]) / 1000000,
+		HeapMB:     float64(memStats.HeapAlloc) / bytesToMB / bytesToMB,
+		GCPauseMS:  float64(memStats.PauseNs[(memStats.NumGC+gcMaskForRing)%256]) / nanosToMillis,
 		Uptime:     time.Since(time.Now()), // Would track actual uptime
 	}
 }

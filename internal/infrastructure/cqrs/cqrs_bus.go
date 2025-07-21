@@ -13,6 +13,13 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// Status constants
+const (
+	StatusSuccess        = "success"
+	StatusFailed         = "failed"
+	percentageMultiplier = 100 // For converting ratios to percentages
+)
+
 // Command represents a command in the CQRS pattern
 type Command interface {
 	CommandID() string
@@ -227,15 +234,15 @@ func (bus *CQRSBus) SendCommand(ctx context.Context, command Command) (*CommandR
 	bus.mu.RUnlock()
 
 	if !exists {
-		result.Status = "failed"
+		result.Status = StatusFailed
 		result.Error = fmt.Sprintf("no handler found for command type: %s", command.CommandType())
 		result.Duration = time.Since(startTime)
-		return result, fmt.Errorf(result.Error)
+		return result, fmt.Errorf("%s", result.Error)
 	}
 
 	// Store command in write database
 	if err := bus.storeCommand(command); err != nil {
-		result.Status = "failed"
+		result.Status = StatusFailed
 		result.Error = fmt.Sprintf("failed to store command: %v", err)
 		result.Duration = time.Since(startTime)
 		return result, err
@@ -246,18 +253,27 @@ func (bus *CQRSBus) SendCommand(ctx context.Context, command Command) (*CommandR
 	result.Duration = time.Since(startTime)
 
 	if err != nil {
-		result.Status = "failed"
+		result.Status = StatusFailed
 		result.Error = err.Error()
-		bus.updateCommandStatus(command.CommandID(), "failed", err.Error(), "", result.Duration)
+		if updateErr := bus.updateCommandStatus(
+			command.CommandID(), StatusFailed, err.Error(), "", result.Duration,
+		); updateErr != nil {
+			log.Printf("Failed to update command status: %v", updateErr)
+		}
 	} else {
-		result.Status = "success"
-		bus.updateCommandStatus(command.CommandID(), "success", "", "", result.Duration)
+		result.Status = StatusSuccess
+		if updateErr := bus.updateCommandStatus(
+			command.CommandID(), StatusSuccess, "", "", result.Duration,
+		); updateErr != nil {
+			log.Printf("Failed to update command status: %v", updateErr)
+		}
 	}
 
 	// Update metrics
 	bus.updateCommandMetrics(command.CommandType(), result.Status, result.Duration)
 
-	log.Printf("Command executed: %s (%s) - %s in %v", command.CommandType(), command.CommandID(), result.Status, result.Duration)
+	log.Printf("Command executed: %s (%s) - %s in %v",
+		command.CommandType(), command.CommandID(), result.Status, result.Duration)
 	return result, err
 }
 
@@ -292,27 +308,31 @@ func (bus *CQRSBus) SendQuery(ctx context.Context, query Query) (*QueryResult, e
 	result.Data = data
 
 	// Determine count
-	if dataSlice, ok := data.([]interface{}); ok {
-		result.Count = len(dataSlice)
-	} else if dataMap, ok := data.(map[string]interface{}); ok {
-		if items, ok := dataMap["items"]; ok {
+	switch v := data.(type) {
+	case []interface{}:
+		result.Count = len(v)
+	case map[string]interface{}:
+		if items, ok := v["items"]; ok {
 			if itemsSlice, ok := items.([]interface{}); ok {
 				result.Count = len(itemsSlice)
 			}
 		} else {
 			result.Count = 1
 		}
-	} else {
+	default:
 		result.Count = 1
 	}
 
 	// Store query result
-	bus.storeQueryResult(query, result)
+	if storeErr := bus.storeQueryResult(query, result); storeErr != nil {
+		log.Printf("Failed to store query result: %v", storeErr)
+	}
 
 	// Update metrics
 	bus.updateQueryMetrics(query.QueryType(), result.Duration)
 
-	log.Printf("Query executed: %s (%s) - %d results in %v", query.QueryType(), query.QueryID(), result.Count, result.Duration)
+	log.Printf("Query executed: %s (%s) - %d results in %v",
+		query.QueryType(), query.QueryID(), result.Count, result.Duration)
 	return result, nil
 }
 
@@ -344,14 +364,14 @@ func (bus *CQRSBus) storeCommand(command Command) error {
 	return err
 }
 
-func (bus *CQRSBus) updateCommandStatus(commandID, status, error, result string, duration time.Duration) error {
+func (bus *CQRSBus) updateCommandStatus(commandID, status, errorMsg, result string, duration time.Duration) error {
 	query := `
 	UPDATE commands
 	SET status = ?, error = ?, result = ?, executed_at = ?, duration_ms = ?
 	WHERE id = ?
 	`
 
-	_, err := bus.writeDB.Exec(query, status, error, result, time.Now(), duration.Milliseconds(), commandID)
+	_, err := bus.writeDB.Exec(query, status, errorMsg, result, time.Now(), duration.Milliseconds(), commandID)
 	return err
 }
 
@@ -394,7 +414,7 @@ func (bus *CQRSBus) updateCommandMetrics(commandType, status string, duration ti
 	}
 
 	metrics.TotalExecuted++
-	if status == "success" {
+	if status == StatusSuccess {
 		metrics.TotalSucceeded++
 	} else {
 		metrics.TotalFailed++
@@ -404,7 +424,9 @@ func (bus *CQRSBus) updateCommandMetrics(commandType, status string, duration ti
 	if metrics.TotalExecuted == 1 {
 		metrics.AverageLatency = duration
 	} else {
-		metrics.AverageLatency = (metrics.AverageLatency*time.Duration(metrics.TotalExecuted-1) + duration) / time.Duration(metrics.TotalExecuted)
+		oldWeight := metrics.AverageLatency * time.Duration(metrics.TotalExecuted-1)
+		newTotal := time.Duration(metrics.TotalExecuted)
+		metrics.AverageLatency = (oldWeight + duration) / newTotal
 	}
 
 	metrics.LastExecuted = time.Now()
@@ -425,7 +447,9 @@ func (bus *CQRSBus) updateQueryMetrics(queryType string, duration time.Duration)
 	if metrics.TotalExecuted == 1 {
 		metrics.AverageLatency = duration
 	} else {
-		metrics.AverageLatency = (metrics.AverageLatency*time.Duration(metrics.TotalExecuted-1) + duration) / time.Duration(metrics.TotalExecuted)
+		oldWeight := metrics.AverageLatency * time.Duration(metrics.TotalExecuted-1)
+		newTotal := time.Duration(metrics.TotalExecuted)
+		metrics.AverageLatency = (oldWeight + duration) / newTotal
 	}
 
 	metrics.LastExecuted = time.Now()
@@ -468,12 +492,12 @@ func (bus *CQRSBus) GetCQRSStats() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	err = bus.writeDB.QueryRow("SELECT COUNT(*) FROM commands WHERE status = 'success'").Scan(&successfulCommands)
+	err = bus.writeDB.QueryRow("SELECT COUNT(*) FROM commands WHERE status = ?", StatusSuccess).Scan(&successfulCommands)
 	if err != nil {
 		return nil, err
 	}
 
-	err = bus.writeDB.QueryRow("SELECT COUNT(*) FROM commands WHERE status = 'failed'").Scan(&failedCommands)
+	err = bus.writeDB.QueryRow("SELECT COUNT(*) FROM commands WHERE status = ?", StatusFailed).Scan(&failedCommands)
 	if err != nil {
 		return nil, err
 	}
@@ -486,7 +510,7 @@ func (bus *CQRSBus) GetCQRSStats() (map[string]interface{}, error) {
 			if totalCommands == 0 {
 				return 0
 			}
-			return float64(successfulCommands) / float64(totalCommands) * 100
+			return float64(successfulCommands) / float64(totalCommands) * percentageMultiplier
 		}(),
 	}
 
@@ -525,25 +549,29 @@ func (bus *CQRSBus) UpdateProjection(projectionType, projectionID string, data i
 	`
 
 	now := time.Now()
-	_, err = bus.readDB.Exec(query, projectionID, projectionType, string(dataJSON), version, projectionID, now, now)
+	_, err = bus.readDB.Exec(query, projectionID, projectionType, string(dataJSON),
+		version, projectionID, now, now)
 
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Projection updated: %s/%s (version %d)", projectionType, projectionID, version)
+	log.Printf("Projection updated: %s/%s (version %d)",
+		projectionType, projectionID, version)
 	return nil
 }
 
 // GetProjection retrieves a read-side projection
 func (bus *CQRSBus) GetProjection(projectionID string) (map[string]interface{}, error) {
-	query := `SELECT type, data, version, created_at, updated_at FROM projections WHERE id = ?`
+	query := `SELECT type, data, version, created_at, updated_at 
+		FROM projections WHERE id = ?`
 
 	var projectionType, dataJSON string
 	var version int
 	var createdAt, updatedAt time.Time
 
-	err := bus.readDB.QueryRow(query, projectionID).Scan(&projectionType, &dataJSON, &version, &createdAt, &updatedAt)
+	err := bus.readDB.QueryRow(query, projectionID).Scan(&projectionType, &dataJSON,
+		&version, &createdAt, &updatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}

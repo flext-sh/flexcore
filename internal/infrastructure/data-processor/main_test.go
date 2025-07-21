@@ -34,10 +34,10 @@ func TestDataProcessor_Initialize(t *testing.T) {
 		{
 			name: "config with processing options",
 			config: map[string]interface{}{
-				"mode":         "filter",
-				"batch_size":   100,
-				"timeout":      30,
-				"enable_cache": true,
+				"mode":          "filter",
+				"batch_size":    100,
+				"timeout":       30,
+				"enable_cache":  true,
 				"output_format": "json",
 			},
 			wantErr: false,
@@ -480,10 +480,10 @@ func TestDataProcessor_ConfigurationHandling(t *testing.T) {
 		ctx := context.Background()
 
 		complexConfig := map[string]interface{}{
-			"mode":         "transform",
-			"batch_size":   500,
-			"timeout":      60,
-			"enable_cache": true,
+			"mode":          "transform",
+			"batch_size":    500,
+			"timeout":       60,
+			"enable_cache":  true,
 			"output_format": "json",
 			"filters": map[string]interface{}{
 				"include_types": []string{"important", "critical"},
@@ -663,7 +663,7 @@ func BenchmarkDataProcessor_Execute(b *testing.B) {
 			"type":      "performance_test",
 			"timestamp": time.Now().Unix(),
 			"metadata": map[string]interface{}{
-				"source": "benchmark",
+				"source":  "benchmark",
 				"version": "1.0",
 			},
 		},

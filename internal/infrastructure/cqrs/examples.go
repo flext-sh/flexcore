@@ -4,8 +4,9 @@ package cqrs
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Example Commands
@@ -162,6 +163,13 @@ func (h *PipelineCommandHandler) CanHandle(commandType string) bool {
 }
 
 func (h *PipelineCommandHandler) handleCreatePipeline(ctx context.Context, cmd *CreatePipelineCommand) error {
+	// Check context cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Simulate pipeline creation
 	pipelineData := map[string]interface{}{
 		"id":          cmd.AggregateID(),
@@ -181,7 +189,16 @@ func (h *PipelineCommandHandler) handleCreatePipeline(ctx context.Context, cmd *
 	return nil
 }
 
-func (h *PipelineCommandHandler) handleUpdatePipelineStatus(ctx context.Context, cmd *UpdatePipelineStatusCommand) error {
+func (h *PipelineCommandHandler) handleUpdatePipelineStatus(
+	ctx context.Context, cmd *UpdatePipelineStatusCommand,
+) error {
+	// Check context cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Get existing projection
 	projection, err := h.cqrsBus.GetProjection(cmd.AggregateID())
 	if err != nil {
@@ -193,12 +210,18 @@ func (h *PipelineCommandHandler) handleUpdatePipelineStatus(ctx context.Context,
 	}
 
 	// Update pipeline data
-	pipelineData := projection["data"].(map[string]interface{})
+	pipelineData, ok := projection["data"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid pipeline data format")
+	}
 	pipelineData["status"] = cmd.Status
 	pipelineData["status_message"] = cmd.Message
 	pipelineData["updated_at"] = time.Now()
 
-	currentVersion := projection["version"].(int)
+	currentVersion, ok := projection["version"].(int)
+	if !ok {
+		return fmt.Errorf("invalid pipeline version format")
+	}
 	newVersion := currentVersion + 1
 
 	// Update projection
@@ -235,6 +258,13 @@ func (h *PipelineQueryHandler) CanHandle(queryType string) bool {
 }
 
 func (h *PipelineQueryHandler) handleGetPipeline(ctx context.Context, query *GetPipelineQuery) (interface{}, error) {
+	// Check context cancellation
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	projection, err := h.cqrsBus.GetProjection(query.PipelineID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pipeline: %w", err)
@@ -247,7 +277,16 @@ func (h *PipelineQueryHandler) handleGetPipeline(ctx context.Context, query *Get
 	return projection, nil
 }
 
-func (h *PipelineQueryHandler) handleListPipelines(ctx context.Context, query *ListPipelinesQuery) (interface{}, error) {
+func (h *PipelineQueryHandler) handleListPipelines(
+	ctx context.Context, query *ListPipelinesQuery,
+) (interface{}, error) {
+	// Check context cancellation
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	// In a real implementation, this would query the read database
 	// For now, simulate a list of pipelines
 	pipelines := []map[string]interface{}{

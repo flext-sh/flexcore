@@ -57,6 +57,12 @@ type DataProcessorPlugin interface {
 
 // Initialize the plugin with configuration
 func (sp *SimpleProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[SimpleProcessor] Initializing with config: %+v", config)
 	sp.config = config
 	sp.stats = ProcessingStats{
@@ -67,6 +73,12 @@ func (sp *SimpleProcessor) Initialize(ctx context.Context, config map[string]int
 
 // Execute processes data
 func (sp *SimpleProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	startTime := time.Now()
 	defer func() {
 		sp.stats.DurationMs = time.Since(startTime).Milliseconds()
@@ -133,6 +145,12 @@ func (sp *SimpleProcessor) GetInfo() PluginInfo {
 
 // HealthCheck verifies plugin health
 func (sp *SimpleProcessor) HealthCheck(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[SimpleProcessor] Health check - processed %d records", sp.stats.TotalRecords)
 	return nil
 }
