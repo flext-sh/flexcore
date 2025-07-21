@@ -1,43 +1,26 @@
 [build-system]
-requires = ["poetry-core>=1.9.0"]
+requires = [ "poetry-core>=1.9.0",]
 build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "flexcore"
 version = "0.7.0"
 description = "FlexCore - High-Performance Go-Python Hybrid Enterprise Framework"
-authors = [{name = "FLEXT Team", email = "team@flext.sh"}]
-maintainers = [{name = "FLEXT Team", email = "team@flext.sh"}]
-license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-dependencies = [
-    # Go-Python Hybrid Framework specific dependencies
-    "pydantic>=2.11.0",
-    "pydantic-settings>=2.7.0",
-    "structlog>=25.0.0",
-    "click>=8.1.7",
-    "python-dateutil>=2.9.0",
-    "grpcio>=1.68.0",
-    "grpcio-tools>=1.68.0",
-    "protobuf>=5.28.0",
-    "httpx>=0.28.0",
-    "orjson>=3.10.0",
-]
-keywords = ["flexcore", "go", "python", "hybrid", "framework", "enterprise"]
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Go",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Software Development :: Libraries :: Application Frameworks",
-    "Framework :: AsyncIO",
-    "Typing :: Typed",
-]
+keywords = [ "flext", "enterprise", "async", "typed", "legacy", "compatibility",]
+classifiers = [ "Development Status :: 5 - Production/Stable", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.13", "Programming Language :: Python :: 3 :: Only", "Topic :: Software Development :: Libraries :: Python Modules", "Typing :: Typed",]
+dependencies = []
+[[project.authors]]
+name = "FLEXT Team"
+email = "team@flext.sh"
+
+[[project.maintainers]]
+name = "FLEXT Team"
+email = "team@flext.sh"
+
+[project.license]
+text = "MIT"
 
 [project.urls]
 Homepage = "https://github.com/flext-sh/flext"
@@ -48,16 +31,114 @@ Documentation = "https://github.com/flext-sh/flext/blob/main/README.md"
 flexcore = "flexcore.cli:main"
 flexcore-server = "flexcore.server:main"
 
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+fix = true
+show-fixes = true
+respect-gitignore = true
+src = [ "src", "tests",]
+extend-exclude = [ "__pycache__", ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv", "venv", "build", "dist", "htmlcov",]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+show_error_context = true
+pretty = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+ignore_missing_imports = false
+no_implicit_reexport = true
+files = [ "src", "tests",]
+plugins = [ "pydantic.mypy",]
+exclude = [ "build", "dist", ".venv", ".mypy_cache",]
+
+[tool.bandit]
+exclude_dirs = [ "tests", "build", "dist",]
+skips = [ "B101", "B601",]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
 [tool.poetry]
-packages = [{include = "flexcore", from = "src"}]
+[[tool.poetry.packages]]
+include = "flexcore"
+from = "src"
+
+[tool.deptry]
+known_first_party = [ "flexcore",]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+asyncio_mode = "auto"
+addopts = [ "-ra", "--strict-markers", "--strict-config", "--cov=flexcore", "--cov-branch", "--cov-report=term-missing:skip-covered", "--cov-report=html:reports/coverage", "--cov-report=xml:reports/coverage.xml", "--cov-fail-under=90", "--maxfail=1", "--tb=short",]
+testpaths = [ "tests",]
+markers = [ "unit: Unit tests", "integration: Integration tests", "slow: Slow tests", "smoke: Smoke tests", "e2e: End-to-end tests",]
+filterwarnings = [ "error", "ignore::UserWarning", "ignore::DeprecationWarning",]
+
+[tool.ruff.lint]
+select = [ "ALL",]
+ignore = [ "COM812", "D203", "D213", "ISC001", "ANN401", "ARG001", "ARG002", "BLE001", "C901", "D102", "D103", "D105", "D107", "D401", "DTZ001", "DTZ005", "E401", "E501", "EM101", "EM102", "ERA001", "EXE001", "F401", "F823", "FBT001", "FBT002", "FBT003", "FIX002", "G004", "PLC0415", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004", "PLW0603", "PTH118", "PTH123", "RUF001", "S103", "S104", "S105", "S106", "S107", "S603", "S607", "SIM102", "TD002", "TD003", "TRY003", "TRY203", "TRY300", "TRY301", "TRY401",]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.coverage.run]
+source = [ "src",]
+branch = true
+omit = [ "*/tests/*", "*/test_*", "*/__pycache__/*", "*/venv/*", "*/.venv/*",]
+
+[tool.coverage.report]
+exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if settings.DEBUG", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "class .*\\bProtocol\\):", "@(abc\\.)?abstractmethod",]
+
+[tool.coverage.html]
+directory = "reports/coverage"
+
+[tool.coverage.xml]
+output = "reports/coverage.xml"
 
 [tool.poetry.dependencies]
 python = ">=3.13,<3.14"
 
-# All development dependencies managed by workspace root pyproject.toml
-# All tool configurations inherited from workspace root pyproject.toml
 
-# Project-specific tool configurations
+[tool.ruff.lint.isort]
+known-first-party = [ "flext",]
+force-single-line = false
+split-on-trailing-comma = true
+combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = [ "S101", "S103", "S104", "S105", "S106", "S107", "PLR2004", "ARG", "SLF001", "PLC0415",]
+"**/scripts/**" = [ "T201", "S603", "S607", "ANN",]
+"**/__init__.py" = [ "F401",]
+"**/proto/*_pb2.py" = [ "ALL",]
+"**/proto/*_pb2_grpc.py" = [ "ALL",]
+"**/*_pb2.py" = [ "ALL",]
+"**/*_pb2_grpc.py" = [ "ALL",]
+"**/generated/**/*.py" = [ "ALL",]
+
+[tool.poetry.dependencies.flext-core]
+path = "../flext-core"
+develop = true
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.12.3"
@@ -65,24 +146,12 @@ black = "^25.1.0"
 isort = "^6.0.1"
 mypy = "^1.13.0"
 pylint = "^3.3.0"
+pre-commit = "^4.0.1"
 vulture = "^2.13"
 radon = "^6.0.1"
-pre-commit = "^4.0.1"
 codespell = "^2.3.0"
 pyupgrade = "^3.19.0"
 autoflake = "^2.3.1"
-sphinx = "^8.2.3"
-sphinx-rtd-theme = "^3.0.2"
-myst-parser = "^4.0.1"
-mkdocs = "^1.6.1"
-mkdocs-material = "^9.6.15"
-mkdocstrings = "^0.27.0"
-mkdocs-gen-files = "^0.5.0"
-mkdocs-literate-nav = "^0.6.0"
-ipython = "^9.4.0"
-jupyter = "^1.1.1"
-rich-traceback = "^1.0.3"
-
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.4.0"
@@ -102,7 +171,6 @@ hypothesis = "^6.125.0"
 factory-boy = "^3.3.1"
 faker = "^37.4.0"
 
-
 [tool.poetry.group.typings.dependencies]
 types-python-dateutil = "^2.9.0"
 types-pyyaml = "^6.0.12"
@@ -112,16 +180,6 @@ types-requests = "^2.32.4"
 types-redis = "^4.6.0"
 types-psutil = "^7.0.0"
 
-
 [tool.poetry.group.security.dependencies]
 bandit = "^1.8.0"
 pip-audit = "^2.7.3"
-
-[tool.pytest.ini_options]
-markers = [
-    "go: marks tests as Go integration tests",
-    "grpc: marks tests as gRPC tests",
-    "hybrid: marks tests as Go-Python hybrid tests",
-    "performance: marks tests as performance tests",
-    "requires_go: tests that need Go runtime",
-]

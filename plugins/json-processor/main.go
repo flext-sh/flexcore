@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/rpc"
 	"os"
@@ -53,6 +54,12 @@ type DataProcessorPlugin interface {
 
 // Initialize the plugin with configuration
 func (jp *JSONProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[JSONProcessor] Initializing with config: %+v", config)
 	jp.config = config
 	jp.stats = plugin.ProcessingStats{
@@ -63,6 +70,12 @@ func (jp *JSONProcessor) Initialize(ctx context.Context, config map[string]inter
 
 // Execute processes JSON data
 func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	startTime := time.Now()
 	defer func() {
 		jp.stats.DurationMs = time.Since(startTime).Milliseconds()
@@ -77,29 +90,7 @@ func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface
 	result["processed_by"] = "FlexCore JSONProcessor v1.0"
 
 	// Process the input data
-	if data, ok := input["data"]; ok {
-		transformed, err := jp.transformData(data)
-		if err != nil {
-			result["error"] = err.Error()
-			result["data"] = data
-		} else {
-			result["data"] = transformed
-			jp.stats.ProcessedOK++
-		}
-	} else if jsonStr, ok := input["json_string"].(string); ok {
-		// Parse JSON string
-		parsed, err := jp.parseJSONString(jsonStr)
-		if err != nil {
-			result["error"] = err.Error()
-			result["data"] = jsonStr
-		} else {
-			result["data"] = parsed
-			jp.stats.ProcessedOK++
-		}
-	} else {
-		// Process raw input
-		result["data"] = jp.processRawData(input)
-	}
+	jp.processInputData(input, result)
 
 	// Add processing stats
 	result["stats"] = map[string]interface{}{
@@ -113,6 +104,46 @@ func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface
 	jp.stats.TotalRecords++
 	jp.stats.ProcessedOK++
 	return result, nil
+}
+
+// processInputData handles different types of input data
+func (jp *JSONProcessor) processInputData(input, result map[string]interface{}) {
+	if data, ok := input["data"]; ok {
+		jp.processDataField(data, result)
+	} else if jsonStr, ok := input["json_string"].(string); ok {
+		jp.processJSONString(jsonStr, result)
+	} else {
+		jp.processRawInput(input, result)
+	}
+}
+
+// processDataField processes the data field
+func (jp *JSONProcessor) processDataField(data interface{}, result map[string]interface{}) {
+	transformed, err := jp.transformData(data)
+	if err != nil {
+		result["error"] = err.Error()
+		result["data"] = data
+	} else {
+		result["data"] = transformed
+		jp.stats.ProcessedOK++
+	}
+}
+
+// processJSONString processes JSON string input
+func (jp *JSONProcessor) processJSONString(jsonStr string, result map[string]interface{}) {
+	parsed, err := jp.parseJSONString(jsonStr)
+	if err != nil {
+		result["error"] = err.Error()
+		result["data"] = jsonStr
+	} else {
+		result["data"] = parsed
+		jp.stats.ProcessedOK++
+	}
+}
+
+// processRawInput processes raw input data
+func (jp *JSONProcessor) processRawInput(input, result map[string]interface{}) {
+	result["data"] = jp.processRawData(input)
 }
 
 // transformData applies JSON transformations
@@ -318,6 +349,12 @@ func (jp *JSONProcessor) GetInfo() plugin.PluginInfo {
 
 // HealthCheck verifies plugin health
 func (jp *JSONProcessor) HealthCheck(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[JSONProcessor] Health check - processed %d records", jp.stats.TotalRecords)
 	return nil
 }
@@ -328,8 +365,13 @@ func (jp *JSONProcessor) Cleanup() error {
 
 	// Save statistics to file (optional)
 	if statsFile, ok := jp.config["stats_file"].(string); ok {
-		data, _ := json.MarshalIndent(jp.stats, "", "  ")
-		os.WriteFile(statsFile, data, 0644)
+		data, err := json.MarshalIndent(jp.stats, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal stats: %w", err)
+		}
+		if err := os.WriteFile(statsFile, data, 0o644); err != nil {
+			return fmt.Errorf("failed to write stats file: %w", err)
+		}
 	}
 
 	return nil
@@ -355,7 +397,7 @@ func (rpc *JSONProcessorRPC) Execute(args map[string]interface{}, resp *map[stri
 	return nil
 }
 
-func (rpc *JSONProcessorRPC) GetInfo(args interface{}, resp *plugin.PluginInfo) error {
+func (rpc *JSONProcessorRPC) GetInfo(_ interface{}, resp *plugin.PluginInfo) error {
 	*resp = rpc.Impl.GetInfo()
 	return nil
 }

@@ -9,6 +9,21 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	// Default configuration constants
+	defaultAppPort            = 8080
+	defaultDatabasePort       = 5432
+	defaultMaxOpenConns       = 25
+	defaultMaxIdleConns       = 5
+	defaultMaxLifetimeMinutes = 5
+
+	// Server timeout constants
+	defaultServerPort          = 8080
+	defaultReadTimeoutSeconds  = 15
+	defaultWriteTimeoutSeconds = 15
+	defaultIdleTimeoutSeconds  = 60
+)
+
 // Global Viper instance
 var V *viper.Viper
 
@@ -98,27 +113,27 @@ func setDefaults() {
 	V.SetDefault("app.version", "1.0.0")
 	V.SetDefault("app.environment", "development")
 	V.SetDefault("app.debug", true)
-	V.SetDefault("app.port", 8080)
+	V.SetDefault("app.port", defaultAppPort)
 
 	// Database defaults
 	V.SetDefault("database.type", "memory")
 	V.SetDefault("database.host", "localhost")
-	V.SetDefault("database.port", 5432)
+	V.SetDefault("database.port", defaultDatabasePort)
 	V.SetDefault("database.name", "flexcore")
 	V.SetDefault("database.user", "postgres")
 	V.SetDefault("database.password", "")
 	V.SetDefault("database.ssl_mode", "disable")
-	V.SetDefault("database.max_open_conns", 25)
-	V.SetDefault("database.max_idle_conns", 5)
-	V.SetDefault("database.max_lifetime", 5*time.Minute)
+	V.SetDefault("database.max_open_conns", defaultMaxOpenConns)
+	V.SetDefault("database.max_idle_conns", defaultMaxIdleConns)
+	V.SetDefault("database.max_lifetime", defaultMaxLifetimeMinutes*time.Minute)
 	V.SetDefault("database.auto_migrate", true)
 
 	// Server defaults
 	V.SetDefault("server.host", "0.0.0.0")
-	V.SetDefault("server.port", 8080)
-	V.SetDefault("server.read_timeout", 15*time.Second)
-	V.SetDefault("server.write_timeout", 15*time.Second)
-	V.SetDefault("server.idle_timeout", 60*time.Second)
+	V.SetDefault("server.port", defaultServerPort)
+	V.SetDefault("server.read_timeout", defaultReadTimeoutSeconds*time.Second)
+	V.SetDefault("server.write_timeout", defaultWriteTimeoutSeconds*time.Second)
+	V.SetDefault("server.idle_timeout", defaultIdleTimeoutSeconds*time.Second)
 
 	// Logging defaults
 	V.SetDefault("logging.level", "info")

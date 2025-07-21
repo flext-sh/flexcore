@@ -179,7 +179,8 @@ func (es *EventStore) AppendEvent(event DomainEvent) error {
 		return fmt.Errorf("failed to insert event: %w", err)
 	}
 
-	log.Printf("Event appended: %s (aggregate: %s, version: %d)", event.EventType(), event.AggregateID(), event.EventVersion())
+	log.Printf("Event appended: %s (aggregate: %s, version: %d)",
+		event.EventType(), event.AggregateID(), event.EventVersion())
 	return nil
 }
 
@@ -267,35 +268,9 @@ func (es *EventStore) GetEventsFromVersion(aggregateID string, fromVersion int) 
 
 	var events []*Event
 
-	for rows.Next() {
-		var event Event
-		var dataJSON, metadataJSON string
-
-		err := rows.Scan(
-			&event.ID,
-			&event.Type,
-			&event.AggregateID,
-			&event.AggregateType,
-			&event.Version,
-			&dataJSON,
-			&metadataJSON,
-			&event.OccurredAt,
-			&event.CreatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan event: %w", err)
-		}
-
-		// Deserialize data and metadata
-		if err := json.Unmarshal([]byte(dataJSON), &event.Data); err != nil {
-			return nil, fmt.Errorf("failed to deserialize event data: %w", err)
-		}
-
-		if err := json.Unmarshal([]byte(metadataJSON), &event.Metadata); err != nil {
-			return nil, fmt.Errorf("failed to deserialize metadata: %w", err)
-		}
-
-		events = append(events, &event)
+	events, err = es.scanEventsFromRows(rows)
+	if err != nil {
+		return nil, err
 	}
 
 	return events, nil
@@ -414,6 +389,30 @@ func (es *EventStore) GetEventsByType(eventType string, fromTime, toTime *time.T
 
 	var events []*Event
 
+	events, err = es.scanEventsFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+func (es *EventStore) getCurrentVersion(aggregateID string) (int, error) {
+	query := `SELECT COALESCE(MAX(version), 0) FROM events WHERE aggregate_id = ?`
+
+	var version int
+	err := es.db.QueryRow(query, aggregateID).Scan(&version)
+	if err != nil {
+		return 0, err
+	}
+
+	return version, nil
+}
+
+// scanEventsFromRows is a helper method to scan events from database rows
+func (es *EventStore) scanEventsFromRows(rows *sql.Rows) ([]*Event, error) {
+	var events []*Event
+
 	for rows.Next() {
 		var event Event
 		var dataJSON, metadataJSON string
@@ -446,18 +445,6 @@ func (es *EventStore) GetEventsByType(eventType string, fromTime, toTime *time.T
 	}
 
 	return events, nil
-}
-
-func (es *EventStore) getCurrentVersion(aggregateID string) (int, error) {
-	query := `SELECT COALESCE(MAX(version), 0) FROM events WHERE aggregate_id = ?`
-
-	var version int
-	err := es.db.QueryRow(query, aggregateID).Scan(&version)
-	if err != nil {
-		return 0, err
-	}
-
-	return version, nil
 }
 
 // GetStats returns statistics about the event store

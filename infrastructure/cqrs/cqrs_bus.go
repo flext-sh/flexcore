@@ -13,6 +13,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const (
+	percentageMultiplier = 100
+)
+
 // Command represents a command in the CQRS pattern
 type Command interface {
 	CommandID() string
@@ -248,10 +252,14 @@ func (bus *CQRSBus) SendCommand(ctx context.Context, command Command) (*CommandR
 	if err != nil {
 		result.Status = "failed"
 		result.Error = err.Error()
-		bus.updateCommandStatus(command.CommandID(), "failed", err.Error(), "", result.Duration)
+		if updateErr := bus.updateCommandStatus(command.CommandID(), "failed", err.Error(), "", result.Duration); updateErr != nil {
+			log.Printf("Failed to update command status: %v", updateErr)
+		}
 	} else {
 		result.Status = "success"
-		bus.updateCommandStatus(command.CommandID(), "success", "", "", result.Duration)
+		if updateErr := bus.updateCommandStatus(command.CommandID(), "success", "", "", result.Duration); updateErr != nil {
+			log.Printf("Failed to update command status: %v", updateErr)
+		}
 	}
 
 	// Update metrics
@@ -307,7 +315,9 @@ func (bus *CQRSBus) SendQuery(ctx context.Context, query Query) (*QueryResult, e
 	}
 
 	// Store query result
-	bus.storeQueryResult(query, result)
+	if storeErr := bus.storeQueryResult(query, result); storeErr != nil {
+		log.Printf("Failed to store query result: %v", storeErr)
+	}
 
 	// Update metrics
 	bus.updateQueryMetrics(query.QueryType(), result.Duration)
@@ -486,7 +496,7 @@ func (bus *CQRSBus) GetCQRSStats() (map[string]interface{}, error) {
 			if totalCommands == 0 {
 				return 0
 			}
-			return float64(successfulCommands) / float64(totalCommands) * 100
+			return float64(successfulCommands) / float64(totalCommands) * percentageMultiplier
 		}(),
 	}
 

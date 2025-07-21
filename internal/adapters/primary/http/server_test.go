@@ -68,7 +68,7 @@ func TestServer_HandleHealth(t *testing.T) {
 	cfg := setupTestConfig()
 	server := NewServer(cfg)
 
-	req := httptest.NewRequest("GET", "/health", nil)
+	req := httptest.NewRequest("GET", "/health", http.NoBody)
 	w := httptest.NewRecorder()
 
 	server.mux.ServeHTTP(w, req)
@@ -86,7 +86,7 @@ func TestServer_HandleRoot(t *testing.T) {
 	cfg := setupTestConfig()
 	server := NewServer(cfg)
 
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequest("GET", "/", http.NoBody)
 	w := httptest.NewRecorder()
 
 	server.mux.ServeHTTP(w, req)
@@ -105,7 +105,7 @@ func TestServer_HandleReady(t *testing.T) {
 	cfg := setupTestConfig()
 	server := NewServer(cfg)
 
-	req := httptest.NewRequest("GET", "/ready", nil)
+	req := httptest.NewRequest("GET", "/ready", http.NoBody)
 	w := httptest.NewRecorder()
 
 	server.mux.ServeHTTP(w, req)
@@ -123,7 +123,7 @@ func TestServer_HandlePipelinesList(t *testing.T) {
 	cfg := setupTestConfig()
 	server := NewServer(cfg)
 
-	req := httptest.NewRequest("GET", "/api/v1/pipelines", nil)
+	req := httptest.NewRequest("GET", "/api/v1/pipelines", http.NoBody)
 	w := httptest.NewRecorder()
 
 	server.mux.ServeHTTP(w, req)
@@ -188,7 +188,7 @@ func TestServer_MethodNotAllowed(t *testing.T) {
 	cfg := setupTestConfig()
 	server := NewServer(cfg)
 
-	req := httptest.NewRequest("DELETE", "/api/v1/pipelines", nil)
+	req := httptest.NewRequest("DELETE", "/api/v1/pipelines", http.NoBody)
 	w := httptest.NewRecorder()
 
 	server.mux.ServeHTTP(w, req)

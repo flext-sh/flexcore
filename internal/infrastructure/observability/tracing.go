@@ -13,6 +13,13 @@ import (
 	"github.com/flext/flexcore/shared/errors"
 )
 
+const (
+	// Tracing configuration constants
+	exportTimeoutSeconds = 5
+	traceIDBytes         = 16
+	spanIDBytes          = 8
+)
+
 // Tracer provides distributed tracing functionality
 type Tracer struct {
 	mu          sync.RWMutex
@@ -270,7 +277,7 @@ func (t *Tracer) GetAllSpans() []*Span {
 
 // exportSpan exports a span to all configured exporters
 func (t *Tracer) exportSpan(span *Span) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), exportTimeoutSeconds*time.Second)
 	defer cancel()
 
 	t.mu.RLock()
@@ -288,14 +295,14 @@ func (t *Tracer) exportSpan(span *Span) {
 
 // generateTraceID generates a new trace ID
 func (t *Tracer) generateTraceID() string {
-	bytes := make([]byte, 16)
+	bytes := make([]byte, traceIDBytes)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }
 
 // generateSpanID generates a new span ID
 func (t *Tracer) generateSpanID() string {
-	bytes := make([]byte, 8)
+	bytes := make([]byte, spanIDBytes)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }

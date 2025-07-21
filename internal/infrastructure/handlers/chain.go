@@ -11,6 +11,11 @@ import (
 	"github.com/flext/flexcore/shared/errors"
 )
 
+const (
+	// Cache configuration constants
+	defaultCacheTTLMinutes = 5
+)
+
 // Handler represents a request handler
 type Handler interface {
 	Handle(ctx context.Context, req Request) result.Result[Response]
@@ -391,7 +396,7 @@ func CacheMiddleware(cache Cache) Middleware {
 
 			// Cache successful responses
 			if result.IsSuccess() {
-				cache.Set(cacheKey, result.Value(), time.Minute*5)
+				cache.Set(cacheKey, result.Value(), time.Minute*defaultCacheTTLMinutes)
 			}
 
 			return result

@@ -126,7 +126,11 @@ func (q *QueryBuilder) Build() (string, []interface{}) {
 		whereClauses := make([]string, 0, len(q.where))
 		for _, clause := range q.where {
 			if clause.Operator == "IN" {
-				values := clause.Value.([]interface{})
+				values, ok := clause.Value.([]interface{})
+				if !ok {
+					// Log error and skip this clause
+					continue
+				}
 				placeholders := make([]string, len(values))
 				for i, v := range values {
 					placeholders[i] = fmt.Sprintf("$%d", argIndex)

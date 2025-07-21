@@ -101,10 +101,20 @@ func (s *Server) handlePipelines(w http.ResponseWriter, r *http.Request) {
 
 // listPipelines lists all pipelines
 func (s *Server) listPipelines(w http.ResponseWriter, r *http.Request) {
+	// Extract query parameters for filtering/pagination
+	limit := r.URL.Query().Get("limit")
+	offset := r.URL.Query().Get("offset")
+	filter := r.URL.Query().Get("filter")
+
 	response := map[string]interface{}{
 		"pipelines": []interface{}{},
 		"count":     0,
 		"timestamp": time.Now().Format(time.RFC3339),
+		"params": map[string]string{
+			"limit":  limit,
+			"offset": offset,
+			"filter": filter,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")

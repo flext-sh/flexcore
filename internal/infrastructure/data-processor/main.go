@@ -28,6 +28,12 @@ type PluginInfo = plugin.PluginInfo
 
 // Initialize the plugin with configuration
 func (dp *DataProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[DataProcessor] Initializing with config: %+v", config)
 
 	dp.config = config
@@ -45,6 +51,12 @@ func (dp *DataProcessor) Initialize(ctx context.Context, config map[string]inter
 
 // Execute processes data according to configuration
 func (dp *DataProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	startTime := time.Now()
 	defer func() {
 		dp.statistics.DurationMs = time.Since(startTime).Milliseconds()
@@ -123,6 +135,12 @@ func (dp *DataProcessor) GetInfo() PluginInfo {
 
 // HealthCheck verifies plugin health
 func (dp *DataProcessor) HealthCheck(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Check if we've processed anything recently
 	if !dp.statistics.EndTime.IsZero() {
 		timeSinceLastProcess := time.Since(dp.statistics.EndTime)

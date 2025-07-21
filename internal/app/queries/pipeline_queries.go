@@ -11,6 +11,11 @@ import (
 	"github.com/flext/flexcore/shared/errors"
 )
 
+const (
+	// Statistics estimation constants
+	averageExecutionTimeMinutes = 5
+)
+
 // PipelineRepository represents a repository for pipelines (read operations)
 type PipelineRepository interface {
 	FindByID(ctx context.Context, id entities.PipelineID) (*entities.Pipeline, error)
@@ -348,9 +353,9 @@ func (h *GetPipelineStatisticsQueryHandler) Handle(ctx context.Context, query Ge
 		RunningPipelines:     len(runningPipelines),
 		FailedPipelines:      len(failedPipelines),
 		CompletedPipelines:   len(completedPipelines),
-		PipelinesLastHour:    0,               // Would need time-based queries
-		PipelinesLastDay:     0,               // Would need time-based queries
-		AverageExecutionTime: time.Minute * 5, // Would need execution data
+		PipelinesLastHour:    0,                                         // Would need time-based queries
+		PipelinesLastDay:     0,                                         // Would need time-based queries
+		AverageExecutionTime: time.Minute * averageExecutionTimeMinutes, // Would need execution data
 	}
 
 	return result.Success(stats)

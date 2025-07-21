@@ -5,13 +5,20 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/rpc"
 	"os"
 	"time"
 
-	"github.com/flext/flexcore/pkg/plugin"
 	hashicorpPlugin "github.com/hashicorp/go-plugin"
+
+	"github.com/flext/flexcore/pkg/plugin"
+)
+
+const (
+	processorType   = "simple-processor"
+	defaultFileMode = 0o644
 )
 
 // init registers types for gob encoding/decoding
@@ -57,6 +64,12 @@ type DataProcessorPlugin interface {
 
 // Initialize the plugin with configuration
 func (sp *SimpleProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[SimpleProcessor] Initializing with config: %+v", config)
 	sp.config = config
 	sp.stats = ProcessingStats{
@@ -67,6 +80,12 @@ func (sp *SimpleProcessor) Initialize(ctx context.Context, config map[string]int
 
 // Execute processes data
 func (sp *SimpleProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	startTime := time.Now()
 	defer func() {
 		sp.stats.DurationMs = time.Since(startTime).Milliseconds()
@@ -76,7 +95,7 @@ func (sp *SimpleProcessor) Execute(ctx context.Context, input map[string]interfa
 	log.Printf("[SimpleProcessor] Processing input with %d keys", len(input))
 
 	result := make(map[string]interface{})
-	result["processor"] = "simple-processor"
+	result["processor"] = processorType
 	result["timestamp"] = time.Now().Unix()
 	result["processed_by"] = "FlexCore SimpleProcessor v1.0"
 
@@ -118,8 +137,8 @@ func (sp *SimpleProcessor) Execute(ctx context.Context, input map[string]interfa
 // GetInfo returns plugin metadata
 func (sp *SimpleProcessor) GetInfo() PluginInfo {
 	return PluginInfo{
-		ID:          "simple-processor",
-		Name:        "simple-processor",
+		ID:          processorType,
+		Name:        processorType,
 		Version:     "1.0.0",
 		Description: "Simple data processing plugin for FlexCore testing",
 		Author:      "FlexCore Team",
@@ -133,6 +152,12 @@ func (sp *SimpleProcessor) GetInfo() PluginInfo {
 
 // HealthCheck verifies plugin health
 func (sp *SimpleProcessor) HealthCheck(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[SimpleProcessor] Health check - processed %d records", sp.stats.TotalRecords)
 	return nil
 }
@@ -143,8 +168,13 @@ func (sp *SimpleProcessor) Cleanup() error {
 
 	// Save stats to file (optional)
 	if statsFile, ok := sp.config["stats_file"].(string); ok {
-		data, _ := json.MarshalIndent(sp.stats, "", "  ")
-		os.WriteFile(statsFile, data, 0644)
+		data, err := json.MarshalIndent(sp.stats, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal stats: %w", err)
+		}
+		if err := os.WriteFile(statsFile, data, defaultFileMode); err != nil {
+			return fmt.Errorf("failed to write stats file: %w", err)
+		}
 	}
 
 	return nil
@@ -159,7 +189,7 @@ func (sp *SimpleProcessor) processArray(data []interface{}) []interface{} {
 		// Simple processing: add metadata
 		if itemMap, ok := item.(map[string]interface{}); ok {
 			itemMap["_processed_at"] = time.Now().Unix()
-			itemMap["_processor"] = "simple-processor"
+			itemMap["_processor"] = processorType
 			processed = append(processed, itemMap)
 		} else {
 			processed = append(processed, item)
@@ -178,7 +208,7 @@ func (sp *SimpleProcessor) processMap(data map[string]interface{}) map[string]in
 
 	// Add metadata
 	processed["_processed_at"] = time.Now().Unix()
-	processed["_processor"] = "simple-processor"
+	processed["_processor"] = processorType
 
 	return processed
 }

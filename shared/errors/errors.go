@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+// Constants for caller depth
+const (
+	callerDepth = 2         // Number of stack frames to skip to get the actual caller
+	unknownFile = "unknown" // Default file name when caller cannot be determined
+)
+
 // FlexError represents a FlexCore error with context
 type FlexError struct {
 	message   string
@@ -47,7 +53,7 @@ func (e *FlexError) Location() string {
 
 // New creates a new FlexError
 func New(message string) *FlexError {
-	file, line := getCaller(2)
+	file, line := getCaller(callerDepth)
 	return &FlexError{
 		message: message,
 		file:    file,
@@ -57,7 +63,7 @@ func New(message string) *FlexError {
 
 // Newf creates a new FlexError with formatted message
 func Newf(format string, args ...interface{}) *FlexError {
-	file, line := getCaller(2)
+	file, line := getCaller(callerDepth)
 	return &FlexError{
 		message: fmt.Sprintf(format, args...),
 		file:    file,
@@ -71,7 +77,7 @@ func Wrap(err error, message string) *FlexError {
 		return nil
 	}
 
-	file, line := getCaller(2)
+	file, line := getCaller(callerDepth)
 	return &FlexError{
 		message: message,
 		cause:   err,
@@ -86,7 +92,7 @@ func Wrapf(err error, format string, args ...interface{}) *FlexError {
 		return nil
 	}
 
-	file, line := getCaller(2)
+	file, line := getCaller(callerDepth)
 	return &FlexError{
 		message: fmt.Sprintf(format, args...),
 		cause:   err,
@@ -108,10 +114,10 @@ func (e *FlexError) WithOperation(operation string) *FlexError {
 }
 
 // getCaller returns the file and line of the caller
-func getCaller(skip int) (string, int) {
+func getCaller(skip int) (file string, line int) {
 	_, file, line, ok := runtime.Caller(skip)
 	if !ok {
-		return "unknown", 0
+		return unknownFile, 0
 	}
 
 	// Extract just the filename

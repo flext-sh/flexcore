@@ -24,6 +24,11 @@ var (
 	CommitHash = "unknown"
 )
 
+// Server constants
+const (
+	shutdownTimeoutSeconds = 30
+)
+
 // CommandLineFlags represents command line flags
 type CommandLineFlags struct {
 	environment string
@@ -46,7 +51,7 @@ func parseFlags() CommandLineFlags {
 }
 
 // initializeApplication creates and configures the application
-func initializeApplication(ctx context.Context, flags CommandLineFlags) error {
+func initializeApplication(flags CommandLineFlags) error {
 	// Initialize configuration
 	if err := config.Initialize(); err != nil {
 		return fmt.Errorf("failed to initialize config: %w", err)
@@ -99,16 +104,30 @@ func main() {
 	}
 
 	if flags.version {
-		fmt.Printf("FlexCore %s (build %s, commit %s)\n", Version, BuildTime, CommitHash)
+		// Initialize basic logging for version output
+		if err := logging.Initialize("flexcore", "info"); err == nil {
+			logging.Logger.Info("FlexCore version info",
+				zap.String("version", Version),
+				zap.String("build_time", BuildTime),
+				zap.String("commit", CommitHash),
+			)
+		}
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := initializeApplication(ctx, flags); err != nil {
-		fmt.Printf("Failed to initialize application: %v\n", err)
-		os.Exit(1)
+	if err := initializeApplication(flags); err != nil {
+		// Try to log error properly, fallback to stderr if logging not initialized
+		if logging.Logger != nil {
+			logging.Logger.Fatal("Failed to initialize application", zap.Error(err))
+		} else {
+			// Use os.Stderr for critical error output
+			os.Stderr.WriteString("Failed to initialize application: " + err.Error() + "\n")
+			cancel()
+			return
+		}
 	}
 
 	setupGracefulShutdown(cancel)
@@ -148,7 +167,7 @@ func main() {
 	<-ctx.Done()
 
 	// Graceful shutdown
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeoutSeconds*time.Second)
 	defer shutdownCancel()
 
 	logging.Logger.Info("Shutting down server...")

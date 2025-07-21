@@ -12,9 +12,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/flext/flexcore/pkg/plugin"
 	hashicorpPlugin "github.com/hashicorp/go-plugin"
 	_ "github.com/lib/pq"
+
+	"github.com/flext/flexcore/pkg/plugin"
+)
+
+const (
+	processorType   = "postgres-processor"
+	defaultFileMode = 0o644
 )
 
 // init registers types for gob encoding/decoding
@@ -61,6 +67,13 @@ type DataProcessorPlugin interface {
 
 // Initialize the plugin with configuration
 func (pp *PostgresProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
+	// Check context cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	log.Printf("[PostgresProcessor] Initializing with config: %+v", config)
 
 	pp.config = config
@@ -111,7 +124,9 @@ func (pp *PostgresProcessor) Initialize(ctx context.Context, config map[string]i
 }
 
 // Execute processes data with PostgreSQL
-func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
+func (pp *PostgresProcessor) Execute(
+	ctx context.Context, input map[string]interface{},
+) (map[string]interface{}, error) {
 	startTime := time.Now()
 	defer func() {
 		pp.stats.DurationMs = time.Since(startTime).Milliseconds()
@@ -121,7 +136,7 @@ func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]inter
 	log.Printf("[PostgresProcessor] Processing input with %d keys", len(input))
 
 	result := make(map[string]interface{})
-	result["processor"] = "postgres-processor"
+	result["processor"] = processorType
 	result["timestamp"] = time.Now().Unix()
 	result["processed_by"] = "FlexCore PostgresProcessor v1.0"
 
@@ -219,8 +234,8 @@ func (pp *PostgresProcessor) executeQuery(ctx context.Context, query string) ([]
 // GetInfo returns plugin metadata
 func (pp *PostgresProcessor) GetInfo() PluginInfo {
 	return PluginInfo{
-		ID:          "postgres-processor",
-		Name:        "postgres-processor",
+		ID:          processorType,
+		Name:        processorType,
 		Version:     "1.0.0",
 		Description: "PostgreSQL data processing plugin with SQL execution capabilities",
 		Author:      "FlexCore Team",
@@ -257,8 +272,13 @@ func (pp *PostgresProcessor) Cleanup() error {
 
 	// Save statistics to file (optional)
 	if statsFile, ok := pp.config["stats_file"].(string); ok {
-		data, _ := json.MarshalIndent(pp.stats, "", "  ")
-		os.WriteFile(statsFile, data, 0644)
+		data, err := json.MarshalIndent(pp.stats, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal stats: %w", err)
+		}
+		if err := os.WriteFile(statsFile, data, defaultFileMode); err != nil {
+			return fmt.Errorf("failed to write stats file: %w", err)
+		}
 	}
 
 	return nil
@@ -273,7 +293,7 @@ func (pp *PostgresProcessor) processArray(data []interface{}) []interface{} {
 		// Add metadata
 		if itemMap, ok := item.(map[string]interface{}); ok {
 			itemMap["_processed_at"] = time.Now().Unix()
-			itemMap["_processor"] = "postgres-processor"
+			itemMap["_processor"] = processorType
 			processed = append(processed, itemMap)
 		} else {
 			processed = append(processed, item)
@@ -292,7 +312,7 @@ func (pp *PostgresProcessor) processMap(data map[string]interface{}) map[string]
 
 	// Add metadata
 	processed["_processed_at"] = time.Now().Unix()
-	processed["_processor"] = "postgres-processor"
+	processed["_processor"] = processorType
 
 	return processed
 }
@@ -321,7 +341,7 @@ func (rpc *PostgresProcessorRPC) Execute(args map[string]interface{}, resp *map[
 	return nil
 }
 
-func (rpc *PostgresProcessorRPC) GetInfo(args interface{}, resp *PluginInfo) error {
+func (rpc *PostgresProcessorRPC) GetInfo(_ interface{}, resp *PluginInfo) error {
 	*resp = rpc.Impl.GetInfo()
 	return nil
 }

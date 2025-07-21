@@ -171,7 +171,9 @@ func TestClose(t *testing.T) {
 			name: "close initialized logger",
 			setupFunc: func() {
 				Logger = nil
-				_ = Initialize("development", "info")
+				if err := Initialize("development", "info"); err != nil {
+					panic(err)
+				}
 			},
 			wantErr: false,
 		},
@@ -186,7 +188,9 @@ func TestClose(t *testing.T) {
 			name: "close production logger",
 			setupFunc: func() {
 				Logger = nil
-				_ = Initialize("production", "warn")
+				if err := Initialize("production", "warn"); err != nil {
+					panic(err)
+				}
 			},
 			wantErr: false,
 		},
@@ -283,7 +287,9 @@ func TestLogger_EdgeCases(t *testing.T) {
 		originalLogger := Logger
 		Logger = nil
 		assert.NotPanics(t, func() {
-			_ = Close() // Should handle nil logger gracefully
+			if err := Close(); err != nil {
+				t.Logf("Close returned error: %v", err)
+			}
 		})
 		Logger = originalLogger
 	})
@@ -435,7 +441,9 @@ func BenchmarkLogger_Initialize(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		Logger = nil
-		_ = Initialize("production", "info")
+		if err := Initialize("production", "info"); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
@@ -494,7 +502,11 @@ func BenchmarkLogger_Close(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		Logger = nil
-		_ = Initialize("production", "info")
-		_ = Close()
+		if err := Initialize("production", "info"); err != nil {
+			b.Fatal(err)
+		}
+		if err := Close(); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

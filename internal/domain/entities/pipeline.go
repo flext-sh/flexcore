@@ -27,6 +27,13 @@ func (id PipelineID) String() string {
 type PipelineStatus int
 
 const (
+	// Pipeline status constants
+	unknownStatusString = "unknown"
+
+	// Default configuration constants
+	DefaultMaxRetries     = 3
+	DefaultTimeoutMinutes = 30
+
 	PipelineStatusDraft PipelineStatus = iota
 	PipelineStatusActive
 	PipelineStatusRunning
@@ -54,7 +61,7 @@ func (s PipelineStatus) String() string {
 	case PipelineStatusArchived:
 		return "archived"
 	default:
-		return "unknown"
+		return unknownStatusString
 	}
 }
 
@@ -81,8 +88,8 @@ func NewPipelineStep(name, stepType string) PipelineStep {
 		Config:     make(map[string]interface{}),
 		DependsOn:  make([]string, 0),
 		RetryCount: 0,
-		MaxRetries: 3,
-		Timeout:    time.Minute * 30,
+		MaxRetries: DefaultMaxRetries,
+		Timeout:    time.Minute * DefaultTimeoutMinutes,
 		IsEnabled:  true,
 		CreatedAt:  time.Now(),
 	}

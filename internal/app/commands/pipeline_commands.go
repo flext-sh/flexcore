@@ -116,8 +116,8 @@ func NewAddPipelineStepCommand(pipelineID entities.PipelineID, stepName, stepTyp
 		StepType:    stepType,
 		Config:      make(map[string]interface{}),
 		DependsOn:   make([]string, 0),
-		MaxRetries:  3,
-		Timeout:     time.Minute * 30,
+		MaxRetries:  entities.DefaultMaxRetries,
+		Timeout:     time.Minute * entities.DefaultTimeoutMinutes,
 	}
 }
 

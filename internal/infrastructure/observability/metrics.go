@@ -11,6 +11,12 @@ import (
 	"github.com/flext/flexcore/shared/errors"
 )
 
+const (
+	// Histogram configuration constants
+	histogramBucketsCount = 10 // 9 buckets + inf
+	maxTimerSamples       = 1000
+)
+
 // MetricsCollector provides real-time metrics collection
 type MetricsCollector struct {
 	mu         sync.RWMutex
@@ -23,29 +29,29 @@ type MetricsCollector struct {
 
 // Counter represents a monotonically increasing counter
 type Counter struct {
-	name  string
-	value int64
-	tags  map[string]string
 	mu    sync.RWMutex
+	name  string
+	tags  map[string]string
+	value int64
 }
 
 // Gauge represents a value that can go up and down
 type Gauge struct {
-	name  string
-	value float64
-	tags  map[string]string
 	mu    sync.RWMutex
+	name  string
+	tags  map[string]string
+	value float64
 }
 
 // Histogram tracks distribution of values
 type Histogram struct {
+	mu      sync.RWMutex
 	name    string
+	tags    map[string]string
 	buckets []float64
 	counts  []int64
 	sum     float64
 	count   int64
-	tags    map[string]string
-	mu      sync.RWMutex
 }
 
 // Timer tracks timing information
@@ -59,8 +65,8 @@ type Timer struct {
 type MetricPoint struct {
 	Name      string            `json:"name"`
 	Type      string            `json:"type"`
-	Value     interface{}       `json:"value"`
 	Tags      map[string]string `json:"tags"`
+	Value     interface{}       `json:"value"`
 	Timestamp time.Time         `json:"timestamp"`
 }
 
@@ -199,7 +205,7 @@ func (mc *MetricsCollector) RecordHistogram(name string, value float64, tags map
 		hist = &Histogram{
 			name:    name,
 			buckets: []float64{0.1, 0.5, 1, 2.5, 5, 10, 25, 50, 100},
-			counts:  make([]int64, 10), // 9 buckets + inf
+			counts:  make([]int64, histogramBucketsCount), // 9 buckets + inf
 			tags:    tags,
 		}
 		mc.histograms[key] = hist
@@ -238,8 +244,8 @@ func (mc *MetricsCollector) StartTimer(name string) *TimerContext {
 // TimerContext represents an active timer
 type TimerContext struct {
 	collector *MetricsCollector
-	name      string
 	startTime time.Time
+	name      string
 }
 
 // Stop stops the timer and records the duration
@@ -269,7 +275,7 @@ func (mc *MetricsCollector) RecordTimer(name string, duration time.Duration) {
 	timer.mu.Lock()
 	timer.durations = append(timer.durations, duration)
 	// Keep only last 1000 measurements to prevent memory leak
-	if len(timer.durations) > 1000 {
+	if len(timer.durations) > maxTimerSamples {
 		timer.durations = timer.durations[len(timer.durations)-1000:]
 	}
 	timer.mu.Unlock()
