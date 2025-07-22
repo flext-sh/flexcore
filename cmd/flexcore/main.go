@@ -1,21 +1,20 @@
-// FlexCore - Professional distributed event-driven architecture
+// FlexCore Server - Professional Clean Architecture Implementation
 package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/flext/flexcore/internal/domain"
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+
+	"github.com/flext/flexcore/pkg/config"
+	"github.com/flext/flexcore/pkg/logging"
 )
 
 // Version information (set by build flags)
@@ -25,341 +24,156 @@ var (
 	CommitHash = "unknown"
 )
 
-// Server represents the FlexCore HTTP server
-type Server struct {
-	core   *domain.FlexCore
-	router *mux.Router
-	config *domain.FlexCoreConfig
+// Server constants
+const (
+	shutdownTimeoutSeconds = 30
+)
+
+// CommandLineFlags represents command line flags
+type CommandLineFlags struct {
+	environment string
+	logLevel    string
+	help        bool
+	version     bool
 }
 
-// NewServer creates a new FlexCore server
-func NewServer(config *domain.FlexCoreConfig) (*Server, error) {
-	// Create FlexCore instance
-	coreResult := domain.NewFlexCore(config)
-	if coreResult.IsFailure() {
-		return nil, fmt.Errorf("failed to create FlexCore: %v", coreResult.Error())
-	}
+// parseFlags parses command line flags
+func parseFlags() CommandLineFlags {
+	var flags CommandLineFlags
 
-	server := &Server{
-		core:   coreResult.Value(),
-		config: config,
-	}
+	flag.StringVar(&flags.environment, "env", "", "Environment (development/production)")
+	flag.StringVar(&flags.logLevel, "log-level", "", "Log level (debug/info/warn/error)")
+	flag.BoolVar(&flags.help, "help", false, "Show help")
+	flag.BoolVar(&flags.version, "version", false, "Show version")
 
-	// Setup routes
-	server.setupRoutes()
-
-	return server, nil
+	flag.Parse()
+	return flags
 }
 
-// setupRoutes configures all HTTP routes
-func (s *Server) setupRoutes() {
-	s.router = mux.NewRouter()
+// initializeApplication creates and configures the application
+func initializeApplication(flags CommandLineFlags) error {
+	// Initialize configuration
+	if err := config.Initialize(); err != nil {
+		return fmt.Errorf("failed to initialize config: %w", err)
+	}
 
-	// Health & Info
-	s.router.HandleFunc("/health", s.handleHealth).Methods("GET")
-	s.router.HandleFunc("/info", s.handleInfo).Methods("GET")
-	s.router.HandleFunc("/metrics", promhttp.Handler().ServeHTTP).Methods("GET")
+	// Override environment if provided
+	if flags.environment != "" {
+		config.V.Set("app.environment", flags.environment)
+		config.Current.App.Environment = flags.environment
+	}
 
-	// Event handling
-	s.router.HandleFunc("/events", s.handleSendEvent).Methods("POST")
-	s.router.HandleFunc("/events/batch", s.handleBatchEvents).Methods("POST")
+	// Determine log level
+	logLevel := flags.logLevel
+	if logLevel == "" {
+		if config.Current.App.Debug {
+			logLevel = "debug"
+		} else {
+			logLevel = "info"
+		}
+	}
 
-	// Message queue
-	s.router.HandleFunc("/queues/{queue}/messages", s.handleSendMessage).Methods("POST")
-	s.router.HandleFunc("/queues/{queue}/messages", s.handleReceiveMessages).Methods("GET")
+	// Initialize logging
+	if err := logging.Initialize(config.Current.App.Environment, logLevel); err != nil {
+		return fmt.Errorf("failed to initialize logging: %w", err)
+	}
 
-	// Workflow execution
-	s.router.HandleFunc("/workflows/execute", s.handleExecuteWorkflow).Methods("POST")
-	s.router.HandleFunc("/workflows/{id}/status", s.handleWorkflowStatus).Methods("GET")
+	// Enable config hot reloading
+	config.Watch()
 
-	// Cluster management
-	s.router.HandleFunc("/cluster/status", s.handleClusterStatus).Methods("GET")
+	return nil
 }
 
-// Start starts the server
-func (s *Server) Start(port string) error {
-	ctx := context.Background()
-
-	// Start FlexCore
-	if startResult := s.core.Start(ctx); startResult.IsFailure() {
-		log.Printf("Warning: FlexCore start returned: %v", startResult.Error())
-	}
-
-	// Start HTTP server
-	srv := &http.Server{
-		Addr:         ":" + port,
-		Handler:      s.router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-
-	// Handle graceful shutdown
+// setupGracefulShutdown sets up graceful shutdown handling
+func setupGracefulShutdown(cancel context.CancelFunc) {
 	go func() {
 		sigChan := make(chan os.Signal, 1)
 		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 		<-sigChan
-
-		log.Println("Shutting down server...")
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		srv.Shutdown(ctx)
-		s.core.Stop(ctx)
+		logging.Logger.Info("Shutdown signal received")
+		cancel()
 	}()
-
-	log.Printf("FlexCore server listening on port %s", port)
-	log.Printf("Version: %s, Build: %s, Commit: %s", Version, BuildTime, CommitHash)
-	return srv.ListenAndServe()
-}
-
-// HTTP Handlers
-
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":     "healthy",
-		"timestamp":  time.Now().Unix(),
-		"version":    Version,
-		"build_time": BuildTime,
-		"commit":     CommitHash,
-	})
-}
-
-func (s *Server) handleInfo(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"service":    "flexcore",
-		"version":    Version,
-		"build_time": BuildTime,
-		"commit":     CommitHash,
-		"node_id":    s.config.NodeID,
-		"cluster":    s.config.ClusterName,
-		"uptime":     time.Since(time.Now()).Seconds(), // Would track actual start time
-	})
-}
-
-func (s *Server) handleSendEvent(w http.ResponseWriter, r *http.Request) {
-	var eventData struct {
-		Type        string                 `json:"type"`
-		AggregateID string                 `json:"aggregate_id"`
-		Data        map[string]interface{} `json:"data"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&eventData); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if eventData.Type == "" {
-		http.Error(w, "Event type is required", http.StatusBadRequest)
-		return
-	}
-
-	event := domain.NewEvent(eventData.Type, eventData.AggregateID, eventData.Data)
-	result := s.core.SendEvent(r.Context(), event)
-	
-	if result.IsFailure() {
-		http.Error(w, result.Error().Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":     event.ID,
-		"status": "accepted",
-	})
-}
-
-func (s *Server) handleBatchEvents(w http.ResponseWriter, r *http.Request) {
-	var events []struct {
-		Type        string                 `json:"type"`
-		AggregateID string                 `json:"aggregate_id"`
-		Data        map[string]interface{} `json:"data"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&events); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	results := make([]map[string]interface{}, 0, len(events))
-	
-	for _, eventData := range events {
-		event := domain.NewEvent(eventData.Type, eventData.AggregateID, eventData.Data)
-		result := s.core.SendEvent(r.Context(), event)
-		
-		status := "accepted"
-		if result.IsFailure() {
-			status = "failed"
-		}
-
-		results = append(results, map[string]interface{}{
-			"id":     event.ID,
-			"status": status,
-		})
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"results": results,
-		"total":   len(results),
-	})
-}
-
-func (s *Server) handleSendMessage(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	queue := vars["queue"]
-	
-	var messageData map[string]interface{}
-	if err := json.NewDecoder(r.Body).Decode(&messageData); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	message := domain.NewMessage(queue, messageData)
-	result := s.core.SendMessage(r.Context(), queue, message)
-	
-	if result.IsFailure() {
-		http.Error(w, result.Error().Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":     message.ID,
-		"queue":  queue,
-		"status": "queued",
-	})
-}
-
-func (s *Server) handleReceiveMessages(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	queue := vars["queue"]
-	maxMessages := 10 // Could be from query param
-	
-	result := s.core.ReceiveMessages(r.Context(), queue, maxMessages)
-	if result.IsFailure() {
-		http.Error(w, result.Error().Error(), http.StatusInternalServerError)
-		return
-	}
-
-	messages := result.Value()
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"messages": messages,
-		"count":    len(messages),
-		"queue":    queue,
-	})
-}
-
-func (s *Server) handleExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Path  string                 `json:"path"`
-		Input map[string]interface{} `json:"input"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if req.Path == "" {
-		http.Error(w, "Workflow path is required", http.StatusBadRequest)
-		return
-	}
-
-	result := s.core.ExecuteWorkflow(r.Context(), req.Path, req.Input)
-	if result.IsFailure() {
-		http.Error(w, result.Error().Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"job_id": result.Value(),
-		"status": "started",
-	})
-}
-
-func (s *Server) handleWorkflowStatus(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	jobID := vars["id"]
-	
-	result := s.core.GetWorkflowStatus(r.Context(), jobID)
-	if result.IsFailure() {
-		http.Error(w, result.Error().Error(), http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result.Value())
-}
-
-func (s *Server) handleClusterStatus(w http.ResponseWriter, r *http.Request) {
-	result := s.core.GetClusterStatus(r.Context())
-	if result.IsFailure() {
-		http.Error(w, result.Error().Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result.Value())
 }
 
 func main() {
-	// Parse flags
-	var (
-		configFile = flag.String("config", "", "Configuration file (optional)")
-		port       = flag.String("port", "8080", "HTTP server port")
-		nodeID     = flag.String("node", "", "Node ID (auto-generated if empty)")
-		help       = flag.Bool("help", false, "Show help")
-		version    = flag.Bool("version", false, "Show version")
-	)
-	flag.Parse()
+	flags := parseFlags()
 
-	if *help {
+	if flags.help {
 		flag.Usage()
 		return
 	}
 
-	if *version {
-		fmt.Printf("FlexCore %s (build %s, commit %s)\n", Version, BuildTime, CommitHash)
+	if flags.version {
+		// Initialize basic logging for version output
+		if err := logging.Initialize("flexcore", "info"); err == nil {
+			logging.Logger.Info("FlexCore version info",
+				zap.String("version", Version),
+				zap.String("build_time", BuildTime),
+				zap.String("commit", CommitHash),
+			)
+		}
 		return
 	}
 
-	// Create configuration
-	config := domain.DefaultConfig()
-	if *nodeID != "" {
-		config.NodeID = *nodeID
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := initializeApplication(flags); err != nil {
+		// Try to log error properly, fallback to stderr if logging not initialized
+		if logging.Logger != nil {
+			logging.Logger.Fatal("Failed to initialize application", zap.Error(err))
+		} else {
+			// Use os.Stderr for critical error output
+			os.Stderr.WriteString("Failed to initialize application: " + err.Error() + "\n")
+			cancel()
+			return
+		}
 	}
 
-	// TODO: Load from config file if provided
-	if *configFile != "" {
-		log.Printf("Loading configuration from %s", *configFile)
-		// Implementation would load from file
+	setupGracefulShutdown(cancel)
+
+	// Log startup information
+	logging.Logger.Info("FlexCore starting up",
+		zap.String("version", Version),
+		zap.String("build_time", BuildTime),
+		zap.String("commit", CommitHash),
+		zap.String("environment", config.Current.App.Environment),
+		zap.Bool("debug", config.Current.App.Debug),
+		zap.Int("port", config.Current.App.Port),
+	)
+
+	// Create simple HTTP server
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+	})
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", config.Current.App.Port),
+		Handler: mux,
 	}
 
-	// Override from environment variables
-	if url := os.Getenv("WINDMILL_URL"); url != "" {
-		config.WindmillURL = url
-	}
-	if token := os.Getenv("WINDMILL_TOKEN"); token != "" {
-		config.WindmillToken = token
-	}
-	if workspace := os.Getenv("WINDMILL_WORKSPACE"); workspace != "" {
-		config.WindmillWorkspace = workspace
-	}
+	// Start server in goroutine
+	go func() {
+		logging.Logger.Info("Server starting", zap.String("address", server.Addr))
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logging.Logger.Fatal("Server failed", zap.Error(err))
+		}
+	}()
 
-	log.Printf("Starting FlexCore node: %s", config.NodeID)
+	// Wait for shutdown signal
+	<-ctx.Done()
 
-	// Create and start server
-	server, err := NewServer(config)
-	if err != nil {
-		log.Fatalf("Failed to create server: %v", err)
-	}
+	// Graceful shutdown
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeoutSeconds*time.Second)
+	defer shutdownCancel()
 
-	if err := server.Start(*port); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Server failed: %v", err)
+	logging.Logger.Info("Shutting down server...")
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logging.Logger.Error("Server shutdown error", zap.Error(err))
+	} else {
+		logging.Logger.Info("Server shut down gracefully")
 	}
 }

@@ -1,0 +1,45 @@
+{
+  "port": "8000",
+  "jwt_secret": "flexcore-jwt-secret-2025-super-secure",
+  "rate_limit_rps": 1000,
+  "timeout_seconds": 30,
+  "health_check_url": "/health",
+  "backends": [
+    {
+      "id": "flexcore-node-1",
+      "url": "http://localhost:8081",
+      "weight": 3,
+      "healthy": true
+    },
+    {
+      "id": "flexcore-node-2",
+      "url": "http://localhost:8082",
+      "weight": 3,
+      "healthy": true
+    },
+    {
+      "id": "flexcore-node-3",
+      "url": "http://localhost:8083",
+      "weight": 2,
+      "healthy": true
+    },
+    {
+      "id": "windmill-server",
+      "url": "http://localhost:3000",
+      "weight": 2,
+      "healthy": true
+    },
+    {
+      "id": "integration-api",
+      "url": "http://localhost:8090",
+      "weight": 1,
+      "healthy": true
+    },
+    {
+      "id": "metrics-server",
+      "url": "http://localhost:9090",
+      "weight": 1,
+      "healthy": true
+    }
+  ]
+}
