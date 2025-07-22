@@ -1,0 +1,28 @@
+app:
+  name: "flexcore"
+  version: "1.0.0"
+  environment: "development"
+  debug: true
+  port: 8080
+
+jwt:
+  secret: "test-secret-key-for-development"
+  issuer: "flexcore"
+  expiry_duration: "24h"
+  refresh_enabled: true
+
+database:
+  type: "postgres"
+  host: "localhost"
+  port: 5432
+  name: "flexcore_dev"
+  user: "postgres"
+  password: ""
+  ssl_mode: "disable"
+
+metrics:
+  enabled: true
+  path: "/metrics"
+
+tracing:
+  enabled: false

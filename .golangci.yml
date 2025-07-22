@@ -1,16 +1,14 @@
----
-# Professional Go linting configuration
+# FlexCore Linting Configuration
 run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
-  skip-dirs:
-    - vendor
-    - _cleanup
-    - old
+  modules-download-mode: readonly
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
+      path: stdout
   print-issued-lines: true
   print-linter-name: true
 
@@ -20,33 +18,24 @@ linters-settings:
     check-blank: true
 
   govet:
-    check-shadowing: true
-    settings:
-      printf:
-        funcs:
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+    shadow: true
+    enable-all: true
 
   gocyclo:
-    min-complexity: 15
-
-  maligned:
-    suggest-new: true
+    min-complexity: 10
 
   dupl:
     threshold: 100
 
   goconst:
-    min-len: 2
-    min-occurrences: 2
+    min-len: 3
+    min-occurrences: 3
 
   misspell:
     locale: US
 
   lll:
-    line-length: 140
+    line-length: 120
 
   goimports:
     local-prefixes: github.com/flext/flexcore
@@ -58,94 +47,86 @@ linters-settings:
       - opinionated
       - performance
       - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
+
+  funlen:
+    lines: 100
+    statements: 50
+
+  gocognit:
+    min-complexity: 15
+
+  nestif:
+    min-complexity: 5
+
+  mnd:
+    settings:
+      mnd:
+        checks: argument,case,condition,operation,return,assign
+
+  depguard:
+    rules:
+      main:
+        allow:
+          - $gostd
+          - github.com/flext/flexcore
+          - github.com/hashicorp/go-plugin
+          - github.com/lib/pq
+          - github.com/mattn/go-sqlite3
+          - github.com/google/uuid
+          - github.com/stretchr/testify
+          - go.uber.org/zap
+          - github.com/redis/go-redis/v9
+          - google.golang.org/grpc
 
 linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
   enable:
-    - bodyclose
-    - deadcode
-    - depguard
-    - dogsled
-    - dupl
     - errcheck
-    - exhaustive
-    - funlen
-    - gochecknoinits
-    - goconst
-    - gocritic
-    - gocyclo
-    - gofmt
-    - goimports
-    - golint
-    - gomnd
-    - goprintffuncname
-    - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
-    - lll
-    - misspell
-    - nakedret
-    - noctx
-    - nolintlint
-    - rowserrcheck
-    - scopelint
     - staticcheck
-    - structcheck
-    - stylecheck
     - typecheck
+    - unused
+    - gocyclo
+    - gofmt
+    - goimports
+    - misspell
+    - lll
+    - goconst
+    - gocritic
+    - gocognit
+    - funlen
+    - nestif
+    - mnd
+    - copyloopvar
+    - depguard
+    - dogsled
+    - dupl
+    - forbidigo
+    - nakedret
+    - prealloc
     - unconvert
     - unparam
-    - unused
-    - varcheck
     - whitespace
 
-  # don't enable:
-  # - asciicheck
-  # - gochecknoglobals
-  # - gocognit
-  # - godot
-  # - godox
-  # - goerr113
-  # - maligned
-  # - nestif
-  # - prealloc
-  # - testpackage
-  # - wsl
+  disable: []
 
 issues:
-  # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
     - path: _test\.go
       linters:
         - gomnd
+        - funlen
+        - dupl
 
-    # https://github.com/go-critic/go-critic/issues/926
-    - linters:
-        - gocritic
-      text: "unnecessaryDefer:"
+    - path: cmd/
+      linters:
+        - gocyclo
+        - funlen
 
-  exclude-use-default: false
-  exclude:
-    # errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
-    - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
+    - path: internal/infrastructure/
+      linters:
+        - nestif
 
   max-issues-per-linter: 0
   max-same-issues: 0
-
-severity:
-  default-severity: error
-  case-sensitive: false
-  rules:
-    - linters:
-      - dupl
-      severity: info
