@@ -13,6 +13,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/flext/flexcore/internal/application/services"
+	"github.com/flext/flexcore/internal/infrastructure"
 	"github.com/flext/flexcore/pkg/config"
 	"github.com/flext/flexcore/pkg/logging"
 )
@@ -96,84 +98,121 @@ func setupGracefulShutdown(cancel context.CancelFunc) {
 }
 
 func main() {
+	// Parse command line flags
 	flags := parseFlags()
-
+	
+	// Show help or version if requested
 	if flags.help {
 		flag.Usage()
 		return
 	}
-
+	
 	if flags.version {
-		// Initialize basic logging for version output
-		if err := logging.Initialize("flexcore", "info"); err == nil {
-			logging.Logger.Info("FlexCore version info",
-				zap.String("version", Version),
-				zap.String("build_time", BuildTime),
-				zap.String("commit", CommitHash),
-			)
-		}
+		fmt.Printf("FlexCore Server v%s\nBuild: %s\nCommit: %s\n", Version, BuildTime, CommitHash)
 		return
 	}
-
+	
+	// Initialize application
+	if err := initializeApplication(flags); err != nil {
+		fmt.Printf("Failed to initialize application: %v\n", err)
+		os.Exit(1)
+	}
+	
+	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	if err := initializeApplication(flags); err != nil {
-		// Try to log error properly, fallback to stderr if logging not initialized
-		if logging.Logger != nil {
-			logging.Logger.Fatal("Failed to initialize application", zap.Error(err))
-		} else {
-			// Use os.Stderr for critical error output
-			os.Stderr.WriteString("Failed to initialize application: " + err.Error() + "\n")
-			cancel()
-			return
-		}
-	}
-
+	
+	// Setup graceful shutdown
 	setupGracefulShutdown(cancel)
-
-	// Log startup information
-	logging.Logger.Info("FlexCore starting up",
-		zap.String("version", Version),
-		zap.String("build_time", BuildTime),
-		zap.String("commit", CommitHash),
-		zap.String("environment", config.Current.App.Environment),
-		zap.Bool("debug", config.Current.App.Debug),
-		zap.Int("port", config.Current.App.Port),
-	)
-
-	// Create simple HTTP server
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
-	})
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", config.Current.App.Port),
-		Handler: mux,
+	
+	// 1. Initialize FLEXCORE distributed runtime with real persistence
+	useRealPersistence := config.Current.App.Environment == "production"
+	flexcoreContainer := infrastructure.NewFlexCoreContainer(useRealPersistence)
+	if err := flexcoreContainer.Initialize(ctx); err != nil {
+		logging.Logger.Fatal("Failed to initialize FLEXCORE container", zap.Error(err))
 	}
-
-	// Start server in goroutine
+	
+	// 2. Setup event sourcing + CQRS
+	eventStore := flexcoreContainer.GetEventStore()
+	commandBus := flexcoreContainer.GetCommandBus()
+	_ = flexcoreContainer.GetQueryBus() // Not used in this implementation
+	
+	// 3. Setup plugin system for FLEXT service
+	pluginLoader := infrastructure.NewHashicorpStyleLoader()
+	
+	// 4. Register FLEXT service as a plugin in FLEXCORE (real implementation)
+	logger := logging.NewLogger("flext-plugin")
+	flextPlugin := infrastructure.NewRealFlextServicePlugin(
+		"/home/marlonsc/flext/cmd/flext/main.go",
+		"/home/marlonsc/flext/config.yaml",
+		logger,
+	)
+	pluginLoader.RegisterPlugin("flext-service", flextPlugin)
+	
+	// 5. Setup distributed cluster coordination (real Redis or fallback)
+	var cluster services.CoordinationLayer
+	redisLogger := logging.NewLogger("redis-coordinator")
+	
+	if config.GetString("redis.url") != "" {
+		// Use real Redis coordinator
+		cluster = infrastructure.NewRealRedisCoordinator(config.GetString("redis.url"), redisLogger)
+		logging.Logger.Info("Using real Redis coordinator")
+	} else {
+		// Fallback to simulated coordinator for development
+		cluster = infrastructure.NewRedisCoordinator()
+		logging.Logger.Info("Using simulated Redis coordinator (development mode)")
+	}
+	
+	if err := cluster.Start(ctx); err != nil {
+		logging.Logger.Fatal("Failed to start cluster coordinator", zap.Error(err))
+	}
+	defer cluster.Stop()
+	
+	// 6. Initialize workflow engine with FLEXT service
+	workflowLogger := logging.NewLogger("workflow-service")
+	workflowService := services.NewWorkflowService(
+		flexcoreContainer.GetEventBus(),
+		pluginLoader,
+		cluster,
+		eventStore,
+		commandBus,
+		workflowLogger,
+	)
+	
+	// 7. Start FLEXCORE container with real endpoints
+	server := infrastructure.NewRealFlexcoreServer(workflowService, pluginLoader, cluster, eventStore)
+	logging.Logger.Info("Starting FLEXCORE container with real FLEXT service...")
+	
+	// Start server in a goroutine
 	go func() {
-		logging.Logger.Info("Server starting", zap.String("address", server.Addr))
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logging.Logger.Fatal("Server failed", zap.Error(err))
+		if err := server.Start(":8080"); err != nil && err != http.ErrServerClosed {
+			logging.Logger.Fatal("FLEXCORE container failed to start", zap.Error(err))
 		}
 	}()
-
+	
 	// Wait for shutdown signal
 	<-ctx.Done()
-
+	
 	// Graceful shutdown
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeoutSeconds*time.Second)
+	logging.Logger.Info("Shutting down FLEXCORE container...")
+	
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), time.Duration(shutdownTimeoutSeconds)*time.Second)
 	defer shutdownCancel()
-
-	logging.Logger.Info("Shutting down server...")
-	if err := server.Shutdown(shutdownCtx); err != nil {
+	
+	// Stop server
+	if err := server.Stop(shutdownCtx); err != nil {
 		logging.Logger.Error("Server shutdown error", zap.Error(err))
-	} else {
-		logging.Logger.Info("Server shut down gracefully")
 	}
+	
+	// Stop plugin loader
+	if err := pluginLoader.Shutdown(); err != nil {
+		logging.Logger.Error("Plugin loader shutdown error", zap.Error(err))
+	}
+	
+	// Stop container
+	if err := flexcoreContainer.Shutdown(shutdownCtx); err != nil {
+		logging.Logger.Error("Container shutdown error", zap.Error(err))
+	}
+	
+	logging.Logger.Info("FLEXCORE container shutdown complete")
 }

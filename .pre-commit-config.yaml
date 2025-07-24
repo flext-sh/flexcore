@@ -1,118 +1,174 @@
-# ============================================================================
-# FLEXT GO PROJECT PRE-COMMIT CONFIGURATION TEMPLATE
-# Go 1.24+ | Clean Architecture | Distributed Systems
+# STRICT Enterprise Pre-commit Configuration
 # Zero tolerance for quality violations
-# ============================================================================
+# All tools managed by Poetry
 
 minimum_pre_commit_version: "3.5.0"
 fail_fast: false
 default_stages: [pre-commit, pre-push]
+default_language_version:
+  python: python3.13
 
 repos:
-  # ===== BASIC FILE CHECKS =====
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-      - id: trailing-whitespace
-        name: "✂️ Trailing Whitespace"
-      - id: end-of-file-fixer
-        name: "📄 EOF Fixer"
-      - id: check-yaml
-        name: "📋 YAML Syntax Check"
-        args: [--unsafe]
-      - id: check-json
-        name: "📋 JSON Syntax Check"
-      - id: check-added-large-files
-        name: "📦 Large File Check"
-        args: ["--maxkb=1000"]
-      - id: check-case-conflict
-        name: "🔤 Case Conflict Check"
-      - id: check-merge-conflict
-        name: "⚔️ Merge Conflict Check"
-      - id: check-toml
-        name: "📋 TOML Syntax Check"
-      - id: mixed-line-ending
-        name: "📏 Line Ending Check"
-        args: ["--fix=lf"]
-      - id: detect-private-key
-        name: "🔑 Private Key Detection"
-      - id: check-executables-have-shebangs
-        name: "📜 Executable Shebang Check"
-      - id: check-shebang-scripts-are-executable
-        name: "⚡ Shebang Executable Check"
-
-  # ===== GO SPECIFIC TOOLS =====
-  - repo: https://github.com/dnephin/pre-commit-golang
-    rev: v0.5.1
-    hooks:
-      - id: go-fmt
-        name: "🔧 Go Format"
-        args: [-w]
-      - id: go-imports
-        name: "📦 Go Imports"
-        args: [-w]
-      - id: go-cyclo
-        name: "📊 Go Cyclomatic Complexity"
-        args: [-over=10]
-      - id: go-mod-tidy
-        name: "📋 Go Mod Tidy"
-      - id: go-unit-tests
-        name: "🧪 Go Unit Tests"
-      - id: golangci-lint
-        name: "🔥 Go Linting"
-
-  # ===== SECURITY SCANNING =====
+  # Security scanning FIRST - fail fast on vulnerabilities
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.4.0
     hooks:
       - id: detect-secrets
-        name: "🔒 Detect Secrets"
         args: ["--baseline", ".secrets.baseline"]
-        exclude: .*\.lock$|.*\.lockb$|go\.sum$
+        exclude: .*\.lock$|.*\.lockb$
 
-  # ===== DOCKER LINTING =====
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.13.1-beta
+  # Poetry-managed tools via local repo
+  - repo: local
     hooks:
-      - id: hadolint
-        name: "🐳 Docker Lint"
-        args: ["--ignore", "DL3008", "--ignore", "DL3009"]
+      # Black formatting (primary formatter)
+      - id: black
+        name: "⚫ Black Format"
+        entry: poetry run black
+        language: system
+        types: [python]
+        require_serial: true
+        args: [--check, --diff]
 
-  # ===== YAML VALIDATION =====
-  - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.37.1
+      # Ruff linting and formatting
+      - id: ruff-format
+        name: "⚡ Ruff Format"
+        entry: poetry run ruff format
+        language: system
+        types: [python]
+        require_serial: true
+        args: [--check, --diff]
+
+      - id: ruff-lint
+        name: "🔥 Ruff Lint (17 categories)"
+        entry: poetry run ruff check
+        language: system
+        types: [python]
+        require_serial: true
+        args: [--fix, --exit-non-zero-on-fix]
+
+      # isort import sorting
+      - id: isort
+        name: "📦 Import Sort"
+        entry: poetry run isort
+        language: system
+        types: [python]
+        require_serial: true
+        args: [--check-only, --diff]
+
+      # MyPy type checking
+      - id: mypy
+        name: "🛡️ MyPy Strict"
+        entry: poetry run mypy
+        language: system
+        types: [python]
+        require_serial: true
+        pass_filenames: false
+        args: [src/, tests/, --config-file=pyproject.toml]
+
+      # Bandit security
+      - id: bandit
+        name: "🔒 Bandit Security"
+        entry: poetry run bandit
+        language: system
+        types: [python]
+        require_serial: true
+        args: [-r, src/, --severity-level=medium]
+        exclude: tests/
+
+      # Vulture dead code
+      - id: vulture
+        name: "🦅 Dead Code Detection"
+        entry: poetry run vulture
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: [src/, --min-confidence=80]
+
+      # Radon complexity
+      - id: radon-cc
+        name: "📊 Cyclomatic Complexity"
+        entry: poetry run radon cc
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: [src/, -a, -nb, --total-average]
+
+      - id: radon-mi
+        name: "📊 Maintainability Index"
+        entry: poetry run radon mi
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: [src/, -nb]
+
+  # YAML/TOML/JSON validation
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
     hooks:
-      - id: yamllint
-        name: "📋 YAML Lint"
-        args: ["-d", "relaxed"]
+      - id: check-yaml
+        name: "📋 YAML Syntax Check"
+      - id: check-toml
+        name: "📋 TOML Syntax Check"
+      - id: check-json
+        name: "📋 JSON Syntax Check"
+      - id: end-of-file-fixer
+        name: "📄 EOF Fixer"
+      - id: trailing-whitespace
+        name: "✂️ Trailing Whitespace"
+      - id: check-added-large-files
+        name: "📦 Large File Check"
+        args: [--maxkb=1000]
+      - id: check-case-conflict
+        name: "🔤 Case Conflict Check"
+      - id: check-merge-conflict
+        name: "⚔️ Merge Conflict Check"
+      - id: mixed-line-ending
+        name: "📏 Line Ending Check"
+        args: [--fix=lf]
+      - id: debug-statements
+        name: "🐛 Debug Statement Check"
 
-  # ===== MARKDOWN LINTING =====
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+  # Python-specific checks
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
     hooks:
-      - id: markdownlint
-        name: "📝 Markdown Lint"
-        args: ["--fix"]
+      - id: python-check-blanket-noqa
+        name: "🚫 Blanket noqa Check"
+      - id: python-check-blanket-type-ignore
+        name: "🚫 Blanket type: ignore Check"
+      - id: python-no-eval
+        name: "🚫 No eval() Check"
+      - id: python-no-log-warn
+        name: "⚠️ No log.warn Check"
+      - id: python-use-type-annotations
+        name: "📝 Type Annotations Check"
 
-  # ===== CODESPELL - SPELL CHECKING =====
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+  # Commit message validation via Poetry
+  - repo: local
     hooks:
-      - id: codespell
-        name: "📝 Spell Check"
-        args:
-          [
-            "--skip=*.json,*.lock,*.toml,*.yaml,*.yml,go.sum,go.mod",
-            "--ignore-words-list=flexcore,grpc,uuid,ctx,struct,func,goroutine,mutex,postgres,redis",
-          ]
+      - id: commitizen
+        name: "💬 Commit Message Check"
+        entry: poetry run cz check
+        language: system
+        stages: [commit-msg]
+        pass_filenames: false
+        args: [--commit-msg-file]
 
-# ===== CI CONFIGURATION =====
+# CI configuration
 ci:
-  autofix_commit_msg: |
-    [pre-commit.ci] auto fixes from pre-commit hooks - Go project
-  autofix_prs: true
-  autoupdate_branch: ""
-  autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
+  autofix_prs: false # No automatic fixes - must be intentional
   autoupdate_schedule: weekly
-  skip: []
+  skip: [
+      # Local Poetry hooks do not work in CI
+      black,
+      ruff-format,
+      ruff-lint,
+      isort,
+      mypy,
+      bandit,
+      vulture,
+      radon-cc,
+      radon-mi,
+      commitizen,
+    ]
   submodules: false
