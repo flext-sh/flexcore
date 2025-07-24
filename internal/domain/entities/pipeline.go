@@ -166,7 +166,7 @@ func (p *Pipeline) AddStep(step PipelineStep) result.Result[bool] {
 	}
 
 	p.Steps = append(p.Steps, step)
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineStepAddedEvent(p.ID, step.ID, step.Name)
@@ -200,7 +200,7 @@ func (p *Pipeline) RemoveStep(stepName string) result.Result[bool] {
 
 	// Remove the step
 	p.Steps = append(p.Steps[:stepIndex], p.Steps[stepIndex+1:]...)
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineStepRemovedEvent(p.ID, stepName)
@@ -220,7 +220,7 @@ func (p *Pipeline) Activate() result.Result[bool] {
 	}
 
 	p.Status = PipelineStatusActive
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineActivatedEvent(p.ID, p.Name)
@@ -236,7 +236,7 @@ func (p *Pipeline) Deactivate() result.Result[bool] {
 	}
 
 	p.Status = PipelineStatusDraft
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineDeactivatedEvent(p.ID, p.Name)
@@ -258,7 +258,7 @@ func (p *Pipeline) Start() result.Result[bool] {
 	p.Status = PipelineStatusRunning
 	now := time.Now()
 	p.LastRunAt = &now
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineStartedEvent(p.ID, p.Name, now)
@@ -274,7 +274,7 @@ func (p *Pipeline) Complete() result.Result[bool] {
 	}
 
 	p.Status = PipelineStatusCompleted
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineCompletedEvent(p.ID, p.Name, time.Now())
@@ -290,7 +290,7 @@ func (p *Pipeline) Fail(reason string) result.Result[bool] {
 	}
 
 	p.Status = PipelineStatusFailed
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineFailedEvent(p.ID, p.Name, reason, time.Now())
@@ -311,7 +311,7 @@ func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bo
 		IsEnabled:      true,
 		CreatedAt:      time.Now(),
 	}
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineScheduleSetEvent(p.ID, cronExpression, timezone)
@@ -323,7 +323,7 @@ func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bo
 // ClearSchedule removes the pipeline schedule
 func (p *Pipeline) ClearSchedule() {
 	p.Schedule = nil
-	p.Entity.Touch()
+	p.Touch()
 
 	// Raise domain event
 	event := NewPipelineScheduleClearedEvent(p.ID)
@@ -338,7 +338,7 @@ func (p *Pipeline) AddTag(tag string) {
 		}
 	}
 	p.Tags = append(p.Tags, tag)
-	p.Entity.Touch()
+	p.Touch()
 }
 
 // RemoveTag removes a tag from the pipeline
@@ -346,7 +346,7 @@ func (p *Pipeline) RemoveTag(tag string) {
 	for i, existingTag := range p.Tags {
 		if existingTag == tag {
 			p.Tags = append(p.Tags[:i], p.Tags[i+1:]...)
-			p.Entity.Touch()
+			p.Touch()
 			break
 		}
 	}
@@ -407,4 +407,158 @@ func (p *Pipeline) HasTag(tag string) bool {
 		}
 	}
 	return false
+}
+
+// Domain Events
+
+// PipelineCreatedEvent represents a pipeline created event
+type PipelineCreatedEvent struct {
+	domain.BaseDomainEvent
+	PipelineName string
+	Owner        string
+}
+
+// NewPipelineCreatedEvent creates a new pipeline created event
+func NewPipelineCreatedEvent(pipelineID PipelineID, name, owner string) *PipelineCreatedEvent {
+	return &PipelineCreatedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.created", pipelineID.String()),
+		PipelineName:    name,
+		Owner:           owner,
+	}
+}
+
+// PipelineStepAddedEvent represents a pipeline step added event
+type PipelineStepAddedEvent struct {
+	domain.BaseDomainEvent
+	StepID   string
+	StepName string
+}
+
+// NewPipelineStepAddedEvent creates a new pipeline step added event
+func NewPipelineStepAddedEvent(pipelineID PipelineID, stepID, stepName string) *PipelineStepAddedEvent {
+	return &PipelineStepAddedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.step.added", pipelineID.String()),
+		StepID:          stepID,
+		StepName:        stepName,
+	}
+}
+
+// PipelineStepRemovedEvent represents a pipeline step removed event
+type PipelineStepRemovedEvent struct {
+	domain.BaseDomainEvent
+	StepName string
+}
+
+// NewPipelineStepRemovedEvent creates a new pipeline step removed event
+func NewPipelineStepRemovedEvent(pipelineID PipelineID, stepName string) *PipelineStepRemovedEvent {
+	return &PipelineStepRemovedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.step.removed", pipelineID.String()),
+		StepName:        stepName,
+	}
+}
+
+// PipelineActivatedEvent represents a pipeline activated event
+type PipelineActivatedEvent struct {
+	domain.BaseDomainEvent
+	PipelineName string
+}
+
+// NewPipelineActivatedEvent creates a new pipeline activated event
+func NewPipelineActivatedEvent(pipelineID PipelineID, name string) *PipelineActivatedEvent {
+	return &PipelineActivatedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.activated", pipelineID.String()),
+		PipelineName:    name,
+	}
+}
+
+// PipelineDeactivatedEvent represents a pipeline deactivated event
+type PipelineDeactivatedEvent struct {
+	domain.BaseDomainEvent
+	PipelineName string
+}
+
+// NewPipelineDeactivatedEvent creates a new pipeline deactivated event
+func NewPipelineDeactivatedEvent(pipelineID PipelineID, name string) *PipelineDeactivatedEvent {
+	return &PipelineDeactivatedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.deactivated", pipelineID.String()),
+		PipelineName:    name,
+	}
+}
+
+// PipelineStartedEvent represents a pipeline started event
+type PipelineStartedEvent struct {
+	domain.BaseDomainEvent
+	PipelineName string
+	StartTime    time.Time
+}
+
+// NewPipelineStartedEvent creates a new pipeline started event
+func NewPipelineStartedEvent(pipelineID PipelineID, name string, startTime time.Time) *PipelineStartedEvent {
+	return &PipelineStartedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.started", pipelineID.String()),
+		PipelineName:    name,
+		StartTime:       startTime,
+	}
+}
+
+// PipelineCompletedEvent represents a pipeline completed event
+type PipelineCompletedEvent struct {
+	domain.BaseDomainEvent
+	PipelineName  string
+	CompletedTime time.Time
+}
+
+// NewPipelineCompletedEvent creates a new pipeline completed event
+func NewPipelineCompletedEvent(pipelineID PipelineID, name string, completedTime time.Time) *PipelineCompletedEvent {
+	return &PipelineCompletedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.completed", pipelineID.String()),
+		PipelineName:    name,
+		CompletedTime:   completedTime,
+	}
+}
+
+// PipelineFailedEvent represents a pipeline failed event
+type PipelineFailedEvent struct {
+	domain.BaseDomainEvent
+	PipelineName string
+	Reason       string
+	FailedTime   time.Time
+}
+
+// NewPipelineFailedEvent creates a new pipeline failed event
+func NewPipelineFailedEvent(pipelineID PipelineID, name, reason string, failedTime time.Time) *PipelineFailedEvent {
+	return &PipelineFailedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.failed", pipelineID.String()),
+		PipelineName:    name,
+		Reason:          reason,
+		FailedTime:      failedTime,
+	}
+}
+
+// PipelineScheduleSetEvent represents a pipeline schedule set event
+type PipelineScheduleSetEvent struct {
+	domain.BaseDomainEvent
+	CronExpression string
+	Timezone       string
+}
+
+// NewPipelineScheduleSetEvent creates a new pipeline schedule set event
+func NewPipelineScheduleSetEvent(pipelineID PipelineID, cronExpression, timezone string) *PipelineScheduleSetEvent {
+	return &PipelineScheduleSetEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.schedule.set", pipelineID.String()),
+		CronExpression:  cronExpression,
+		Timezone:        timezone,
+	}
+}
+
+// PipelineScheduleClearedEvent represents a pipeline schedule cleared event
+type PipelineScheduleClearedEvent struct {
+	domain.BaseDomainEvent
+}
+
+// NewPipelineScheduleClearedEvent creates a new pipeline schedule cleared event
+func NewPipelineScheduleClearedEvent(pipelineID PipelineID) *PipelineScheduleClearedEvent {
+	return &PipelineScheduleClearedEvent{
+		BaseDomainEvent: domain.NewBaseDomainEvent("pipeline.schedule.cleared", pipelineID.String()),
+	}
 }

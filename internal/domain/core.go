@@ -103,7 +103,7 @@ type FlexCore struct {
 // NewFlexCore creates a new FlexCore instance
 func NewFlexCore(config *FlexCoreConfig) result.Result[*FlexCore] {
 	if config == nil {
-		return result.Error[*FlexCore](errors.NewValidation("configuration cannot be nil"))
+		return result.Failure[*FlexCore](errors.ValidationError("configuration cannot be nil"))
 	}
 
 	core := &FlexCore{
@@ -111,68 +111,68 @@ func NewFlexCore(config *FlexCoreConfig) result.Result[*FlexCore] {
 		nodeID: config.NodeID,
 	}
 
-	return result.Ok(core)
+	return result.Success(core)
 }
 
 // Start initializes and starts FlexCore
 func (f *FlexCore) Start(ctx context.Context) result.Result[interface{}] {
 	// Implementation would start services, connect to external systems, etc.
-	return result.Ok[interface{}](nil)
+	return result.Success[interface{}](nil)
 }
 
 // Stop gracefully shuts down FlexCore
 func (f *FlexCore) Stop(ctx context.Context) result.Result[interface{}] {
 	// Implementation would stop services gracefully
-	return result.Ok[interface{}](nil)
+	return result.Success[interface{}](nil)
 }
 
 // SendEvent sends an event to the event system
 func (f *FlexCore) SendEvent(ctx context.Context, event *Event) result.Result[interface{}] {
 	if event == nil {
-		return result.Error[interface{}](errors.NewValidation("event cannot be nil"))
+		return result.Failure[interface{}](errors.ValidationError("event cannot be nil"))
 	}
 	// Implementation would send event to event store/bus
-	return result.Ok[interface{}](nil)
+	return result.Success[interface{}](nil)
 }
 
 // SendMessage sends a message to a queue
 func (f *FlexCore) SendMessage(ctx context.Context, queue string, message *Message) result.Result[interface{}] {
 	if message == nil {
-		return result.Error[interface{}](errors.NewValidation("message cannot be nil"))
+		return result.Failure[interface{}](errors.ValidationError("message cannot be nil"))
 	}
 	if queue == "" {
-		return result.Error[interface{}](errors.NewValidation("queue name cannot be empty"))
+		return result.Failure[interface{}](errors.ValidationError("queue name cannot be empty"))
 	}
 	// Implementation would send message to queue
-	return result.Ok[interface{}](nil)
+	return result.Success[interface{}](nil)
 }
 
 // ReceiveMessages receives messages from a queue
 func (f *FlexCore) ReceiveMessages(ctx context.Context, queue string, maxMessages int) result.Result[[]*Message] {
 	if queue == "" {
-		return result.Error[[]*Message](errors.NewValidation("queue name cannot be empty"))
+		return result.Failure[[]*Message](errors.ValidationError("queue name cannot be empty"))
 	}
 	if maxMessages <= 0 {
-		return result.Error[[]*Message](errors.NewValidation("max messages must be positive"))
+		return result.Failure[[]*Message](errors.ValidationError("max messages must be positive"))
 	}
 	// Implementation would receive messages from queue
-	return result.Ok([]*Message{})
+	return result.Success([]*Message{})
 }
 
 // ExecuteWorkflow executes a workflow via Windmill
 func (f *FlexCore) ExecuteWorkflow(ctx context.Context, path string, input map[string]interface{}) result.Result[string] {
 	if path == "" {
-		return result.Error[string](errors.NewValidation("workflow path cannot be empty"))
+		return result.Failure[string](errors.ValidationError("workflow path cannot be empty"))
 	}
 	// Implementation would execute workflow via Windmill API
 	jobID := uuid.New().String()
-	return result.Ok(jobID)
+	return result.Success(jobID)
 }
 
 // GetWorkflowStatus gets workflow execution status
 func (f *FlexCore) GetWorkflowStatus(ctx context.Context, jobID string) result.Result[*WorkflowStatus] {
 	if jobID == "" {
-		return result.Error[*WorkflowStatus](errors.NewValidation("job ID cannot be empty"))
+		return result.Failure[*WorkflowStatus](errors.ValidationError("job ID cannot be empty"))
 	}
 	// Implementation would query workflow status
 	status := &WorkflowStatus{
@@ -180,7 +180,7 @@ func (f *FlexCore) GetWorkflowStatus(ctx context.Context, jobID string) result.R
 		Status:    "running",
 		StartTime: time.Now(),
 	}
-	return result.Ok(status)
+	return result.Success(status)
 }
 
 // GetClusterStatus gets cluster status information
@@ -193,5 +193,5 @@ func (f *FlexCore) GetClusterStatus(ctx context.Context) result.Result[*ClusterS
 		Metadata:  make(map[string]interface{}),
 		Timestamp: time.Now(),
 	}
-	return result.Ok(status)
+	return result.Success(status)
 }
