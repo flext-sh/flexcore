@@ -1,181 +1,377 @@
-# FlexCore - Distributed System Core Engine
-# =========================================
-# Production-ready distributed event-driven architecture in Go
-# Go 1.24 + Clean Architecture + DDD + CQRS + Event Sourcing + Zero Tolerance Quality Gates
+# =============================================================================
+# FLEXCORE - PROJECT MAKEFILE
+# =============================================================================
+# Enterprise Go Core Service with Clean Architecture + DDD + Zero Tolerance Quality
+# Go 1.21+ + Modern Build Tools + Professional Standards
+# =============================================================================
 
-.PHONY: help check test lint build clean run dev
-.PHONY: test-unit test-integration test-e2e test-coverage
-.PHONY: install-deps update-deps mod-tidy security-scan
-.PHONY: docker-build docker-up docker-down docker-logs docker-test
-.PHONY: deploy-prod deploy-staging cluster-status
-.PHONY: generate proto-gen mocks-gen docs-gen
+# Project Configuration
+PROJECT_NAME := flexcore
+PROJECT_TYPE := go-service
+GO_VERSION := 1.21
+BINARY_NAME := flexcore
+SRC_DIR := .
+TESTS_DIR := .
+DOCS_DIR := docs
 
-# ============================================================================
-# 🎯 HELP & INFORMATION  
-# ============================================================================
+# Quality Gates Configuration
+MIN_COVERAGE := 80
+GO_LINT_CONFIG := .golangci.yml
+BUILD_DIR := bin
 
-help: ## Show this help message
-	@echo "🚀 FlexCore - Distributed System Core Engine"
-	@echo "============================================"
-	@echo "🎯 Clean Architecture + DDD + CQRS + Event Sourcing + Go 1.24"
+# Service Configuration
+SERVICE_PORT := 8080
+SERVICE_HOST := localhost
+SERVICE_ENV := development
+
+# Export environment variables
+export GO_VERSION
+export MIN_COVERAGE
+export BINARY_NAME
+export SERVICE_PORT
+export SERVICE_HOST
+export SERVICE_ENV
+
+# =============================================================================
+# HELP & INFORMATION
+# =============================================================================
+
+.PHONY: help
+help: ## Show available commands
+	@echo "$(PROJECT_NAME) - Go Core Service"
+	@echo "==================================="
 	@echo ""
-	@echo "📦 Production-ready distributed event-driven architecture system"
-	@echo "🔒 Zero tolerance quality gates with strict Go standards"
-	@echo "🧪 Comprehensive testing with unit + integration + e2e"
+	@echo "📋 AVAILABLE COMMANDS:"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-18s %s\\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo "🔧 PROJECT INFO:"
+	@echo "  Type: $(PROJECT_TYPE)"
+	@echo "  Go Version: $(GO_VERSION)"
+	@echo "  Coverage: $(MIN_COVERAGE)%"
+	@echo "  Binary: $(BINARY_NAME)"
+	@echo "  Service: $(SERVICE_HOST):$(SERVICE_PORT)"
 
-# ============================================================================
-# 🎯 CORE QUALITY GATES - ZERO TOLERANCE
-# ============================================================================
+.PHONY: info
+info: ## Show project information
+	@echo "Project Information"
+	@echo "=================="
+	@echo "Name: $(PROJECT_NAME)"
+	@echo "Type: $(PROJECT_TYPE)"
+	@echo "Go Version: $(GO_VERSION)"
+	@echo "Binary Name: $(BINARY_NAME)"
+	@echo "Source Directory: $(SRC_DIR)"
+	@echo "Tests Directory: $(TESTS_DIR)"
+	@echo "Quality Standards: Zero Tolerance"
+	@echo "Architecture: Clean Architecture + DDD + Go"
+	@echo "Service Configuration:"
+	@echo "  Host: $(SERVICE_HOST)"
+	@echo "  Port: $(SERVICE_PORT)"
+	@echo "  Environment: $(SERVICE_ENV)"
 
-check: lint test security-scan ## Essential quality checks (all must pass)
-	@echo "✅ All quality gates passed"
+# =============================================================================
+# INSTALLATION & SETUP
+# =============================================================================
 
-lint: ## Run golangci-lint with strict rules  
-	@echo "🔍 Running golangci-lint (strict rules)..."
-	@golangci-lint run --config .golangci.yml ./...
-	@echo "✅ Linting complete"
+.PHONY: setup
+setup: ## Complete project setup
+	@echo "🚀 Setting up $(PROJECT_NAME)..."
+	@make deps-download
+	@make mod-tidy
+	@echo "✅ Setup complete"
 
-test: ## Run full test suite with coverage
-	@echo "🧪 Running full test suite..."
-	@go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
-	@go tool cover -html=coverage.out -o coverage.html
-	@echo "✅ Tests complete with coverage report"
+.PHONY: deps-download
+deps-download: ## Download Go dependencies
+	@echo "📦 Downloading dependencies..."
+	@go mod download
 
-security-scan: ## Run security vulnerability scans
-	@echo "🔒 Running security scans..."
-	@gosec -quiet ./...
-	@nancy sleuth --exclude-vulnerability-file .nancy-ignore
-	@echo "✅ Security scans complete"
+.PHONY: mod-tidy
+mod-tidy: ## Tidy Go modules
+	@echo "🔧 Tidying Go modules..."
+	@go mod tidy
 
+.PHONY: mod-verify
+mod-verify: ## Verify Go modules
+	@echo "🔍 Verifying Go modules..."
+	@go mod verify
+
+# =============================================================================
+# QUALITY GATES & VALIDATION
+# =============================================================================
+
+.PHONY: validate
+validate: ## Run complete validation (quality gate)
+	@echo "🔍 Running complete validation for $(PROJECT_NAME)..."
+	@make lint
+	@make vet
+	@make security
+	@make test
+	@make mod-verify
+	@echo "✅ Validation complete"
+
+.PHONY: check
+check: ## Quick health check
+	@echo "🏥 Running health check..."
+	@make lint
+	@make vet
+	@echo "✅ Health check complete"
+
+.PHONY: lint
+lint: ## Run Go linting
+	@echo "🧹 Running linting..."
+	@golangci-lint run
+
+.PHONY: format
 format: ## Format Go code
 	@echo "🎨 Formatting code..."
-	@gofmt -w -s .
+	@go fmt ./...
 	@goimports -w .
-	@echo "✅ Formatting complete"
 
-# ============================================================================
-# 🧪 TESTING - COMPREHENSIVE COVERAGE
-# ============================================================================
+.PHONY: format-check
+format-check: ## Check Go code formatting
+	@echo "🎨 Checking code formatting..."
+	@test -z "$$(gofmt -l .)"
 
+.PHONY: vet
+vet: ## Run Go vet
+	@echo "🔍 Running go vet..."
+	@go vet ./...
+
+.PHONY: security
+security: ## Run security scanning
+	@echo "🔒 Running security scanning..."
+	@gosec ./...
+
+.PHONY: fix
+fix: ## Auto-fix code issues
+	@echo "🔧 Auto-fixing code issues..."
+	@make format
+	@golangci-lint run --fix
+
+# =============================================================================
+# TESTING
+# =============================================================================
+
+.PHONY: test
+test: ## Run all tests with coverage
+	@echo "🧪 Running tests with coverage..."
+	@go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+	@go tool cover -func=coverage.out
+
+.PHONY: test-unit
 test-unit: ## Run unit tests only
 	@echo "🧪 Running unit tests..."
-	@go test -v -race -short ./...
-	@echo "✅ Unit tests complete"
+	@go test -v -short ./...
 
-test-integration: ## Run integration tests
+.PHONY: test-integration
+test-integration: ## Run integration tests only
 	@echo "🧪 Running integration tests..."
-	@go test -v -race -tags=integration ./...
-	@echo "✅ Integration tests complete"
+	@go test -v -run Integration ./...
 
-test-e2e: ## Run end-to-end tests
-	@echo "🧪 Running end-to-end tests..."
-	@go test -v -race -tags=e2e ./...
-	@echo "✅ End-to-end tests complete"
+.PHONY: test-race
+test-race: ## Run tests with race detection
+	@echo "🧪 Running tests with race detection..."
+	@go test -v -race ./...
 
-test-coverage: test ## Generate detailed coverage report
+.PHONY: test-bench
+test-bench: ## Run benchmark tests
+	@echo "🧪 Running benchmark tests..."
+	@go test -v -bench=. -benchmem ./...
+
+.PHONY: coverage
+coverage: ## Generate coverage report
 	@echo "📊 Generating coverage report..."
-	@go tool cover -func=coverage.out
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out -o coverage.html
+
+.PHONY: coverage-html
+coverage-html: ## Generate HTML coverage report
+	@echo "📊 Generating HTML coverage report..."
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out -o coverage.html
 	@echo "📊 Coverage report: coverage.html"
 
-benchmark: ## Run benchmarks
-	@echo "⚡ Running benchmarks..."
-	@go test -bench=. -benchmem ./...
-	@echo "✅ Benchmarks complete"
+# =============================================================================
+# BUILD & DISTRIBUTION
+# =============================================================================
 
-# ============================================================================
-# 🚀 BUILD & RUN
-# ============================================================================
+.PHONY: build
+build: ## Build the application
+	@echo "🏗️ Building $(BINARY_NAME)..."
+	@mkdir -p $(BUILD_DIR)
+	@go build -o $(BUILD_DIR)/$(BINARY_NAME) .
 
-build: clean ## Build all binaries
-	@echo "🔨 Building FlexCore..."
-	@CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags="-w -s" -o bin/flexcore ./cmd/server
-	@echo "✅ Build complete - binary in bin/"
+.PHONY: build-release
+build-release: ## Build release version
+	@echo "🏗️ Building release version..."
+	@mkdir -p $(BUILD_DIR)
+	@go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME) .
 
-build-all: clean ## Build all FlexCore binaries
-	@echo "🔨 Building all FlexCore binaries..."
-	@mkdir -p bin
-	@CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags="-w -s" -o bin/flexcore-server ./cmd/server
-	@CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags="-w -s" -o bin/flexcore-cli ./cmd/cli
-	@CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags="-w -s" -o bin/flexcore-worker ./cmd/worker
-	@echo "✅ All builds complete"
+.PHONY: build-all
+build-all: ## Build for all platforms
+	@echo "🏗️ Building for all platforms..."
+	@mkdir -p $(BUILD_DIR)
+	@GOOS=linux GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 .
+	@GOOS=darwin GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 .
+	@GOOS=windows GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe .
 
-run: ## Run FlexCore server
-	@echo "🚀 Starting FlexCore server..."
-	@go run ./cmd/server
+.PHONY: install
+install: ## Install the application
+	@echo "📦 Installing $(BINARY_NAME)..."
+	@go install .
 
-dev: ## Start development environment
-	@echo "🔧 Starting development environment..."
-	@docker-compose up -d postgres redis
-	@sleep 5
-	@go run ./cmd/server --config configs/dev.yaml
-	@echo "✅ Development environment started"
+# =============================================================================
+# SERVICE OPERATIONS
+# =============================================================================
 
-# ============================================================================
-# 📦 DEPENDENCY MANAGEMENT
-# ============================================================================
+.PHONY: run
+run: ## Run the service
+	@echo "🚀 Running $(BINARY_NAME) service..."
+	@go run .
 
-install-deps: ## Install Go dependencies
-	@echo "📦 Installing dependencies..."
-	@go mod download
-	@go mod verify
-	@echo "✅ Dependencies installed"
+.PHONY: service-start
+service-start: ## Start service
+	@echo "🌐 Starting $(BINARY_NAME) service..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) -port=$(SERVICE_PORT) -host=$(SERVICE_HOST)
 
-update-deps: ## Update Go dependencies
-	@echo "🔄 Updating dependencies..."
-	@go get -u ./...
-	@go mod tidy
-	@echo "✅ Dependencies updated"
+.PHONY: service-dev
+service-dev: ## Start service in development mode
+	@echo "🛠️ Starting $(BINARY_NAME) in development mode..."
+	@go run . -dev -port=$(SERVICE_PORT) -host=$(SERVICE_HOST)
 
-mod-tidy: ## Tidy Go modules
-	@echo "🧹 Tidying Go modules..."
-	@go mod tidy
-	@go mod verify
-	@echo "✅ Modules tidied"
+.PHONY: service-prod
+service-prod: build-release ## Start service in production mode
+	@echo "🏭 Starting $(BINARY_NAME) in production mode..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) -prod -port=$(SERVICE_PORT) -host=$(SERVICE_HOST)
 
-deps-audit: ## Audit dependencies for vulnerabilities
-	@echo "🔍 Auditing dependencies..."
-	@nancy sleuth --exclude-vulnerability-file .nancy-ignore
-	@echo "✅ Dependency audit complete"
+.PHONY: service-health
+service-health: ## Check service health
+	@echo "🏥 Checking service health..."
+	@curl -f http://$(SERVICE_HOST):$(SERVICE_PORT)/health || echo "❌ Service not responding"
 
-# ============================================================================
-# 🐳 DOCKER OPERATIONS
-# ============================================================================
+.PHONY: service-test
+service-test: ## Test service functionality
+	@echo "🧪 Testing service functionality..."
+	@go test -v -run ServiceTest ./... -count=1
 
-docker-build: ## Build Docker image
-	@echo "🐳 Building Docker image..."
-	@docker build -t flexcore:latest -f deployments/docker/Dockerfile .
-	@echo "✅ Docker image built"
+.PHONY: service-benchmark
+service-benchmark: ## Run service benchmarks
+	@echo "⚡ Running service benchmarks..."
+	@go test -bench=BenchmarkService -benchmem ./...
 
-docker-up: ## Start Docker Compose stack
-	@echo "🐳 Starting Docker Compose stack..."
-	@docker-compose -f deployments/docker/docker-compose.yml up -d
-	@echo "✅ Docker stack started"
+# =============================================================================
+# SERVICE MANAGEMENT
+# =============================================================================
 
-docker-down: ## Stop Docker Compose stack
-	@echo "🐳 Stopping Docker Compose stack..."
-	@docker-compose -f deployments/docker/docker-compose.yml down
-	@echo "✅ Docker stack stopped"
+.PHONY: service-logs
+service-logs: ## View service logs
+	@echo "📝 Viewing service logs..."
+	@tail -f /var/log/$(BINARY_NAME).log || echo "❌ Log file not found"
 
-docker-logs: ## View Docker logs
-	@echo "🐳 Viewing Docker logs..."
-	@docker-compose -f deployments/docker/docker-compose.yml logs -f
+.PHONY: service-restart
+service-restart: ## Restart service
+	@echo "🔄 Restarting $(BINARY_NAME) service..."
+	@pkill -f $(BINARY_NAME) || true
+	@sleep 2
+	@make service-start
 
-docker-test: docker-up ## Run tests in Docker
-	@echo "🐳 Running tests in Docker..."
-	@docker run --rm --network=host flexcore:latest make test
-	@echo "✅ Docker tests complete"
+.PHONY: service-stop
+service-stop: ## Stop service
+	@echo "🛑 Stopping $(BINARY_NAME) service..."
+	@pkill -f $(BINARY_NAME) || echo "Service not running"
 
-# ============================================================================
-# 🔧 CODE GENERATION
-# ============================================================================
+.PHONY: service-config
+service-config: ## Show service configuration
+	@echo "⚙️ Service Configuration:"
+	@echo "  Host: $(SERVICE_HOST)"
+	@echo "  Port: $(SERVICE_PORT)"
+	@echo "  Environment: $(SERVICE_ENV)"
+	@echo "  Binary: $(BINARY_NAME)"
 
+.PHONY: service-metrics
+service-metrics: ## Get service metrics
+	@echo "📊 Getting service metrics..."
+	@curl -s http://$(SERVICE_HOST):$(SERVICE_PORT)/metrics || echo "❌ Metrics not available"
+
+.PHONY: service-status
+service-status: ## Check service status
+	@echo "📊 Checking service status..."
+	@curl -s http://$(SERVICE_HOST):$(SERVICE_PORT)/status || echo "❌ Status not available"
+
+# =============================================================================
+# FLEXCORE SPECIFIC OPERATIONS
+# =============================================================================
+
+.PHONY: plugin-build
+plugin-build: ## Build FlexCore plugins
+	@echo "🔌 Building FlexCore plugins..."
+	@mkdir -p plugins
+	@go build -buildmode=plugin -o plugins/source.so ./plugins/source
+	@go build -buildmode=plugin -o plugins/target.so ./plugins/target
+	@go build -buildmode=plugin -o plugins/transformer.so ./plugins/transformer
+	@echo "✅ Plugin build complete"
+
+.PHONY: plugin-test
+plugin-test: ## Test FlexCore plugins
+	@echo "🧪 Testing FlexCore plugins..."
+	@go test -v ./plugins/...
+	@echo "✅ Plugin tests complete"
+
+.PHONY: event-store-migrate
+event-store-migrate: ## Migrate event store schema
+	@echo "🗂️ Migrating event store schema..."
+	@go run ./cmd/migrate --config configs/dev.yaml
+	@echo "✅ Event store migration complete"
+
+.PHONY: cqrs-test
+cqrs-test: ## Test CQRS event bus
+	@echo "🧪 Testing CQRS event bus..."
+	@go test -v ./internal/infrastructure/cqrs/...
+	@echo "✅ CQRS tests complete"
+
+.PHONY: performance-test
+performance-test: ## Run performance tests
+	@echo "⚡ Running performance tests..."
+	@go test -v -tags=performance ./tests/performance/...
+	@echo "✅ Performance tests complete"
+
+.PHONY: load-test
+load-test: ## Run load tests
+	@echo "📊 Running load tests..."
+	@go run ./tests/load/ --duration=5m --concurrency=100
+	@echo "✅ Load tests complete"
+
+# =============================================================================
+# DOCUMENTATION
+# =============================================================================
+
+.PHONY: docs
+docs: ## Generate documentation
+	@echo "📚 Generating documentation..."
+	@godoc -http=:6060
+
+.PHONY: docs-serve
+docs-serve: ## Serve documentation locally
+	@echo "📚 Serving documentation..."
+	@godoc -http=:6060
+
+.PHONY: api-docs
+api-docs: ## Generate API documentation
+	@echo "📚 Generating API documentation..."
+	@mkdir -p $(DOCS_DIR)
+	@go run . --generate-api-docs > $(DOCS_DIR)/api.md
+	@echo "📚 API documentation: $(DOCS_DIR)/api.md"
+
+# =============================================================================
+# CODE GENERATION
+# =============================================================================
+
+.PHONY: generate
 generate: proto-gen mocks-gen ## Generate all code
-	@echo "🔄 Generating all code..."
+	@echo "🔄 Generating all code for $(PROJECT_NAME)..."
 	@go generate ./...
 	@echo "✅ Code generation complete"
 
+.PHONY: proto-gen
 proto-gen: ## Generate protobuf code
 	@echo "🔄 Generating protobuf code..."
 	@protoc --go_out=. --go_opt=paths=source_relative \
@@ -183,211 +379,114 @@ proto-gen: ## Generate protobuf code
 		api/proto/*.proto
 	@echo "✅ Protobuf generation complete"
 
+.PHONY: mocks-gen
 mocks-gen: ## Generate mocks
 	@echo "🔄 Generating mocks..."
 	@mockgen -source=internal/domain/repositories.go -destination=internal/mocks/repositories.go
 	@mockgen -source=internal/domain/services.go -destination=internal/mocks/services.go
 	@echo "✅ Mock generation complete"
 
-docs-gen: ## Generate documentation
-	@echo "📚 Generating documentation..."
-	@godoc -http=:6060 &
-	@echo "✅ Documentation server started at http://localhost:6060"
+# =============================================================================
+# DEPENDENCY MANAGEMENT
+# =============================================================================
 
-# ============================================================================
-# 🏗️ DEPLOYMENT
-# ============================================================================
+.PHONY: deps-update
+deps-update: ## Update dependencies
+	@echo "🔄 Updating dependencies..."
+	@go get -u ./...
+	@go mod tidy
 
-deploy-prod: ## Deploy to production
-	@echo "🚀 Deploying to production..."
-	@kubectl apply -f deployments/k8s/production/
-	@kubectl rollout status deployment/flexcore-server -n production
-	@echo "✅ Production deployment complete"
+.PHONY: deps-check
+deps-check: ## Check for dependency updates
+	@echo "🔍 Checking for dependency updates..."
+	@go list -u -m all
 
-deploy-staging: ## Deploy to staging
-	@echo "🚀 Deploying to staging..."
-	@kubectl apply -f deployments/k8s/staging/
-	@kubectl rollout status deployment/flexcore-server -n staging
-	@echo "✅ Staging deployment complete"
+.PHONY: deps-audit
+deps-audit: ## Audit dependencies for security
+	@echo "🔍 Auditing dependencies..."
+	@go list -json -deps ./... | nancy sleuth
 
-cluster-status: ## Check cluster health
-	@echo "🔍 Checking cluster status..."
-	@kubectl get pods,svc,deploy -n production
-	@kubectl get pods,svc,deploy -n staging
-	@echo "✅ Cluster status check complete"
+# =============================================================================
+# MAINTENANCE & CLEANUP
+# =============================================================================
 
-# ============================================================================
-# 🧹 CLEANUP
-# ============================================================================
+.PHONY: clean
+clean: ## Clean build artifacts
+	@echo "🧹 Cleaning build artifacts..."
+	@rm -rf $(BUILD_DIR)
+	@rm -f coverage.out coverage.html
+	@rm -rf plugins/*.so
+	@go clean
 
-clean: ## Remove all artifacts
-	@echo "🧹 Cleaning up..."
-	@rm -rf bin/
-	@rm -rf coverage.out coverage.html
-	@rm -rf dist/
-	@go clean -cache -testcache -modcache
-	@echo "✅ Cleanup complete"
+.PHONY: clean-all
+clean-all: clean ## Deep clean including cache
+	@echo "🧹 Deep cleaning..."
+	@go clean -cache -modcache -testcache
 
-# ============================================================================
-# 🔧 ENVIRONMENT CONFIGURATION
-# ============================================================================
+.PHONY: reset
+reset: clean-all ## Reset project to clean state
+	@echo "🔄 Resetting project..."
+	@make setup
 
-# Go settings
-GO_VERSION := 1.24
-GOARCH := amd64
-GOOS := linux
-CGO_ENABLED := 0
+# =============================================================================
+# DIAGNOSTICS & TROUBLESHOOTING
+# =============================================================================
 
-# FlexCore settings
-export FLEXCORE_ENV := development
-export FLEXCORE_DEBUG := true
-export FLEXCORE_PORT := 8080
-export FLEXCORE_GRPC_PORT := 50051
-export FLEXCORE_METRICS_PORT := 9090
+.PHONY: diagnose
+diagnose: ## Run project diagnostics
+	@echo "🔬 Running project diagnostics..."
+	@echo "Go version: $$(go version)"
+	@echo "Project info:"
+	@go list -m
+	@echo "Environment:"
+	@go env
 
-# Database settings
-export POSTGRES_HOST := localhost
-export POSTGRES_PORT := 5432
-export POSTGRES_DB := flexcore
-export POSTGRES_USER := flexcore
-export POSTGRES_PASSWORD := flexcore
-
-# Redis settings
-export REDIS_HOST := localhost
-export REDIS_PORT := 6379
-export REDIS_PASSWORD := ""
-export REDIS_DB := 0
-
-# Observability settings
-export JAEGER_ENDPOINT := http://localhost:14268/api/traces
-export PROMETHEUS_ENDPOINT := http://localhost:9090
-
-# Plugin settings
-export FLEXCORE_PLUGINS_DIR := /opt/flexcore/plugins
-export FLEXCORE_PLUGINS_AUTO_DISCOVERY := true
-
-# ============================================================================
-# 📝 PROJECT METADATA
-# ============================================================================
-
-# Project information
-PROJECT_NAME := flexcore
-PROJECT_VERSION := $(shell git describe --tags --always --dirty)
-PROJECT_DESCRIPTION := FlexCore - Distributed System Core Engine
-
-.DEFAULT_GOAL := help
-
-# Go build info
-LDFLAGS := -ldflags="-X main.Version=$(PROJECT_VERSION) -X main.BuildTime=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-# ============================================================================
-# 🎯 FLEXCORE SPECIFIC COMMANDS
-# ============================================================================
-
-plugin-build: ## Build FlexCore plugins
-	@echo "🔌 Building FlexCore plugins..."
-	@go build -buildmode=plugin -o plugins/source.so ./plugins/source
-	@go build -buildmode=plugin -o plugins/target.so ./plugins/target
-	@go build -buildmode=plugin -o plugins/transformer.so ./plugins/transformer
-	@echo "✅ Plugin build complete"
-
-plugin-test: ## Test FlexCore plugins
-	@echo "🧪 Testing FlexCore plugins..."
-	@go test -v ./plugins/...
-	@echo "✅ Plugin tests complete"
-
-event-store-migrate: ## Migrate event store schema
-	@echo "🗂️ Migrating event store schema..."
-	@go run ./cmd/migrate --config configs/dev.yaml
-	@echo "✅ Event store migration complete"
-
-cqrs-test: ## Test CQRS event bus
-	@echo "🧪 Testing CQRS event bus..."
-	@go test -v ./internal/infrastructure/cqrs/...
-	@echo "✅ CQRS tests complete"
-
-performance-test: ## Run performance tests
-	@echo "⚡ Running performance tests..."
-	@go test -v -tags=performance ./tests/performance/...
-	@echo "✅ Performance tests complete"
-
-load-test: ## Run load tests
-	@echo "📊 Running load tests..."
-	@go run ./tests/load/ --duration=5m --concurrency=100
-	@echo "✅ Load tests complete"
-
-metrics-check: ## Check metrics endpoint
-	@echo "📊 Checking metrics endpoint..."
-	@curl -s http://localhost:9090/metrics | head -20
-	@echo "✅ Metrics endpoint check complete"
-
-health-check: ## Check health endpoint
-	@echo "🏥 Checking health endpoint..."
-	@curl -s http://localhost:8080/health | jq .
+.PHONY: doctor
+doctor: ## Check project health
+	@echo "👩‍⚕️ Checking project health..."
+	@make diagnose
+	@make check
 	@echo "✅ Health check complete"
 
-# ============================================================================
-# 🎯 OBSERVABILITY COMMANDS
-# ============================================================================
+# =============================================================================
+# CONVENIENCE ALIASES
+# =============================================================================
 
-trace-check: ## Check distributed tracing
-	@echo "🔍 Checking distributed tracing..."
-	@curl -s http://localhost:14268/api/traces?service=flexcore | jq .
-	@echo "✅ Tracing check complete"
+.PHONY: t
+t: test ## Alias for test
 
-logs-tail: ## Tail application logs
-	@echo "📝 Tailing application logs..."
-	@docker-compose logs -f flexcore-server
+.PHONY: l
+l: lint ## Alias for lint
 
-prometheus-query: ## Query Prometheus metrics
-	@echo "📊 Querying Prometheus metrics..."
-	@curl -s 'http://localhost:9090/api/v1/query?query=flexcore_requests_total' | jq .
-	@echo "✅ Prometheus query complete"
+.PHONY: f
+f: format ## Alias for format
 
-grafana-dash: ## Open Grafana dashboard
-	@echo "📊 Opening Grafana dashboard..."
-	@open http://localhost:3000/d/flexcore/flexcore-dashboard
+.PHONY: b
+b: build ## Alias for build
 
-# ============================================================================
-# 🎯 DEVELOPMENT UTILITIES
-# ============================================================================
+.PHONY: c
+c: clean ## Alias for clean
 
-watch-test: ## Watch and run tests on file changes
-	@echo "👀 Watching for file changes..."
-	@find . -name "*.go" | entr -r make test-unit
+.PHONY: r
+r: run ## Alias for run
 
-watch-build: ## Watch and build on file changes
-	@echo "👀 Watching for build changes..."
-	@find . -name "*.go" | entr -r make build
+.PHONY: v
+v: validate ## Alias for validate
 
-local-infra: ## Start local infrastructure (postgres, redis, jaeger)
-	@echo "🏗️ Starting local infrastructure..."
-	@docker-compose up -d postgres redis jaeger prometheus grafana
-	@echo "✅ Local infrastructure started"
+.PHONY: s
+s: service-start ## Alias for service-start
 
-local-infra-down: ## Stop local infrastructure
-	@echo "🏗️ Stopping local infrastructure..."
-	@docker-compose down
-	@echo "✅ Local infrastructure stopped"
+.PHONY: h
+h: service-health ## Alias for service-health
 
-# ============================================================================
-# 🎯 FLEXT ECOSYSTEM INTEGRATION
-# ============================================================================
+.PHONY: pb
+pb: plugin-build ## Alias for plugin-build
 
-ecosystem-check: ## Verify FLEXT ecosystem compatibility
-	@echo "🌐 Checking FLEXT ecosystem compatibility..."
-	@echo "📦 Distributed core: $(PROJECT_NAME) v$(PROJECT_VERSION)"
-	@echo "🏗️ Architecture: Clean Architecture + DDD + CQRS"
-	@echo "🔧 Language: Go $(GO_VERSION)"
-	@echo "🎯 Framework: Event-driven distributed system"
-	@echo "📊 Quality: Zero tolerance enforcement"
-	@echo "✅ Ecosystem compatibility verified"
+.PHONY: pt
+pt: plugin-test ## Alias for plugin-test
 
-workspace-info: ## Show workspace integration info
-	@echo "🏢 FLEXT Workspace Integration"
-	@echo "==============================="
-	@echo "📁 Project Path: $(PWD)"
-	@echo "🏆 Role: Distributed System Core Engine"
-	@echo "🔗 Dependencies: PostgreSQL, Redis, gRPC"
-	@echo "📦 Provides: Event-driven distributed architecture"
-	@echo "🎯 Standards: Enterprise Go patterns with observability"
+# =============================================================================
+# Default target
+# =============================================================================
+
+.DEFAULT_GOAL := help

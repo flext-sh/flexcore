@@ -1,15 +1,24 @@
 [build-system]
-requires = [ "poetry-core>=1.9.0",]
+requires = ["poetry-core>=1.9.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "flexcore"
-version = "0.7.0"
+version = "0.8.0"
 description = "FlexCore - High-Performance Go-Python Hybrid Enterprise Framework"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-keywords = [ "flext", "enterprise", "async", "typed", "legacy", "compatibility",]
-classifiers = [ "Development Status :: 5 - Production/Stable", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.13", "Programming Language :: Python :: 3 :: Only", "Topic :: Software Development :: Libraries :: Python Modules", "Typing :: Typed",]
+keywords = ["flext", "enterprise", "async", "typed", "legacy", "compatibility"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = []
 [[project.authors]]
 name = "FLEXT Team"
@@ -37,8 +46,20 @@ line-length = 88
 fix = true
 show-fixes = true
 respect-gitignore = true
-src = [ "src", "tests",]
-extend-exclude = [ "__pycache__", ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv", "venv", "build", "dist", "htmlcov",]
+src = ["src", "tests"]
+extend-exclude = [
+    "__pycache__",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "htmlcov",
+]
+extend = "../.ruff-shared.toml"
 
 [tool.mypy]
 python_version = "3.13"
@@ -63,13 +84,13 @@ disallow_subclassing_any = true
 disallow_untyped_calls = true
 ignore_missing_imports = false
 no_implicit_reexport = true
-files = [ "src", "tests",]
-plugins = [ "pydantic.mypy",]
-exclude = [ "build", "dist", ".venv", ".mypy_cache",]
+files = ["src", "tests"]
+plugins = ["pydantic.mypy"]
+exclude = ["build", "dist", ".venv", ".mypy_cache"]
 
 [tool.bandit]
-exclude_dirs = [ "tests", "build", "dist",]
-skips = [ "B101", "B601",]
+exclude_dirs = ["tests", "build", "dist"]
+skips = ["B101", "B601"]
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -82,19 +103,92 @@ include = "flexcore"
 from = "src"
 
 [tool.deptry]
-known_first_party = [ "flexcore",]
+known_first_party = ["flexcore"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
 asyncio_mode = "auto"
-addopts = [ "-ra", "--strict-markers", "--strict-config", "--cov=flexcore", "--cov-branch", "--cov-report=term-missing:skip-covered", "--cov-report=html:reports/coverage", "--cov-report=xml:reports/coverage.xml", "--cov-fail-under=90", "--maxfail=1", "--tb=short",]
-testpaths = [ "tests",]
-markers = [ "unit: Unit tests", "integration: Integration tests", "slow: Slow tests", "smoke: Smoke tests", "e2e: End-to-end tests",]
-filterwarnings = [ "error", "ignore::UserWarning", "ignore::DeprecationWarning",]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=flexcore",
+    "--cov-branch",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html:reports/coverage",
+    "--cov-report=xml:reports/coverage.xml",
+    "--cov-fail-under=90",
+    "--maxfail=1",
+    "--tb=short",
+]
+testpaths = ["tests"]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow tests",
+    "smoke: Smoke tests",
+    "e2e: End-to-end tests",
+]
+filterwarnings = ["error", "ignore::UserWarning", "ignore::DeprecationWarning"]
 
 [tool.ruff.lint]
-select = [ "ALL",]
-ignore = [ "COM812", "D203", "D213", "ISC001", "ANN401", "ARG001", "ARG002", "BLE001", "C901", "D102", "D103", "D105", "D107", "D401", "DTZ001", "DTZ005", "E401", "E501", "EM101", "EM102", "ERA001", "EXE001", "F401", "F823", "FBT001", "FBT002", "FBT003", "FIX002", "G004", "PLC0415", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004", "PLW0603", "PTH118", "PTH123", "RUF001", "S103", "S104", "S105", "S106", "S107", "S603", "S607", "SIM102", "TD002", "TD003", "TRY003", "TRY203", "TRY300", "TRY301", "TRY401",]
+select = ["ALL"]
+ignore = [
+    "COM812",
+    "D203",
+    "D213",
+    "ISC001",
+    "ANN401",
+    "ARG001",
+    "ARG002",
+    "BLE001",
+    "C901",
+    "D102",
+    "D103",
+    "D105",
+    "D107",
+    "D401",
+    "DTZ001",
+    "DTZ005",
+    "E401",
+    "E501",
+    "EM101",
+    "EM102",
+    "ERA001",
+    "EXE001",
+    "F401",
+    "F823",
+    "FBT001",
+    "FBT002",
+    "FBT003",
+    "FIX002",
+    "G004",
+    "PLC0415",
+    "PLR0911",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+    "PLR2004",
+    "PLW0603",
+    "PTH118",
+    "PTH123",
+    "RUF001",
+    "S103",
+    "S104",
+    "S105",
+    "S106",
+    "S107",
+    "S603",
+    "S607",
+    "SIM102",
+    "TD002",
+    "TD003",
+    "TRY003",
+    "TRY203",
+    "TRY300",
+    "TRY301",
+    "TRY401",
+]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -103,12 +197,23 @@ line-ending = "lf"
 docstring-code-format = true
 
 [tool.coverage.run]
-source = [ "src",]
+source = ["src"]
 branch = true
-omit = [ "*/tests/*", "*/test_*", "*/__pycache__/*", "*/venv/*", "*/.venv/*",]
+omit = ["*/tests/*", "*/test_*", "*/__pycache__/*", "*/venv/*", "*/.venv/*"]
 
 [tool.coverage.report]
-exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if settings.DEBUG", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "class .*\\bProtocol\\):", "@(abc\\.)?abstractmethod",]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
 
 [tool.coverage.html]
 directory = "reports/coverage"
@@ -121,20 +226,30 @@ python = ">=3.13,<3.14"
 
 
 [tool.ruff.lint.isort]
-known-first-party = [ "flext",]
+known-first-party = ["flext"]
 force-single-line = false
 split-on-trailing-comma = true
 combine-as-imports = true
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = [ "S101", "S103", "S104", "S105", "S106", "S107", "PLR2004", "ARG", "SLF001", "PLC0415",]
-"**/scripts/**" = [ "T201", "S603", "S607", "ANN",]
-"**/__init__.py" = [ "F401",]
-"**/proto/*_pb2.py" = [ "ALL",]
-"**/proto/*_pb2_grpc.py" = [ "ALL",]
-"**/*_pb2.py" = [ "ALL",]
-"**/*_pb2_grpc.py" = [ "ALL",]
-"**/generated/**/*.py" = [ "ALL",]
+"**/tests/**" = [
+    "S101",
+    "S103",
+    "S104",
+    "S105",
+    "S106",
+    "S107",
+    "PLR2004",
+    "ARG",
+    "SLF001",
+    "PLC0415",
+]
+"**/scripts/**" = ["T201", "S603", "S607", "ANN"]
+"**/__init__.py" = ["F401"]
+"**/proto/*_pb2.py" = ["ALL"]
+"**/proto/*_pb2_grpc.py" = ["ALL"]
+"**/*_pb2.py" = ["ALL"]
+"**/*_pb2_grpc.py" = ["ALL"]
 
 [tool.poetry.dependencies.flext-core]
 path = "../flext-core"
