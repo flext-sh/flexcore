@@ -35,6 +35,10 @@ func NewRealFlextServicePlugin(servicePath, configPath string, logger logging.Lo
 	if workingDir == "." {
 		workingDir = "/home/marlonsc/flext"
 	}
+	// Ensure working directory exists for FLEXT service
+	if _, err := os.Stat(workingDir); os.IsNotExist(err) {
+		workingDir = "/home/marlonsc/flext"
+	}
 	
 	return &RealFlextServicePlugin{
 		servicePath: servicePath,

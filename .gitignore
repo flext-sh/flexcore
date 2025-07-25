@@ -1,36 +1,97 @@
 # ============================================================================
-# FLEXT GO PROJECT STANDARD .gitignore TEMPLATE
-# Go 1.24+ | Clean Architecture | Distributed Systems
+# FLEXCORE - Go Distributed Service .gitignore
+# Go 1.24+ | Clean Architecture | Distributed Systems | gRPC
 # ============================================================================
 
 # ============================================================================
-# GO BINARIES AND BUILD ARTIFACTS
+# JUNK FILES - NEVER COMMIT THESE
 # ============================================================================
 
-# Binaries for programs and plugins
+# Archive and backup directories  
+archive/
+archives/
+backup/
+backups/
+.backup/
+*_backup/
+*_backup_*/
+
+# AI-generated files and reports
+*_REPORT*.md
+*_ANALYSIS*.md
+*_SUMMARY*.md  
+*_FINDINGS*.md
+CLAUDE*.md
+CONFIG_MIGRATION*.md
+DEVELOPMENT_STANDARDS*.md
+DUPLICATION_REPORT*.md
+LINT_CORRECTIONS*.md
+*.ai.md
+*.ai.txt
+
+# Backup files with timestamps
+*_20250*.bak
+*_202507*.bak
+*_202506*.bak
+*.md_20250*
+README_20250*.bak
+
+# Generic backup patterns
+*.bak
+*.backup
+*.orig
+*.syntax_backup  
+*.broken
+*.tmp.bak
+*_temp.py
+*_temp.md
+*_temp.go
+
+# Fix scripts and validation files
+fix_*.py
+fix_*.go
+*_fix.py
+*_fix.go
+*_validation.py
+validate_*.py
+investigate_*.py
+temp_*.py
+temp_*.go
+debug_*.py
+debug_*.go
+
+# Tool reports and analysis
+*_analysis.txt
+*_report.txt
+*_output.txt
+analysis_temp/
+report_*/
+reports/
+reports_*/
+temp_test_*/
+
+# ============================================================================
+# GO ARTIFACTS
+# ============================================================================
+
+# Go binaries and build artifacts
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-
-# Test binary, built with `go test -c`
 *.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Dependency directories
+# Go specific
 vendor/
-
-# Go workspace file
 go.work
+go.work.sum
 
-# ============================================================================
-# GO DEVELOPMENT TOOLS
-# ============================================================================
-
-# Debugging
+# Build artifacts
+build/
+dist/
+bin/
 debug
 debug.test
 
@@ -40,277 +101,88 @@ coverage.html
 coverage.xml
 *.coverprofile
 
-# Go module cache
-go.sum
-
-# Air live reload
+# Development tools
 .air/
 tmp/
 
 # ============================================================================
-# IDE AND EDITOR FILES
+# PYTHON ARTIFACTS (mixed project)
 # ============================================================================
 
-# Visual Studio Code
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+.env
+
+# ============================================================================
+# COMMON ARTIFACTS
+# ============================================================================
+
+# IDEs and editors
 .vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# JetBrains GoLand
 .idea/
-*.iml
-*.ipr
-*.iws
-
-# Vim
 *.swp
 *.swo
 *~
 
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-
-# Cursor AI
-.cursor/
-.cursorrules
-
-# ============================================================================
-# OS SPECIFIC FILES
-# ============================================================================
-
-# macOS
+# System files
 .DS_Store
-.AppleDouble
-.LSOverride
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-# Windows
 Thumbs.db
-ehthumbs.db
 Desktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
 
-# Linux
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-.nfs*
-
-# ============================================================================
-# LOGS AND TEMPORARY FILES
-# ============================================================================
-
-# Log files
+# Logs and temporary files
 *.log
 logs/
-log/
-
-# Temporary files
 *.tmp
-*.temp
-*.bak
-*.backup
 temp/
-tmp/
 
-# Runtime data
-*.pid
-*.lock
-
-# ============================================================================
-# DATABASE FILES
-# ============================================================================
-
-# SQLite
+# Database files
 *.db
 *.sqlite
 *.sqlite3
-*.db3
-
-# Redis dumps
 dump.rdb
 
-# ============================================================================
-# DOCKER AND CONTAINERIZATION
-# ============================================================================
-
-# Docker
-.dockerignore.bak
-docker-compose.override.yml
-internal.invalid.yml
-
-# Kubernetes
-*.secret.yaml
-
-# ============================================================================
-# CONFIGURATION AND SECRETS
-# ============================================================================
-
-# Environment files
-.env
-.internal.invalid
-.env.*.local
-.env.production
-.env.prod
-
-# Secrets and credentials
+# Security
 *.key
 *.pem
 *.crt
 *.p12
 *.pfx
-*.jks
 secret*
 *.secret
 credentials.json
-auth.json
-service-account*.json
 
-# Configuration backups
-*.conf.bak
-*.config.bak
-*.yaml.bak
-*.yml.bak
+# Docker
+docker-compose.override.yml
+internal.invalid.yml
 
-# ============================================================================
-# BUILD AND DISTRIBUTION
-# ============================================================================
-
-# Build artifacts
-build/
-dist/
-bin/
-
-# Archive directory
-archive/
-
-# Runtime plugins
-runtime-plugins/
-
-# ============================================================================
-# PROJECT SPECIFIC - GO SERVICE PATTERNS
-# ============================================================================
-
-# Generated protobuf files (if auto-generated)
+# Generated files (if auto-generated)
 *.pb.go
 *_grpc.pb.go
-
-# Swagger/OpenAPI generated files (if auto-generated)
-docs/swagger/
-
-# Migration files (if auto-generated)
-migrations/generated/
-
-# Wire dependency injection (if auto-generated)
 wire_gen.go
 
-# ============================================================================
-# MONITORING AND OBSERVABILITY
-# ============================================================================
-
-# Prometheus
-*.prom
-*.metrics
-
-# Grafana
-grafana/
-
-# Jaeger
-jaeger/
-
-# Health checks
-health_*.json
-status_*.json
-
-# ============================================================================
-# TESTING AND COVERAGE
-# ============================================================================
-
-# Test artifacts
+# Testing
 testdata/
 test_output/
 test_results/
-e2e_results/
-
-# Benchmark results
 *.bench
 benchmarks/
 
-# ============================================================================
-# DEVELOPMENT ARTIFACTS - FORBIDDEN PATTERNS
-# ============================================================================
+# Monitoring
+*.prom
+*.metrics
+health_*.json
+status_*.json
 
-# Manual fix scripts - FORBIDDEN
-fix_*.go
-*_fix.go
-*_validation.go
-validate_*.go
-
-# AI-generated reports - FORBIDDEN
-*_REPORT.md
-*_ANALYSIS.md
-*_VALIDATION.md
-CONFIG_MIGRATION*.md
-DEVELOPMENT_STANDARDS.md
-DUPLICATION_REPORT.md
-
-# Timestamped backup files - FORBIDDEN
-*_20250*.bak
-*_202507*.bak
-*_202506*.bak
-*.md_20250*
-*_SUMMARY_20250*.bak
-*_COMPLETE_20250*.bak
-*_FINDINGS_20250*.bak
-README_20250*.bak
-CLAUDE*_20250*.bak
-*_PATTERNS*.md
-*_IMPLEMENTATION*.md
-*_STATUS*.md
-
-# ============================================================================
-# AI ASSISTANT FILES
-# ============================================================================
-
-CLAUDE.md
-internal.invalid.md
-.claude/
-.cursor/
-
-# ============================================================================
-# ALWAYS INCLUDE EXCEPTIONS
-# ============================================================================
-
-# Important: Force include critical files
+# Force include critical files
 !go.mod
-!go.sum
 !Makefile
 !README.md
-!.pre-commit-config.yaml
-!.env.example
 !Dockerfile
 !docker-compose.yml
-!.gitignore

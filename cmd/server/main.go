@@ -140,13 +140,9 @@ func main() {
 	// 3. Setup plugin system for FLEXT service
 	pluginLoader := infrastructure.NewHashicorpStyleLoader()
 	
-	// 4. Register FLEXT service as a plugin in FLEXCORE (real implementation)
+	// 4. Register FLEXT service as proxy adapter in FLEXCORE (pragmatic implementation)
 	logger := logging.NewLogger("flext-plugin")
-	flextPlugin := infrastructure.NewRealFlextServicePlugin(
-		"/home/marlonsc/flext/cmd/flext/main.go",
-		"/home/marlonsc/flext/config.yaml",
-		logger,
-	)
+	flextPlugin := infrastructure.NewFlextProxyAdapter(logger)
 	pluginLoader.RegisterPlugin("flext-service", flextPlugin)
 	
 	// 5. Setup distributed cluster coordination (real Redis or fallback)
