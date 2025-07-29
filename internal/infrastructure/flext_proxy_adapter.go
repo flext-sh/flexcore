@@ -67,7 +67,7 @@ func (fpa *FlextProxyAdapter) simulateHealth(ctx context.Context) (interface{}, 
 		"timestamp":     time.Now().UTC(),
 		"capabilities": []string{
 			"meltano_execution",
-			"dbt_operations", 
+			"dbt_operations",
 			"singer_taps_targets",
 			"plugin_management",
 		},
@@ -86,7 +86,7 @@ func (fpa *FlextProxyAdapter) simulatePluginList(ctx context.Context) (interface
 			"description": "Meltano ETL execution via flext-meltano Python library",
 			"capabilities": []string{
 				"pipeline_execution",
-				"plugin_testing", 
+				"plugin_testing",
 				"plugin_description",
 				"state_management",
 				"environment_support",
@@ -96,13 +96,13 @@ func (fpa *FlextProxyAdapter) simulatePluginList(ctx context.Context) (interface
 	}
 
 	return map[string]interface{}{
-		"adapter":    fpa.Name(),
-		"operation":  "list_plugins",
-		"status":     "success",
-		"plugins":    plugins,
-		"count":      len(plugins),
-		"note":       "Plugin data retrieved from FLEXT service running on port 8081",
-		"timestamp":  time.Now().UTC(),
+		"adapter":   fpa.Name(),
+		"operation": "list_plugins",
+		"status":    "success",
+		"plugins":   plugins,
+		"count":     len(plugins),
+		"note":      "Plugin data retrieved from FLEXT service running on port 8081",
+		"timestamp": time.Now().UTC(),
 	}, nil
 }
 
@@ -110,7 +110,7 @@ func (fpa *FlextProxyAdapter) simulatePluginList(ctx context.Context) (interface
 func (fpa *FlextProxyAdapter) simulatePluginExecution(ctx context.Context, params map[string]interface{}) (interface{}, error) {
 	pluginName, _ := params["plugin_name"].(string)
 	command, _ := params["command"].(string)
-	
+
 	if pluginName == "" {
 		pluginName = "meltano"
 	}
@@ -118,29 +118,29 @@ func (fpa *FlextProxyAdapter) simulatePluginExecution(ctx context.Context, param
 		command = "--version"
 	}
 
-	fpa.logger.Info("Simulating FLEXT plugin execution", 
+	fpa.logger.Info("Simulating FLEXT plugin execution",
 		zap.String("plugin", pluginName),
 		zap.String("command", command))
 
 	// Simulate realistic execution result
 	executionResult := map[string]interface{}{
-		"status":     "success",
-		"plugin":     pluginName,
-		"command":    command,
-		"output":     "meltano, version 3.8.0\n",
-		"exit_code":  0,
-		"duration":   "1.234s",
-		"job_id":     "simulated-" + time.Now().Format("20060102150405"),
-		"timestamp":  time.Now().UTC(),
+		"status":    "success",
+		"plugin":    pluginName,
+		"command":   command,
+		"output":    "meltano, version 3.8.0\n",
+		"exit_code": 0,
+		"duration":  "1.234s",
+		"job_id":    "simulated-" + time.Now().Format("20060102150405"),
+		"timestamp": time.Now().UTC(),
 	}
 
 	return map[string]interface{}{
-		"adapter":     fpa.Name(),
-		"operation":   "execute_plugin",
-		"status":      "success",
-		"result":      executionResult,
-		"note":        "Plugin execution delegated to FLEXT service on port 8081",
-		"timestamp":   time.Now().UTC(),
+		"adapter":   fpa.Name(),
+		"operation": "execute_plugin",
+		"status":    "success",
+		"result":    executionResult,
+		"note":      "Plugin execution delegated to FLEXT service on port 8081",
+		"timestamp": time.Now().UTC(),
 	}, nil
 }
 

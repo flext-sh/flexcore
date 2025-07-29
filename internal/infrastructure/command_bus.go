@@ -31,17 +31,17 @@ func NewInMemoryCommandBus(logger logging.LoggerInterface) *InMemoryCommandBus {
 func (cb *InMemoryCommandBus) Send(ctx context.Context, command interface{}) error {
 	cb.mu.RLock()
 	defer cb.mu.RUnlock()
-	
+
 	commandType := fmt.Sprintf("%T", command)
 	handler, exists := cb.handlers[commandType]
-	
+
 	if !exists {
 		return fmt.Errorf("no handler registered for command type: %s", commandType)
 	}
-	
+
 	cb.logger.Debug("Executing command",
 		zap.String("command_type", commandType))
-	
+
 	// Execute the command handler
 	if err := handler(ctx, command); err != nil {
 		cb.logger.Error("Command handler failed",
@@ -49,7 +49,7 @@ func (cb *InMemoryCommandBus) Send(ctx context.Context, command interface{}) err
 			zap.Error(err))
 		return fmt.Errorf("command handler failed for %s: %w", commandType, err)
 	}
-	
+
 	cb.logger.Debug("Command executed successfully", zap.String("command_type", commandType))
 	return nil
 }
@@ -58,11 +58,11 @@ func (cb *InMemoryCommandBus) Send(ctx context.Context, command interface{}) err
 func (cb *InMemoryCommandBus) RegisterHandler(commandType string, handler CommandHandler) {
 	cb.mu.Lock()
 	defer cb.mu.Unlock()
-	
+
 	if _, exists := cb.handlers[commandType]; exists {
 		cb.logger.Warn("Overriding existing handler", zap.String("command_type", commandType))
 	}
-	
+
 	cb.handlers[commandType] = handler
 	cb.logger.Debug("Command handler registered", zap.String("command_type", commandType))
 }
@@ -89,17 +89,17 @@ func NewInMemoryQueryBus(logger logging.LoggerInterface) *InMemoryQueryBus {
 func (qb *InMemoryQueryBus) Send(ctx context.Context, query interface{}) (interface{}, error) {
 	qb.mu.RLock()
 	defer qb.mu.RUnlock()
-	
+
 	queryType := fmt.Sprintf("%T", query)
 	handler, exists := qb.handlers[queryType]
-	
+
 	if !exists {
 		return nil, fmt.Errorf("no handler registered for query type: %s", queryType)
 	}
-	
+
 	qb.logger.Debug("Executing query",
 		zap.String("query_type", queryType))
-	
+
 	// Execute the query handler
 	result, err := handler(ctx, query)
 	if err != nil {
@@ -108,7 +108,7 @@ func (qb *InMemoryQueryBus) Send(ctx context.Context, query interface{}) (interf
 			zap.Error(err))
 		return nil, fmt.Errorf("query handler failed for %s: %w", queryType, err)
 	}
-	
+
 	qb.logger.Debug("Query executed successfully", zap.String("query_type", queryType))
 	return result, nil
 }
@@ -117,11 +117,11 @@ func (qb *InMemoryQueryBus) Send(ctx context.Context, query interface{}) (interf
 func (qb *InMemoryQueryBus) RegisterHandler(queryType string, handler QueryHandler) {
 	qb.mu.Lock()
 	defer qb.mu.Unlock()
-	
+
 	if _, exists := qb.handlers[queryType]; exists {
 		qb.logger.Warn("Overriding existing handler", zap.String("query_type", queryType))
 	}
-	
+
 	qb.handlers[queryType] = handler
 	qb.logger.Debug("Query handler registered", zap.String("query_type", queryType))
 }

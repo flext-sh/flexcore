@@ -25,14 +25,14 @@ type FlexCoreContainer struct {
 // NewFlexCoreContainer creates a new FLEXCORE container with real persistence
 func NewFlexCoreContainer(useRealPersistence bool) *FlexCoreContainer {
 	logger := logging.NewLogger("flexcore-container")
-	
+
 	container := &FlexCoreContainer{
 		eventBus:   NewInMemoryEventBus(logger),
 		commandBus: NewInMemoryCommandBus(logger),
 		queryBus:   NewInMemoryQueryBus(logger),
 		logger:     logger,
 	}
-	
+
 	if useRealPersistence {
 		// Use PostgreSQL event store when real persistence is enabled
 		if dbConn, err := NewDatabaseConnection(config.Current, logger); err == nil {
@@ -45,7 +45,7 @@ func NewFlexCoreContainer(useRealPersistence bool) *FlexCoreContainer {
 		// Use in-memory event store for development/testing
 		container.eventStore = NewMemoryEventStore(logger)
 	}
-	
+
 	return container
 }
 
@@ -81,33 +81,33 @@ func (fc *FlexCoreContainer) GetQueryBus() *InMemoryQueryBus {
 func (fc *FlexCoreContainer) Initialize(ctx context.Context) error {
 	fc.mu.Lock()
 	defer fc.mu.Unlock()
-	
+
 	if fc.initialized {
 		return nil
 	}
-	
+
 	fc.logger.Info("Initializing FLEXCORE distributed runtime container...")
-	
+
 	// Initialize components in order
 	if err := fc.initializeEventStore(ctx); err != nil {
 		return fmt.Errorf("failed to initialize event store: %w", err)
 	}
-	
+
 	if err := fc.initializeEventBus(ctx); err != nil {
 		return fmt.Errorf("failed to initialize event bus: %w", err)
 	}
-	
+
 	if err := fc.initializeCommandBus(ctx); err != nil {
 		return fmt.Errorf("failed to initialize command bus: %w", err)
 	}
-	
+
 	if err := fc.initializeQueryBus(ctx); err != nil {
 		return fmt.Errorf("failed to initialize query bus: %w", err)
 	}
-	
+
 	fc.initialized = true
 	fc.logger.Info("FLEXCORE container initialized successfully")
-	
+
 	return nil
 }
 
@@ -143,13 +143,13 @@ func (fc *FlexCoreContainer) initializeQueryBus(ctx context.Context) error {
 func (fc *FlexCoreContainer) Shutdown(ctx context.Context) error {
 	fc.mu.Lock()
 	defer fc.mu.Unlock()
-	
+
 	fc.logger.Info("Shutting down FLEXCORE container...")
-	
+
 	// Shutdown components in reverse order
 	// For now, just mark as not initialized
 	fc.initialized = false
-	
+
 	fc.logger.Info("FLEXCORE container shutdown complete")
 	return nil
 }

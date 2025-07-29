@@ -43,7 +43,7 @@ func (fha *FlextHTTPAdapter) Version() string {
 
 // Execute executes FLEXT operations via HTTP API
 func (fha *FlextHTTPAdapter) Execute(ctx context.Context, params map[string]interface{}) (interface{}, error) {
-	fha.logger.Info("Executing FLEXT operation via HTTP", 
+	fha.logger.Info("Executing FLEXT operation via HTTP",
 		zap.String("base_url", fha.flextBaseURL),
 		zap.Any("params", params))
 
@@ -68,7 +68,7 @@ func (fha *FlextHTTPAdapter) Execute(ctx context.Context, params map[string]inte
 // checkHealth checks FLEXT service health
 func (fha *FlextHTTPAdapter) checkHealth(ctx context.Context) (interface{}, error) {
 	url := fmt.Sprintf("%s/health", fha.flextBaseURL)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create health check request: %w", err)
@@ -93,18 +93,18 @@ func (fha *FlextHTTPAdapter) checkHealth(ctx context.Context) (interface{}, erro
 	fha.logger.Info("FLEXT health check successful", zap.Any("health", healthData))
 
 	return map[string]interface{}{
-		"adapter":     fha.Name(),
-		"operation":   "health",
-		"status":      "success",
-		"flext_data":  healthData,
-		"timestamp":   time.Now().UTC(),
+		"adapter":    fha.Name(),
+		"operation":  "health",
+		"status":     "success",
+		"flext_data": healthData,
+		"timestamp":  time.Now().UTC(),
 	}, nil
 }
 
 // listPlugins lists available FLEXT plugins
 func (fha *FlextHTTPAdapter) listPlugins(ctx context.Context) (interface{}, error) {
 	url := fmt.Sprintf("%s/api/v1/flexcore/plugins", fha.flextBaseURL)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create list plugins request: %w", err)
@@ -129,11 +129,11 @@ func (fha *FlextHTTPAdapter) listPlugins(ctx context.Context) (interface{}, erro
 	fha.logger.Info("FLEXT plugins listed successfully", zap.Any("plugins", pluginsData))
 
 	return map[string]interface{}{
-		"adapter":     fha.Name(),
-		"operation":   "list_plugins",
-		"status":      "success",
-		"flext_data":  pluginsData,
-		"timestamp":   time.Now().UTC(),
+		"adapter":    fha.Name(),
+		"operation":  "list_plugins",
+		"status":     "success",
+		"flext_data": pluginsData,
+		"timestamp":  time.Now().UTC(),
 	}, nil
 }
 
@@ -152,7 +152,7 @@ func (fha *FlextHTTPAdapter) executePlugin(ctx context.Context, params map[strin
 	args, _ := params["args"].([]interface{})
 
 	url := fmt.Sprintf("%s/api/v1/flexcore/plugins/%s/execute", fha.flextBaseURL, pluginName)
-	
+
 	requestBody := map[string]interface{}{
 		"command": command,
 		"args":    args,
@@ -169,7 +169,7 @@ func (fha *FlextHTTPAdapter) executePlugin(ctx context.Context, params map[strin
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	fha.logger.Info("Executing FLEXT plugin via HTTP", 
+	fha.logger.Info("Executing FLEXT plugin via HTTP",
 		zap.String("plugin", pluginName),
 		zap.String("command", command),
 		zap.Any("args", args))
@@ -190,17 +190,17 @@ func (fha *FlextHTTPAdapter) executePlugin(ctx context.Context, params map[strin
 		return nil, fmt.Errorf("failed to parse execution response: %w", err)
 	}
 
-	fha.logger.Info("FLEXT plugin executed successfully", 
+	fha.logger.Info("FLEXT plugin executed successfully",
 		zap.String("plugin", pluginName),
 		zap.Any("result", execData))
 
 	return map[string]interface{}{
-		"adapter":      fha.Name(),
-		"operation":    "execute_plugin",
-		"plugin_name":  pluginName,
-		"status":       "success",
-		"flext_data":   execData,
-		"timestamp":    time.Now().UTC(),
+		"adapter":     fha.Name(),
+		"operation":   "execute_plugin",
+		"plugin_name": pluginName,
+		"status":      "success",
+		"flext_data":  execData,
+		"timestamp":   time.Now().UTC(),
 	}, nil
 }
 

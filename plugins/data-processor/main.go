@@ -160,8 +160,9 @@ func (dp *DataProcessor) Cleanup() error {
 
 	// Save statistics to file (optional)
 	if statsFile, ok := dp.config["stats_file"].(string); ok {
-		data, _ := json.MarshalIndent(dp.statistics, "", "  ")
-		os.WriteFile(statsFile, data, 0644)
+		if data, err := json.MarshalIndent(dp.statistics, "", "  "); err == nil {
+			_ = os.WriteFile(statsFile, data, 0644)
+		}
 	}
 
 	return nil
@@ -371,7 +372,7 @@ func nestMap(data map[string]interface{}) map[string]interface{} {
 				if _, exists := current[part]; !exists {
 					current[part] = make(map[string]interface{})
 				}
-				current = current[part].(map[string]interface{})
+				if nextMap, ok := current[part].(map[string]interface{}); ok {\n					current = nextMap\n				}
 			}
 		}
 	}

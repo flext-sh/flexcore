@@ -22,7 +22,7 @@ type ZapLogger struct {
 func NewLogger(name string) LoggerInterface {
 	if Logger == nil {
 		// Initialize with default config if not already initialized
-		Initialize("development", "info")
+		_ = Initialize("development", "info")
 	}
 	return &ZapLogger{
 		logger: Logger.Named(name),
