@@ -47,7 +47,7 @@ func (es *PostgreSQLEventStore) Initialize() error {
 	if err := es.db.AutoMigrate(&Event{}); err != nil {
 		return fmt.Errorf("failed to migrate events table: %w", err)
 	}
-	
+
 	es.logger.Info("PostgreSQL event store initialized successfully")
 	return nil
 }
@@ -56,16 +56,16 @@ func (es *PostgreSQLEventStore) Initialize() error {
 func (es *PostgreSQLEventStore) SaveEvent(ctx context.Context, event interface{}) error {
 	// Generate event ID
 	eventID := uuid.New().String()
-	
+
 	// Determine event type from the event struct
 	eventType := fmt.Sprintf("%T", event)
-	
+
 	// Serialize event data to JSON
 	eventData, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event data: %w", err)
 	}
-	
+
 	// Create event record
 	eventRecord := Event{
 		ID:        eventID,
@@ -75,7 +75,7 @@ func (es *PostgreSQLEventStore) SaveEvent(ctx context.Context, event interface{}
 		Version:   1,
 		Timestamp: time.Now().UTC(),
 	}
-	
+
 	// Save to database
 	if err := es.db.WithContext(ctx).Create(&eventRecord).Error; err != nil {
 		es.logger.Error("Failed to save event to PostgreSQL",
@@ -84,26 +84,26 @@ func (es *PostgreSQLEventStore) SaveEvent(ctx context.Context, event interface{}
 			zap.Error(err))
 		return fmt.Errorf("failed to save event: %w", err)
 	}
-	
+
 	es.logger.Debug("Event saved to PostgreSQL",
 		zap.String("event_id", eventID),
 		zap.String("event_type", eventType),
 		zap.String("stream_id", eventRecord.StreamID))
-	
+
 	return nil
 }
 
 // GetEvents retrieves events from PostgreSQL by stream ID
 func (es *PostgreSQLEventStore) GetEvents(ctx context.Context, streamID string) ([]EventEntry, error) {
 	var events []Event
-	
+
 	if err := es.db.WithContext(ctx).
 		Where("stream_id = ?", streamID).
 		Order("timestamp ASC").
 		Find(&events).Error; err != nil {
 		return nil, fmt.Errorf("failed to retrieve events: %w", err)
 	}
-	
+
 	// Convert to EventEntry format
 	var eventEntries []EventEntry
 	for _, event := range events {
@@ -114,7 +114,7 @@ func (es *PostgreSQLEventStore) GetEvents(ctx context.Context, streamID string) 
 				zap.Error(err))
 			continue
 		}
-		
+
 		eventEntries = append(eventEntries, EventEntry{
 			ID:        event.ID,
 			Type:      event.Type,
@@ -123,20 +123,20 @@ func (es *PostgreSQLEventStore) GetEvents(ctx context.Context, streamID string) 
 			Version:   event.Version,
 		})
 	}
-	
+
 	return eventEntries, nil
 }
 
 // GetAllEvents retrieves all events from PostgreSQL
 func (es *PostgreSQLEventStore) GetAllEvents(ctx context.Context) ([]EventEntry, error) {
 	var events []Event
-	
+
 	if err := es.db.WithContext(ctx).
 		Order("timestamp ASC").
 		Find(&events).Error; err != nil {
 		return nil, fmt.Errorf("failed to retrieve all events: %w", err)
 	}
-	
+
 	// Convert to EventEntry format
 	var eventEntries []EventEntry
 	for _, event := range events {
@@ -147,7 +147,7 @@ func (es *PostgreSQLEventStore) GetAllEvents(ctx context.Context) ([]EventEntry,
 				zap.Error(err))
 			continue
 		}
-		
+
 		eventEntries = append(eventEntries, EventEntry{
 			ID:        event.ID,
 			Type:      event.Type,
@@ -156,21 +156,21 @@ func (es *PostgreSQLEventStore) GetAllEvents(ctx context.Context) ([]EventEntry,
 			Version:   event.Version,
 		})
 	}
-	
+
 	return eventEntries, nil
 }
 
 // GetEventsByType retrieves events by type from PostgreSQL
 func (es *PostgreSQLEventStore) GetEventsByType(ctx context.Context, eventType string) ([]EventEntry, error) {
 	var events []Event
-	
+
 	if err := es.db.WithContext(ctx).
 		Where("type = ?", eventType).
 		Order("timestamp ASC").
 		Find(&events).Error; err != nil {
 		return nil, fmt.Errorf("failed to retrieve events by type: %w", err)
 	}
-	
+
 	// Convert to EventEntry format
 	var eventEntries []EventEntry
 	for _, event := range events {
@@ -181,7 +181,7 @@ func (es *PostgreSQLEventStore) GetEventsByType(ctx context.Context, eventType s
 				zap.Error(err))
 			continue
 		}
-		
+
 		eventEntries = append(eventEntries, EventEntry{
 			ID:        event.ID,
 			Type:      event.Type,
@@ -190,18 +190,18 @@ func (es *PostgreSQLEventStore) GetEventsByType(ctx context.Context, eventType s
 			Version:   event.Version,
 		})
 	}
-	
+
 	return eventEntries, nil
 }
 
 // GetEventCount returns the total number of events in the store
 func (es *PostgreSQLEventStore) GetEventCount(ctx context.Context) (int64, error) {
 	var count int64
-	
+
 	if err := es.db.WithContext(ctx).Model(&Event{}).Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("failed to count events: %w", err)
 	}
-	
+
 	return count, nil
 }
 
@@ -211,11 +211,11 @@ func (es *PostgreSQLEventStore) DeleteEventsByStream(ctx context.Context, stream
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete events for stream %s: %w", streamID, result.Error)
 	}
-	
+
 	es.logger.Info("Deleted events for stream",
 		zap.String("stream_id", streamID),
 		zap.Int64("deleted_count", result.RowsAffected))
-	
+
 	return nil
 }
 

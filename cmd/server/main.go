@@ -100,55 +100,55 @@ func setupGracefulShutdown(cancel context.CancelFunc) {
 func main() {
 	// Parse command line flags
 	flags := parseFlags()
-	
+
 	// Show help or version if requested
 	if flags.help {
 		flag.Usage()
 		return
 	}
-	
+
 	if flags.version {
 		fmt.Printf("FlexCore Server v%s\nBuild: %s\nCommit: %s\n", Version, BuildTime, CommitHash)
 		return
 	}
-	
+
 	// Initialize application
 	if err := initializeApplication(flags); err != nil {
 		fmt.Printf("Failed to initialize application: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	
+
 	// Setup graceful shutdown
 	setupGracefulShutdown(cancel)
-	
+
 	// 1. Initialize FLEXCORE distributed runtime with real persistence
 	useRealPersistence := config.Current.App.Environment == "production"
 	flexcoreContainer := infrastructure.NewFlexCoreContainer(useRealPersistence)
 	if err := flexcoreContainer.Initialize(ctx); err != nil {
 		logging.Logger.Fatal("Failed to initialize FLEXCORE container", zap.Error(err))
 	}
-	
+
 	// 2. Setup event sourcing + CQRS
 	eventStore := flexcoreContainer.GetEventStore()
 	commandBus := flexcoreContainer.GetCommandBus()
 	_ = flexcoreContainer.GetQueryBus() // Not used in this implementation
-	
+
 	// 3. Setup plugin system for FLEXT service
 	pluginLoader := infrastructure.NewHashicorpStyleLoader()
-	
+
 	// 4. Register FLEXT service as proxy adapter in FLEXCORE (pragmatic implementation)
 	logger := logging.NewLogger("flext-plugin")
 	flextPlugin := infrastructure.NewFlextProxyAdapter(logger)
 	pluginLoader.RegisterPlugin("flext-service", flextPlugin)
-	
+
 	// 5. Setup distributed cluster coordination (real Redis or fallback)
 	var cluster services.CoordinationLayer
 	redisLogger := logging.NewLogger("redis-coordinator")
-	
+
 	if config.GetString("redis.url") != "" {
 		// Use real Redis coordinator
 		cluster = infrastructure.NewRealRedisCoordinator(config.GetString("redis.url"), redisLogger)
@@ -158,12 +158,12 @@ func main() {
 		cluster = infrastructure.NewRedisCoordinator()
 		logging.Logger.Info("Using simulated Redis coordinator (development mode)")
 	}
-	
+
 	if err := cluster.Start(ctx); err != nil {
 		logging.Logger.Fatal("Failed to start cluster coordinator", zap.Error(err))
 	}
 	defer cluster.Stop()
-	
+
 	// 6. Initialize workflow engine with FLEXT service
 	workflowLogger := logging.NewLogger("workflow-service")
 	workflowService := services.NewWorkflowService(
@@ -174,41 +174,41 @@ func main() {
 		commandBus,
 		workflowLogger,
 	)
-	
+
 	// 7. Start FLEXCORE container with real endpoints
 	server := infrastructure.NewRealFlexcoreServer(workflowService, pluginLoader, cluster, eventStore)
 	logging.Logger.Info("Starting FLEXCORE container with real FLEXT service...")
-	
+
 	// Start server in a goroutine
 	go func() {
 		if err := server.Start(":8080"); err != nil && err != http.ErrServerClosed {
 			logging.Logger.Fatal("FLEXCORE container failed to start", zap.Error(err))
 		}
 	}()
-	
+
 	// Wait for shutdown signal
 	<-ctx.Done()
-	
+
 	// Graceful shutdown
 	logging.Logger.Info("Shutting down FLEXCORE container...")
-	
+
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), time.Duration(shutdownTimeoutSeconds)*time.Second)
 	defer shutdownCancel()
-	
+
 	// Stop server
 	if err := server.Stop(shutdownCtx); err != nil {
 		logging.Logger.Error("Server shutdown error", zap.Error(err))
 	}
-	
+
 	// Stop plugin loader
 	if err := pluginLoader.Shutdown(); err != nil {
 		logging.Logger.Error("Plugin loader shutdown error", zap.Error(err))
 	}
-	
+
 	// Stop container
 	if err := flexcoreContainer.Shutdown(shutdownCtx); err != nil {
 		logging.Logger.Error("Container shutdown error", zap.Error(err))
 	}
-	
+
 	logging.Logger.Info("FLEXCORE container shutdown complete")
 }

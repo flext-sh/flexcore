@@ -39,13 +39,13 @@ func NewMemoryEventStore(logger logging.LoggerInterface) *MemoryEventStore {
 func (es *MemoryEventStore) SaveEvent(ctx context.Context, event interface{}) error {
 	es.mu.Lock()
 	defer es.mu.Unlock()
-	
+
 	// Generate event ID
 	eventID := uuid.New().String()
-	
+
 	// Determine event type from the event struct
 	eventType := fmt.Sprintf("%T", event)
-	
+
 	// Create event entry
 	entry := EventEntry{
 		ID:        eventID,
@@ -54,16 +54,16 @@ func (es *MemoryEventStore) SaveEvent(ctx context.Context, event interface{}) er
 		Timestamp: time.Now().UTC(),
 		Version:   1,
 	}
-	
+
 	// Store event (using event type as stream key for simplicity)
 	streamKey := eventType
 	es.events[streamKey] = append(es.events[streamKey], entry)
-	
+
 	es.logger.Debug("Event saved to store",
 		zap.String("event_id", eventID),
 		zap.String("event_type", eventType),
 		zap.String("stream", streamKey))
-	
+
 	return nil
 }
 
@@ -71,16 +71,16 @@ func (es *MemoryEventStore) SaveEvent(ctx context.Context, event interface{}) er
 func (es *MemoryEventStore) GetEvents(ctx context.Context, streamKey string) ([]EventEntry, error) {
 	es.mu.RLock()
 	defer es.mu.RUnlock()
-	
+
 	events, exists := es.events[streamKey]
 	if !exists {
 		return []EventEntry{}, nil
 	}
-	
+
 	// Return a copy to prevent external modification
 	result := make([]EventEntry, len(events))
 	copy(result, events)
-	
+
 	return result, nil
 }
 
@@ -88,12 +88,12 @@ func (es *MemoryEventStore) GetEvents(ctx context.Context, streamKey string) ([]
 func (es *MemoryEventStore) GetAllEvents(ctx context.Context) ([]EventEntry, error) {
 	es.mu.RLock()
 	defer es.mu.RUnlock()
-	
+
 	var allEvents []EventEntry
 	for _, events := range es.events {
 		allEvents = append(allEvents, events...)
 	}
-	
+
 	return allEvents, nil
 }
 
@@ -116,19 +116,19 @@ func NewInMemoryEventBus(logger logging.LoggerInterface) *InMemoryEventBus {
 func (eb *InMemoryEventBus) Publish(ctx context.Context, event interface{}) error {
 	eb.mu.RLock()
 	defer eb.mu.RUnlock()
-	
+
 	eventType := fmt.Sprintf("%T", event)
 	handlers, exists := eb.handlers[eventType]
-	
+
 	if !exists {
 		eb.logger.Debug("No handlers registered for event type", zap.String("event_type", eventType))
 		return nil
 	}
-	
+
 	eb.logger.Debug("Publishing event to handlers",
 		zap.String("event_type", eventType),
 		zap.Int("handler_count", len(handlers)))
-	
+
 	// Execute all handlers
 	for i, handler := range handlers {
 		if err := handler(ctx, event); err != nil {
@@ -139,7 +139,7 @@ func (eb *InMemoryEventBus) Publish(ctx context.Context, event interface{}) erro
 			return fmt.Errorf("handler %d failed for event %s: %w", i, eventType, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -147,7 +147,7 @@ func (eb *InMemoryEventBus) Publish(ctx context.Context, event interface{}) erro
 func (eb *InMemoryEventBus) Subscribe(eventType string, handler func(context.Context, interface{}) error) {
 	eb.mu.Lock()
 	defer eb.mu.Unlock()
-	
+
 	eb.handlers[eventType] = append(eb.handlers[eventType], handler)
 	eb.logger.Debug("Handler subscribed", zap.String("event_type", eventType))
 }

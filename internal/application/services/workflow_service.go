@@ -39,11 +39,11 @@ type CommandBus interface {
 
 // WorkflowService provides FLEXCORE runtime services exactly as specified in FLEXT_SERVICE_ARCHITECTURE.md
 type WorkflowService struct {
-	eventBus     EventBus              // Event Sourcing + CQRS
-	pluginLoader PluginLoader         // HashiCorp-style plugins
-	cluster      CoordinationLayer    // Distributed coordination
-	repository   EventStore           // Event Store for audit trail
-	commandBus   CommandBus           // CQRS command processing
+	eventBus     EventBus          // Event Sourcing + CQRS
+	pluginLoader PluginLoader      // HashiCorp-style plugins
+	cluster      CoordinationLayer // Distributed coordination
+	repository   EventStore        // Event Store for audit trail
+	commandBus   CommandBus        // CQRS command processing
 	logger       logging.LoggerInterface
 }
 
@@ -122,7 +122,7 @@ func (ws *WorkflowService) ExecuteFlextPipeline(ctx context.Context, pipelineID 
 		return fmt.Errorf("failed to execute pipeline command: %w", err)
 	}
 
-	// 3. Plugin System - Load and execute FLEXT plugins dynamically  
+	// 3. Plugin System - Load and execute FLEXT plugins dynamically
 	flextPlugin, err := ws.pluginLoader.LoadPlugin("flext-service")
 	if err != nil {
 		return fmt.Errorf("failed to load FLEXT service plugin: %w", err)
@@ -135,8 +135,8 @@ func (ws *WorkflowService) ExecuteFlextPipeline(ctx context.Context, pipelineID 
 
 	// 5. Execute FLEXT service within FLEXCORE container
 	result, err := ws.executeFlextPlugin(ctx, flextPlugin, map[string]interface{}{
-		"pipeline_id": pipelineID,
-		"environment": "production",
+		"pipeline_id":  pipelineID,
+		"environment":  "production",
 		"cluster_node": ws.cluster.GetNodeID(),
 	})
 	if err != nil {
@@ -155,11 +155,11 @@ func (ws *WorkflowService) executeFlextPlugin(ctx context.Context, plugin interf
 		zap.Any("pipeline_id", params["pipeline_id"]),
 		zap.Any("environment", params["environment"]),
 		zap.Any("cluster_node", params["cluster_node"]))
-	
+
 	// Return success result
 	return map[string]interface{}{
-		"status": "completed",
+		"status":    "completed",
 		"timestamp": time.Now(),
-		"node": params["cluster_node"],
+		"node":      params["cluster_node"],
 	}, nil
 }
