@@ -255,7 +255,7 @@ func TestLogger_WithFields(t *testing.T) {
 		// Create logger with fields
 		loggerWithFields := Logger.With(
 			zap.String("service", "flexcore"),
-			zap.String("version", "1.0.0"),
+			zap.String("version", "0.9.0"),
 			zap.Int("pid", 12345),
 		)
 

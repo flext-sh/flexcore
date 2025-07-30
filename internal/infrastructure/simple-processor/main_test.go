@@ -343,7 +343,7 @@ func TestSimpleProcessor_GetInfo(t *testing.T) {
 
 		assert.Equal(t, "simple-processor", info.ID)
 		assert.Equal(t, "simple-processor", info.Name)
-		assert.Equal(t, "1.0.0", info.Version)
+		assert.Equal(t, "0.9.0", info.Version)
 		assert.Equal(t, "Simple data processing plugin for FlexCore testing", info.Description)
 		assert.Equal(t, "FlexCore Team", info.Author)
 		assert.Equal(t, "processor", info.Type)

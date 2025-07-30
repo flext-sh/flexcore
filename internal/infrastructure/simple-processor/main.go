@@ -132,7 +132,7 @@ func (sp *SimpleProcessor) GetInfo() PluginInfo {
 	return PluginInfo{
 		ID:          "simple-processor",
 		Name:        "simple-processor",
-		Version:     "1.0.0",
+		Version:     "0.9.0",
 		Description: "Simple data processing plugin for FlexCore testing",
 		Author:      "FlexCore Team",
 		Type:        "processor",

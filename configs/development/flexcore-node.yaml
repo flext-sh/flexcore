@@ -1,6 +1,6 @@
 app:
   name: "flexcore-node"
-  version: "1.0.0"
+  version: "0.9.0"
   debug: true
 
 cluster:

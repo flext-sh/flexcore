@@ -74,7 +74,7 @@ func TestSetDefaults(t *testing.T) {
 
 		// Test app defaults
 		assert.Equal(t, "flexcore", V.GetString("app.name"))
-		assert.Equal(t, "1.0.0", V.GetString("app.version"))
+		assert.Equal(t, "0.9.0", V.GetString("app.version"))
 		assert.Equal(t, "development", V.GetString("app.environment"))
 		assert.True(t, V.GetBool("app.debug"))
 		assert.Equal(t, 8080, V.GetInt("app.port"))

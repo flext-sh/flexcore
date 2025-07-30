@@ -93,7 +93,7 @@ func TestPluginInfo_Creation(t *testing.T) {
 			pluginInfo: PluginInfo{
 				ID:          "test-plugin",
 				Name:        "Test Plugin",
-				Version:     "1.0.0",
+				Version:     "0.9.0",
 				Description: "A test plugin for unit testing",
 				Author:      "Test Author",
 				Type:        "processor",
@@ -151,7 +151,7 @@ func TestPluginInfo_Validation(t *testing.T) {
 			plugin := PluginInfo{
 				ID:      "test",
 				Name:    "Test",
-				Version: "1.0.0",
+				Version: "0.9.0",
 				Status:  status,
 				Health:  "healthy",
 			}
@@ -165,7 +165,7 @@ func TestPluginInfo_Validation(t *testing.T) {
 			plugin := PluginInfo{
 				ID:      "test",
 				Name:    "Test",
-				Version: "1.0.0",
+				Version: "0.9.0",
 				Status:  "active",
 				Health:  health,
 			}
@@ -179,7 +179,7 @@ func TestPluginInfo_Validation(t *testing.T) {
 			plugin := PluginInfo{
 				ID:      "test",
 				Name:    "Test",
-				Version: "1.0.0",
+				Version: "0.9.0",
 				Type:    pluginType,
 				Status:  "active",
 				Health:  "healthy",
@@ -189,7 +189,7 @@ func TestPluginInfo_Validation(t *testing.T) {
 	})
 
 	t.Run("semantic version validation", func(t *testing.T) {
-		validVersions := []string{"1.0.0", "2.1.3", "0.0.1", "10.20.30"}
+		validVersions := []string{"0.9.0", "2.1.3", "0.0.1", "10.20.30"}
 		for _, version := range validVersions {
 			plugin := PluginInfo{
 				ID:      "test",
@@ -210,7 +210,7 @@ func TestPluginInfo_Tags(t *testing.T) {
 		plugin := PluginInfo{
 			ID:      "test",
 			Name:    "Test",
-			Version: "1.0.0",
+			Version: "0.9.0",
 			Tags:    []string{"data", "processor", "json"},
 			Status:  "active",
 			Health:  "healthy",
@@ -232,7 +232,7 @@ func TestPluginInfo_Tags(t *testing.T) {
 		plugin := PluginInfo{
 			ID:      "test",
 			Name:    "Test",
-			Version: "1.0.0",
+			Version: "0.9.0",
 			Tags:    []string{},
 			Status:  "active",
 			Health:  "healthy",
@@ -246,7 +246,7 @@ func TestPluginInfo_Tags(t *testing.T) {
 		plugin := PluginInfo{
 			ID:      "test",
 			Name:    "Test",
-			Version: "1.0.0",
+			Version: "0.9.0",
 			Tags:    nil,
 			Status:  "active",
 			Health:  "healthy",
@@ -262,7 +262,7 @@ func TestPluginInfo_Timestamps(t *testing.T) {
 		plugin := PluginInfo{
 			ID:       "test",
 			Name:     "Test",
-			Version:  "1.0.0",
+			Version:  "0.9.0",
 			LoadedAt: loadedTime,
 			Status:   "active",
 			Health:   "healthy",
@@ -277,7 +277,7 @@ func TestPluginInfo_Timestamps(t *testing.T) {
 		plugin := PluginInfo{
 			ID:      "test",
 			Name:    "Test",
-			Version: "1.0.0",
+			Version: "0.9.0",
 			Status:  "active",
 			Health:  "healthy",
 		}
@@ -297,7 +297,7 @@ func TestPluginInfo_EdgeCases(t *testing.T) {
 		plugin := PluginInfo{
 			ID:          "test",
 			Name:        "Test",
-			Version:     "1.0.0",
+			Version:     "0.9.0",
 			Description: longString,
 			Status:      "active",
 			Health:      "healthy",
@@ -312,7 +312,7 @@ func TestPluginInfo_EdgeCases(t *testing.T) {
 		plugin := PluginInfo{
 			ID:          "test-plugin-123",
 			Name:        "Test Plugin" + specialChars,
-			Version:     "1.0.0",
+			Version:     "0.9.0",
 			Description: "Plugin with special chars: " + specialChars,
 			Status:      "active",
 			Health:      "healthy",
@@ -327,7 +327,7 @@ func TestPluginInfo_EdgeCases(t *testing.T) {
 		plugin := PluginInfo{
 			ID:          "unicode-test",
 			Name:        unicodeText,
-			Version:     "1.0.0",
+			Version:     "0.9.0",
 			Description: "Unicode support: " + unicodeText,
 			Status:      "active",
 			Health:      "healthy",
@@ -350,7 +350,7 @@ func TestPluginInfo_Performance(t *testing.T) {
 		plugin := PluginInfo{
 			ID:      "large-tags-test",
 			Name:    "Large Tags Test",
-			Version: "1.0.0",
+			Version: "0.9.0",
 			Tags:    largeTagsArray,
 			Status:  "active",
 			Health:  "healthy",
@@ -385,7 +385,7 @@ func BenchmarkPluginInfo_Creation(b *testing.B) {
 		_ = PluginInfo{
 			ID:          fmt.Sprintf("benchmark-plugin-%d", i),
 			Name:        fmt.Sprintf("Benchmark Plugin %d", i),
-			Version:     "1.0.0",
+			Version:     "0.9.0",
 			Description: "A benchmark plugin for performance testing",
 			Author:      "Benchmark Author",
 			Type:        "processor",

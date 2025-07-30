@@ -25,9 +25,9 @@ func TestNewBaseAdapter(t *testing.T) {
 		{
 			name:        "basic adapter creation",
 			adapterName: "test-adapter",
-			version:     "1.0.0",
+			version:     "0.9.0",
 			wantName:    "test-adapter",
-			wantVersion: "1.0.0",
+			wantVersion: "0.9.0",
 		},
 		{
 			name:        "adapter with hooks",
@@ -103,7 +103,7 @@ func TestBaseAdapter_Configure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := NewBaseAdapter("test", "1.0.0")
+			adapter := NewBaseAdapter("test", "0.9.0")
 			var config testConfig
 			err := adapter.Configure(&config, tt.rawConfig)
 
@@ -185,7 +185,7 @@ func TestBaseAdapter_ExtractWithHooks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := NewBaseAdapter("test", "1.0.0", WithHooks(tt.hooks))
+			adapter := NewBaseAdapter("test", "0.9.0", WithHooks(tt.hooks))
 
 			resp, err := adapter.ExtractWithHooks(ctx, req, tt.extractFn)
 
@@ -256,7 +256,7 @@ func TestBaseAdapter_LoadWithHooks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := NewBaseAdapter("test", "1.0.0", WithHooks(tt.hooks))
+			adapter := NewBaseAdapter("test", "0.9.0", WithHooks(tt.hooks))
 
 			resp, err := adapter.LoadWithHooks(ctx, req, tt.loadFn)
 
@@ -280,13 +280,13 @@ func TestAdapterOptions(t *testing.T) {
 			OnError: func(ctx context.Context, err error) {},
 		}
 
-		adapter := NewBaseAdapter("test", "1.0.0", WithHooks(hooks))
+		adapter := NewBaseAdapter("test", "0.9.0", WithHooks(hooks))
 		assert.NotNil(t, adapter.hooks.OnError)
 	})
 
 	t.Run("WithValidator option", func(t *testing.T) {
 		customValidator := &validator.Validate{}
-		adapter := NewBaseAdapter("test", "1.0.0", WithValidator(customValidator))
+		adapter := NewBaseAdapter("test", "0.9.0", WithValidator(customValidator))
 		assert.Equal(t, customValidator, adapter.validator)
 	})
 }
@@ -299,7 +299,7 @@ func BenchmarkBaseAdapter_ExtractWithHooks(b *testing.B) {
 		Limit:  1000,
 	}
 
-	adapter := NewBaseAdapter("benchmark", "1.0.0")
+	adapter := NewBaseAdapter("benchmark", "0.9.0")
 	extractFn := func(ctx context.Context, req ExtractRequest) result.Result[*ExtractResponse] {
 		records := make([]Record, req.Limit)
 		for i := 0; i < req.Limit; i++ {

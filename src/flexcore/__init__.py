@@ -1,6 +1,6 @@
 """FLEXT FlexCore - Event-driven architecture system."""
 
-__version__ = "1.0.0"
+__version__ = "0.9.0"
 __author__ = "FLEXT Team"
 __email__ = "team@flext.dev"
 
