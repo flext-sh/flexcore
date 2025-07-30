@@ -116,7 +116,7 @@ func (dp *DataProcessor) GetInfo() PluginInfo {
 	return PluginInfo{
 		ID:          "data-processor",
 		Name:        "data-processor",
-		Version:     "1.0.0",
+		Version:     "0.9.0",
 		Description: "Real data processing plugin with filtering, enrichment, and transformation",
 		Author:      "FlexCore Team",
 		Type:        "processor",

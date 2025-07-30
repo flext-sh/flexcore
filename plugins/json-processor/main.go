@@ -336,7 +336,7 @@ func (jp *JSONProcessor) GetInfo() plugin.PluginInfo {
 	return plugin.PluginInfo{
 		ID:          "json-processor",
 		Name:        "json-processor",
-		Version:     "1.0.0",
+		Version:     "0.9.0",
 		Description: "JSON data processing plugin with transformation capabilities",
 		Author:      "FlexCore Team",
 		Type:        "processor",

@@ -1,80 +1,4 @@
-# ============================================================================
-# FLEXCORE - Go Distributed Service .gitignore
-# Go 1.24+ | Clean Architecture | Distributed Systems | gRPC
-# ============================================================================
-
-# ============================================================================
-# JUNK FILES - NEVER COMMIT THESE
-# ============================================================================
-
-# Archive and backup directories  
-archive/
-archives/
-backup/
-backups/
-.backup/
-*_backup/
-*_backup_*/
-
-# AI-generated files and reports
-*_REPORT*.md
-*_ANALYSIS*.md
-*_SUMMARY*.md  
-*_FINDINGS*.md
-CLAUDE*.md
-CONFIG_MIGRATION*.md
-DEVELOPMENT_STANDARDS*.md
-DUPLICATION_REPORT*.md
-LINT_CORRECTIONS*.md
-*.ai.md
-*.ai.txt
-
-# Backup files with timestamps
-*_20250*.bak
-*_202507*.bak
-*_202506*.bak
-*.md_20250*
-README_20250*.bak
-
-# Generic backup patterns
-*.bak
-*.backup
-*.orig
-*.syntax_backup  
-*.broken
-*.tmp.bak
-*_temp.py
-*_temp.md
-*_temp.go
-
-# Fix scripts and validation files
-fix_*.py
-fix_*.go
-*_fix.py
-*_fix.go
-*_validation.py
-validate_*.py
-investigate_*.py
-temp_*.py
-temp_*.go
-debug_*.py
-debug_*.go
-
-# Tool reports and analysis
-*_analysis.txt
-*_report.txt
-*_output.txt
-analysis_temp/
-report_*/
-reports/
-reports_*/
-temp_test_*/
-
-# ============================================================================
-# GO ARTIFACTS
-# ============================================================================
-
-# Go binaries and build artifacts
+# Go binaries
 *.exe
 *.exe~
 *.dll
@@ -105,38 +29,28 @@ coverage.xml
 .air/
 tmp/
 
-# ============================================================================
-# PYTHON ARTIFACTS (mixed project)
-# ============================================================================
-
-# Python artifacts
+# Python artifacts (mixed project)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Virtual environments
 .venv/
 venv/
 .env
 
-# ============================================================================
-# COMMON ARTIFACTS
-# ============================================================================
-
-# IDEs and editors
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# System files
+# System
 .DS_Store
 Thumbs.db
 Desktop.ini
 
-# Logs and temporary files
+# Logs
 *.log
 logs/
 *.tmp
@@ -162,7 +76,7 @@ credentials.json
 docker-compose.override.yml
 internal.invalid.yml
 
-# Generated files (if auto-generated)
+# Generated files
 *.pb.go
 *_grpc.pb.go
 wire_gen.go
@@ -180,9 +94,17 @@ benchmarks/
 health_*.json
 status_*.json
 
-# Force include critical files
-!go.mod
-!Makefile
-!README.md
-!Dockerfile
-!docker-compose.yml
+# Archive/backup
+archive/
+backup/
+*.bak
+*.backup
+*.orig
+*_temp.*
+temp_*
+fix_*
+
+# Reports
+*_REPORT*.md
+*_ANALYSIS*.md
+*_SUMMARY*.md

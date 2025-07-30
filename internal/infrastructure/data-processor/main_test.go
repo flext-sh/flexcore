@@ -336,7 +336,7 @@ func TestDataProcessor_GetInfo(t *testing.T) {
 
 		assert.Equal(t, "data-processor", info.ID)
 		assert.Equal(t, "data-processor", info.Name)
-		assert.Equal(t, "1.0.0", info.Version)
+		assert.Equal(t, "0.9.0", info.Version)
 		assert.Contains(t, info.Description, "Data processing plugin")
 		assert.Equal(t, "FlexCore Team", info.Author)
 		assert.Equal(t, "processor", info.Type)

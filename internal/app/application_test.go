@@ -29,7 +29,7 @@ func TestNewApplication(t *testing.T) {
 					Port        int    `mapstructure:"port"`
 				}{
 					Name:        "flexcore",
-					Version:     "1.0.0",
+					Version:     "0.9.0",
 					Environment: "test",
 					Debug:       true,
 					Port:        8080,
@@ -61,7 +61,7 @@ func TestNewApplication(t *testing.T) {
 					Port        int    `mapstructure:"port"`
 				}{
 					Name:        "flexcore",
-					Version:     "1.0.0",
+					Version:     "0.9.0",
 					Environment: "", // Missing environment
 					Debug:       true,
 					Port:        8080,
@@ -119,7 +119,7 @@ func TestApplication_StartStop(t *testing.T) {
 			Port        int    `mapstructure:"port"`
 		}{
 			Name:        "flexcore",
-			Version:     "1.0.0",
+			Version:     "0.9.0",
 			Environment: "test",
 			Debug:       true,
 			Port:        8080,

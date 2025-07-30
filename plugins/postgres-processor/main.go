@@ -249,7 +249,7 @@ func (pp *PostgresProcessor) GetInfo() plugin.PluginInfo {
 	return plugin.PluginInfo{
 		ID:          processorType,
 		Name:        processorType,
-		Version:     "1.0.0",
+		Version:     "0.9.0",
 		Description: "PostgreSQL data processing plugin with SQL execution capabilities",
 		Author:      "FlexCore Team",
 		Type:        "processor",

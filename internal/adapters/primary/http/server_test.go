@@ -25,7 +25,7 @@ func setupTestConfig() *config.Config {
 			Port        int    `mapstructure:"port"`
 		}{
 			Name:        "flexcore",
-			Version:     "1.0.0",
+			Version:     "0.9.0",
 			Environment: "test",
 			Debug:       true,
 			Port:        8080,
