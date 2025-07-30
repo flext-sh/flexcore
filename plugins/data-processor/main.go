@@ -372,7 +372,9 @@ func nestMap(data map[string]interface{}) map[string]interface{} {
 				if _, exists := current[part]; !exists {
 					current[part] = make(map[string]interface{})
 				}
-				if nextMap, ok := current[part].(map[string]interface{}); ok {\n					current = nextMap\n				}
+				if nextMap, ok := current[part].(map[string]interface{}); ok {
+					current = nextMap
+				}
 			}
 		}
 	}
