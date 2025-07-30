@@ -26,7 +26,7 @@ RUN apk add --no-cache curl
 EXPOSE 8080 50051 9090
 CMD ["./flexcore-server"]
 
-# Production stage  
+# Production stage
 FROM alpine:3.18 AS production
 
 # Install runtime dependencies
@@ -38,8 +38,8 @@ WORKDIR /app
 COPY --from=builder /app/flexcore-server .
 
 # Create non-root user
-RUN addgroup -g 1001 flexcore && \
-    adduser -D -s /bin/sh -u 1001 -G flexcore flexcore
+RUN addgroup -g 1001 flexcore \
+    && adduser -D -s /bin/sh -u 1001 -G flexcore flexcore
 
 # Change ownership
 RUN chown flexcore:flexcore /app/flexcore-server

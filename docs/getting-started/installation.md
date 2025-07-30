@@ -5,6 +5,7 @@ This comprehensive guide will help you install FlexCore and set up your developm
 ## 📋 System Requirements
 
 ### Hardware Requirements
+
 - **CPU**: 2+ cores (4+ recommended for development)
 - **Memory**: 4GB RAM minimum (8GB+ recommended)
 - **Storage**: 2GB free disk space
@@ -13,16 +14,19 @@ This comprehensive guide will help you install FlexCore and set up your developm
 ### Software Requirements
 
 #### Core Runtime
+
 - **Go**: 1.24 or later ([Download Go](https://golang.org/dl/))
 - **Python**: 3.13 or later ([Download Python](https://python.org/downloads/))
 - **Git**: For version control ([Download Git](https://git-scm.com/downloads))
 
 #### Infrastructure Dependencies
+
 - **PostgreSQL**: 13+ for event store ([Download PostgreSQL](https://postgresql.org/download/))
 - **Redis**: 6+ for caching and message queue ([Download Redis](https://redis.io/download))
 - **Docker**: For containerized deployment ([Download Docker](https://docker.com/get-started))
 
 #### Optional Tools
+
 - **Docker Compose**: For multi-container orchestration
 - **kubectl**: For Kubernetes deployment
 - **Make**: For build automation (usually pre-installed on Unix systems)
@@ -97,6 +101,7 @@ make run
 ```
 
 If successful, you should see:
+
 ```
 ✅ All quality gates passed
 ✅ Unit tests complete
@@ -127,7 +132,7 @@ make docker-logs
 Create `docker-compose.override.yml` for local customization:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   flexcore-server:
@@ -136,7 +141,7 @@ services:
       - FLEXCORE_LOG_LEVEL=debug
     ports:
       - "8080:8080"
-      - "50051:50051"  # gRPC
+      - "50051:50051" # gRPC
     volumes:
       - ./configs:/app/configs
       - ./plugins:/app/plugins
@@ -193,11 +198,12 @@ python -c "import flexcore; print('FlexCore installed successfully')"
 #### Visual Studio Code
 
 1. Install recommended extensions:
+
 ```bash
 # Go extension
 code --install-extension golang.go
 
-# Python extension  
+# Python extension
 code --install-extension ms-python.python
 
 # Docker extension
@@ -205,15 +211,16 @@ code --install-extension ms-azuretools.vscode-docker
 ```
 
 2. Configure workspace settings (`.vscode/settings.json`):
+
 ```json
 {
-    "go.toolsManagement.checkForUpdates": "local",
-    "go.useLanguageServer": true,
-    "go.lintTool": "golangci-lint",
-    "python.defaultInterpreterPath": "./venv/bin/python",
-    "python.linting.enabled": true,
-    "python.linting.ruffEnabled": true,
-    "python.formatting.provider": "black"
+  "go.toolsManagement.checkForUpdates": "local",
+  "go.useLanguageServer": true,
+  "go.lintTool": "golangci-lint",
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.linting.enabled": true,
+  "python.linting.ruffEnabled": true,
+  "python.formatting.provider": "black"
 }
 ```
 
@@ -309,6 +316,7 @@ make test-e2e
 ### Common Issues
 
 #### Go Module Issues
+
 ```bash
 # Error: "module not found"
 # Solution: Ensure Go 1.24+ and proper GOPATH
@@ -319,6 +327,7 @@ go mod download
 ```
 
 #### Python Import Errors
+
 ```bash
 # Error: "No module named 'flexcore'"
 # Solution: Verify Python version and virtual environment
@@ -328,6 +337,7 @@ pip install -e . --force-reinstall
 ```
 
 #### Database Connection Issues
+
 ```bash
 # Error: "connection refused"
 # Solution: Ensure PostgreSQL is running
@@ -337,6 +347,7 @@ psql -h localhost -U flexcore -d flexcore_dev -c "SELECT 1;"
 ```
 
 #### Port Conflicts
+
 ```bash
 # Error: "port already in use"
 # Solution: Check what's using the port
@@ -350,12 +361,14 @@ export FLEXCORE_PORT=8081
 If you encounter issues not covered here:
 
 1. **Check Logs**: Look at service logs for detailed error messages
+
    ```bash
    make docker-logs
    journalctl -f  # For systemd services
    ```
 
 2. **Search Issues**: Check existing GitHub issues
+
    ```bash
    # Search for similar problems
    https://github.com/flext-sh/flext/issues

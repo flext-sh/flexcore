@@ -21,7 +21,7 @@ FlexCore provides enterprise-grade container orchestration capabilities:
 ### Core Components
 
 - **Command Bus**: Routes and executes state-changing commands
-- **Query Bus**: Processes read-only data queries  
+- **Query Bus**: Processes read-only data queries
 - **Event Store**: PostgreSQL-based immutable event log
 - **Plugin System**: Dynamic plugin loading and execution
 - **Service Integration**: Communication with FLEXT services
@@ -47,6 +47,7 @@ FlexCore provides enterprise-grade container orchestration capabilities:
 ## Quick Start
 
 ### Prerequisites
+
 - Go 1.24+
 - Docker and Docker Compose
 - PostgreSQL 15+
@@ -85,12 +86,14 @@ make health-check
 ## API Endpoints
 
 ### Core Endpoints
+
 - `GET /health` - Service health check
 - `GET /metrics` - Prometheus metrics
 - `GET /api/v1/flexcore/plugins` - List registered plugins
 - `POST /api/v1/flexcore/plugins/{id}/execute` - Execute plugin
 
 ### Plugin Management
+
 - `POST /api/v1/flexcore/plugins/register` - Register new plugin
 - `DELETE /api/v1/flexcore/plugins/{id}` - Unregister plugin
 - `GET /api/v1/flexcore/plugins/{id}/status` - Plugin status
@@ -98,6 +101,7 @@ make health-check
 ## Development Commands
 
 ### Essential Commands
+
 ```bash
 # Development workflow
 make build                  # Build Go binary
@@ -114,6 +118,7 @@ make format                 # Format code with gofmt
 ```
 
 ### Testing Commands
+
 ```bash
 # Test execution
 make test-unit              # Unit tests only
@@ -127,6 +132,7 @@ make performance-test       # Performance testing
 ```
 
 ### Docker Operations
+
 ```bash
 # Local development
 make docker-up              # Start PostgreSQL + Redis + FlexCore
@@ -141,6 +147,7 @@ make service-health         # Check service endpoints
 ## Configuration
 
 ### Environment Variables
+
 ```bash
 # Service configuration
 export FLEXCORE_PORT=8080
@@ -158,6 +165,7 @@ export OTEL_SERVICE_NAME="flexcore"
 ```
 
 ### Service Dependencies
+
 - **PostgreSQL**: Database for event store and application data (port 5433)
 - **Redis**: Caching and distributed coordination (port 6380)
 - **Prometheus**: Metrics collection (port 9090)
@@ -166,6 +174,7 @@ export OTEL_SERVICE_NAME="flexcore"
 ## Plugin System
 
 ### Plugin Interface
+
 ```go
 type Plugin interface {
     Name() string
@@ -177,6 +186,7 @@ type Plugin interface {
 ```
 
 ### Plugin Registration
+
 ```go
 // Register FLEXT service as plugin
 flextPlugin := infrastructure.NewFlextServicePlugin(
@@ -191,13 +201,16 @@ err := pluginManager.Register(flextPlugin)
 ## Event Sourcing & CQRS
 
 ### Event Store
+
 FlexCore implements event sourcing with PostgreSQL:
+
 - Immutable event log
 - Event replay capabilities
 - Aggregate reconstruction
 - Snapshot support
 
 ### Command/Query Separation
+
 - **Commands**: State-changing operations routed through command bus
 - **Queries**: Read-only operations processed by query handlers
 - **Events**: Domain events published for all state changes
@@ -205,6 +218,7 @@ FlexCore implements event sourcing with PostgreSQL:
 ## Monitoring and Observability
 
 ### Health Checks
+
 ```bash
 # Basic health check
 curl http://localhost:8080/health
@@ -214,14 +228,18 @@ curl http://localhost:8080/health?detail=true
 ```
 
 ### Metrics
+
 FlexCore exposes Prometheus metrics:
+
 - Request latency and throughput
 - Plugin execution metrics
 - Event store performance
 - Resource utilization
 
 ### Distributed Tracing
+
 OpenTelemetry integration provides:
+
 - Request tracing across services
 - Plugin execution spans
 - Database operation tracing
@@ -230,12 +248,14 @@ OpenTelemetry integration provides:
 ## Performance
 
 ### Benchmarks
+
 - **Request Processing**: ~1000 requests/second
 - **Plugin Execution**: Sub-millisecond overhead
 - **Event Store**: 10,000+ events/second write throughput
 - **Memory Usage**: <100MB baseline
 
 ### Optimization Features
+
 - Connection pooling for database operations
 - Redis-based caching for frequently accessed data
 - Async plugin execution with goroutines
@@ -244,12 +264,14 @@ OpenTelemetry integration provides:
 ## Testing
 
 ### Test Coverage
+
 - Unit tests: >90% coverage
 - Integration tests: Full database and Redis integration
 - End-to-end tests: Complete plugin execution workflows
 - Performance tests: Load testing and benchmarks
 
 ### Testing Patterns
+
 ```bash
 # Run specific test types
 go test -short ./...           # Unit tests only
@@ -261,12 +283,14 @@ go test -bench=. ./...         # Benchmark tests
 ## Troubleshooting
 
 ### Common Issues
+
 - **Port conflicts**: Ensure ports 8080, 5433, 6380 are available
 - **Database connection**: Verify PostgreSQL is running with correct credentials
 - **Plugin loading**: Check plugin files exist and have correct permissions
 - **Memory issues**: Monitor Go garbage collection and heap usage
 
 ### Debug Commands
+
 ```bash
 # Service diagnostics
 make diagnose               # Complete system diagnostics

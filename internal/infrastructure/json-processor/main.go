@@ -58,6 +58,12 @@ type DataProcessorPlugin interface {
 
 // Initialize the plugin with configuration
 func (jp *JSONProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	
 	log.Printf("[JSONProcessor] Initializing with config: %+v", config)
 	jp.config = config
 	jp.stats = ProcessingStats{
@@ -68,6 +74,12 @@ func (jp *JSONProcessor) Initialize(ctx context.Context, config map[string]inter
 
 // Execute processes JSON data
 func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	
 	startTime := time.Now()
 	defer func() {
 		jp.stats.DurationMs = time.Since(startTime).Milliseconds()
@@ -323,6 +335,12 @@ func (jp *JSONProcessor) GetInfo() PluginInfo {
 
 // HealthCheck verifies plugin health
 func (jp *JSONProcessor) HealthCheck(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	
 	log.Printf("[JSONProcessor] Health check - processed %d records", jp.stats.TotalRecords)
 	return nil
 }
@@ -360,7 +378,7 @@ func (rpc *JSONProcessorRPC) Execute(args map[string]interface{}, resp *map[stri
 	return nil
 }
 
-func (rpc *JSONProcessorRPC) GetInfo(args interface{}, resp *PluginInfo) error {
+func (rpc *JSONProcessorRPC) GetInfo(_ interface{}, resp *PluginInfo) error {
 	*resp = rpc.Impl.GetInfo()
 	return nil
 }

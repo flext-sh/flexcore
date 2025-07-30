@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/flext/flexcore/internal/application/services"
+	"github.com/flext/flexcore/internal/infrastructure/middleware"
 	"github.com/flext/flexcore/pkg/logging"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -445,20 +446,9 @@ func (rfs *RealFlexcoreServer) realGetEvents(c *gin.Context) {
 	})
 }
 
-// Middleware methods
+// Middleware methods - using shared middleware package (DRY principle)
 func (rfs *RealFlexcoreServer) loggingMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		c.Next()
-		duration := time.Since(start)
-
-		rfs.logger.Info("HTTP Request",
-			zap.String("method", c.Request.Method),
-			zap.String("path", c.Request.URL.Path),
-			zap.Int("status", c.Writer.Status()),
-			zap.String("duration", duration.String()),
-			zap.String("client_ip", c.ClientIP()))
-	}
+	return middleware.LoggingMiddleware(rfs.logger)
 }
 
 func (rfs *RealFlexcoreServer) corsMiddleware() gin.HandlerFunc {

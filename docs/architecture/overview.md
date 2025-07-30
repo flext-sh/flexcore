@@ -5,6 +5,7 @@ FlexCore is designed as a high-performance, distributed system core engine that 
 ## 🏗️ Architectural Principles
 
 ### 1. Clean Architecture
+
 FlexCore follows Uncle Bob's Clean Architecture, organizing code into concentric layers with dependencies pointing inward:
 
 ```
@@ -30,18 +31,21 @@ FlexCore follows Uncle Bob's Clean Architecture, organizing code into concentric
 ```
 
 ### 2. Domain-Driven Design (DDD)
+
 - **Bounded Contexts**: Clear boundaries between different business domains
 - **Aggregates**: Consistency boundaries for business transactions
 - **Domain Events**: First-class representation of business events
 - **Ubiquitous Language**: Shared vocabulary between developers and domain experts
 
 ### 3. CQRS + Event Sourcing
+
 - **Command Query Responsibility Segregation**: Separate read and write models
 - **Event Store**: Immutable log of all business events
 - **Event Replay**: Reconstruct state from events for debugging and analytics
 - **Eventual Consistency**: Asynchronous propagation of state changes
 
 ### 4. Hybrid Language Architecture
+
 - **Go Core**: High-performance, concurrent processing engine
 - **Python Integration**: Flexible business logic and rapid development
 - **Seamless Interop**: Type-safe communication between Go and Python layers
@@ -88,18 +92,18 @@ graph TB
     CLI --> HTTP
     WEB --> HTTP
     API --> GRPC
-    
+
     HTTP --> CMD
     HTTP --> QRY
     GRPC --> CMD
     GRPC --> QRY
     MSG --> EVENT
-    
+
     CMD --> AGG
     QRY --> ENT
     EVENT --> EVENTS
     PLUGIN --> AGG
-    
+
     AGG --> STORE
     ENT --> CACHE
     EVENTS --> QUEUE
@@ -109,6 +113,7 @@ graph TB
 ### Core Components
 
 #### 1. Command Bus
+
 **Purpose**: Routes and executes commands that change system state
 
 ```go
@@ -123,12 +128,14 @@ type CommandHandler interface {
 ```
 
 **Features**:
+
 - Type-safe command routing
 - Middleware support for cross-cutting concerns
 - Async command execution
 - Command validation and authorization
 
 #### 2. Query Bus
+
 **Purpose**: Processes queries for reading data
 
 ```go
@@ -143,12 +150,14 @@ type QueryHandler interface {
 ```
 
 **Features**:
+
 - Optimized read models
 - Caching support
 - Pagination and filtering
 - Multiple data source aggregation
 
 #### 3. Event Store
+
 **Purpose**: Persists domain events with full audit trail
 
 ```go
@@ -160,12 +169,14 @@ type EventStore interface {
 ```
 
 **Features**:
+
 - Immutable event log
 - Stream-based organization
 - Snapshotting for performance
 - Event replay capabilities
 
 #### 4. Plugin System
+
 **Purpose**: Hot-swappable functionality with dynamic loading
 
 ```go
@@ -179,14 +190,16 @@ type Plugin interface {
 ```
 
 **Features**:
+
 - Runtime plugin loading
-- Plugin dependency management  
+- Plugin dependency management
 - Plugin lifecycle management
 - Resource isolation
 
 ### Data Flow Patterns
 
 #### Command Flow (Write Operations)
+
 1. **Client Request** → HTTP/gRPC endpoint receives command
 2. **Validation** → Command structure and business rules validated
 3. **Authorization** → User permissions checked
@@ -196,6 +209,7 @@ type Plugin interface {
 7. **Response** → Success/failure response sent to client
 
 #### Query Flow (Read Operations)
+
 1. **Client Request** → HTTP/gRPC endpoint receives query
 2. **Authorization** → Read permissions checked
 3. **Cache Check** → Check if data available in cache
@@ -204,6 +218,7 @@ type Plugin interface {
 6. **Caching** → Store result in cache for future requests
 
 #### Event Flow (Async Processing)
+
 1. **Event Generation** → Domain operations generate events
 2. **Event Storage** → Events persisted in event store
 3. **Event Publishing** → Events sent to message bus
@@ -252,7 +267,7 @@ def create_user_command(cmd):
     # Validate command
     if not cmd.email:
         raise ValidationError("Email required")
-    
+
     # Return domain event
     return UserCreatedEvent(
         user_id=generate_id(),
@@ -264,18 +279,21 @@ def create_user_command(cmd):
 ### Integration Patterns
 
 #### 1. Event-Driven Integration
+
 - Go publishes domain events
 - Python subscribes to relevant events
 - Type-safe event marshaling/unmarshaling
 - Async processing with proper error handling
 
 #### 2. Command Delegation
+
 - HTTP endpoints in Go delegate to Python handlers
 - Python returns domain events or results
 - Go persists events and manages transactions
 - Consistent error handling across languages
 
 #### 3. Plugin Architecture
+
 - Plugins can be written in Go or Python
 - Unified plugin interface across languages
 - Hot-swappable plugin loading
@@ -301,12 +319,12 @@ func (u *User) ChangeEmail(newEmail Email) error {
     if u.email.Equals(newEmail) {
         return nil // No change needed
     }
-    
+
     // Business validation
     if !newEmail.IsValid() {
         return ErrInvalidEmail
     }
-    
+
     // Generate domain event
     event := UserEmailChangedEvent{
         UserID:   u.id,
@@ -314,15 +332,16 @@ func (u *User) ChangeEmail(newEmail Email) error {
         NewEmail: newEmail,
         OccurredAt: time.Now(),
     }
-    
+
     u.recordEvent(event)
     u.email = newEmail
-    
+
     return nil
 }
 ```
 
 **Responsibilities**:
+
 - Core business entities and value objects
 - Business rule enforcement
 - Domain event generation
@@ -344,7 +363,7 @@ func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) e
     if err := cmd.Validate(); err != nil {
         return fmt.Errorf("invalid command: %w", err)
     }
-    
+
     // Check business rules
     exists, err := h.userRepo.ExistsByEmail(ctx, cmd.Email)
     if err != nil {
@@ -353,27 +372,28 @@ func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) e
     if exists {
         return ErrUserAlreadyExists
     }
-    
+
     // Create domain object
     user := NewUser(cmd.Email, cmd.Profile)
-    
+
     // Persist aggregate
     if err := h.userRepo.Save(ctx, user); err != nil {
         return fmt.Errorf("saving user: %w", err)
     }
-    
+
     // Publish events
     for _, event := range user.UncommittedEvents() {
         if err := h.eventBus.Publish(ctx, event); err != nil {
             h.logger.Error("publishing event", "error", err, "event", event)
         }
     }
-    
+
     return nil
 }
 ```
 
 **Responsibilities**:
+
 - Use case orchestration
 - Transaction management
 - Event publishing
@@ -395,36 +415,37 @@ func (r *PostgreSQLUserRepository) Save(ctx context.Context, user *User) error {
         return fmt.Errorf("beginning transaction: %w", err)
     }
     defer tx.Rollback()
-    
+
     // Save aggregate state
     query := `
-        INSERT INTO users (id, email, profile, version) 
+        INSERT INTO users (id, email, profile, version)
         VALUES ($1, $2, $3, $4)
-        ON CONFLICT (id) DO UPDATE SET 
+        ON CONFLICT (id) DO UPDATE SET
             email = EXCLUDED.email,
             profile = EXCLUDED.profile,
             version = EXCLUDED.version
         WHERE users.version = $5`
-    
-    _, err = tx.ExecContext(ctx, query, 
-        user.ID(), user.Email(), user.Profile(), 
+
+    _, err = tx.ExecContext(ctx, query,
+        user.ID(), user.Email(), user.Profile(),
         user.Version(), user.Version()-1)
     if err != nil {
         return fmt.Errorf("saving user: %w", err)
     }
-    
+
     // Save events
     for _, event := range user.UncommittedEvents() {
         if err := r.saveEvent(ctx, tx, event); err != nil {
             return fmt.Errorf("saving event: %w", err)
         }
     }
-    
+
     return tx.Commit()
 }
 ```
 
 **Responsibilities**:
+
 - Database persistence
 - External API integration
 - Message queue interaction
@@ -433,6 +454,7 @@ func (r *PostgreSQLUserRepository) Save(ctx context.Context, user *User) error {
 ## 📊 Observability Architecture
 
 ### Metrics Collection
+
 ```go
 type MetricsCollector struct {
     registry *prometheus.Registry
@@ -447,21 +469,23 @@ func (m *MetricsCollector) IncrementCommandCount(cmdType string) {
 ```
 
 ### Distributed Tracing
+
 ```go
 func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) error {
     ctx, span := trace.StartSpan(ctx, "CreateUserHandler.Handle")
     defer span.End()
-    
+
     span.SetAttributes(
         attribute.String("command.type", "CreateUser"),
         attribute.String("user.email", cmd.Email.String()),
     )
-    
+
     // Handler implementation...
 }
 ```
 
 ### Structured Logging
+
 ```go
 type StructuredLogger struct {
     logger *zap.Logger
@@ -482,18 +506,21 @@ logger.Info("User created",
 ## 🔐 Security Architecture
 
 ### Authentication & Authorization
+
 - JWT tokens for stateless authentication
 - RBAC (Role-Based Access Control) for authorization
 - API rate limiting and throttling
 - Input validation and sanitization
 
 ### Data Protection
+
 - Encryption at rest and in transit
 - Sensitive data masking in logs
 - Audit logging for compliance
 - GDPR compliance features
 
 ### Network Security
+
 - TLS/SSL for all communications
 - Network segmentation
 - Firewall rules and security groups
@@ -502,18 +529,21 @@ logger.Info("User created",
 ## 📈 Performance Characteristics
 
 ### Scalability Patterns
+
 - **Horizontal Scaling**: Multiple instances behind load balancer
 - **Database Sharding**: Partition data across multiple databases
 - **Read Replicas**: Separate read and write databases
 - **Caching Layers**: Multi-level caching strategy
 
 ### Performance Optimizations
+
 - **Connection Pooling**: Reuse database connections
 - **Batch Processing**: Group operations for efficiency
 - **Async Processing**: Non-blocking event handling
 - **Resource Pooling**: Reuse expensive resources
 
 ### Monitoring & Alerting
+
 - Real-time performance metrics
 - Automatic scaling based on load
 - Proactive alerting on anomalies
@@ -522,30 +552,35 @@ logger.Info("User created",
 ## 🎯 Design Benefits
 
 ### 1. **Maintainability**
+
 - Clear separation of concerns
 - Testable architecture with dependency injection
 - Consistent patterns across all layers
 - Self-documenting code with domain language
 
 ### 2. **Scalability**
+
 - Event-driven async processing
 - Stateless service design
 - Database and caching optimizations
 - Microservices-ready architecture
 
 ### 3. **Flexibility**
+
 - Plugin system for extensibility
 - Multiple language support
 - Configurable infrastructure backends
 - API-first design for integration
 
 ### 4. **Reliability**
+
 - Event sourcing for data consistency
 - Comprehensive error handling
 - Circuit breakers and retries
 - Health checks and monitoring
 
 ### 5. **Developer Experience**
+
 - Type safety across languages
 - Rich development tooling
 - Comprehensive testing framework

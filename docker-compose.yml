@@ -7,7 +7,7 @@ services:
   # ============================================================================
   # 🏗️ FLEXCORE CORE SERVICES - Go 1.24
   # ============================================================================
-  
+
   flexcore-server:
     build:
       context: .
@@ -16,9 +16,9 @@ services:
     container_name: flexcore-server
     hostname: flexcore-server
     ports:
-      - "8080:8080"     # HTTP API
-      - "50051:50051"   # gRPC API
-      - "9090:9090"     # Metrics
+      - "8080:8080" # HTTP API
+      - "50051:50051" # gRPC API
+      - "9090:9090" # Metrics
     environment:
       # Core Configuration
       - FLEXCORE_ENV=development
@@ -26,39 +26,39 @@ services:
       - FLEXCORE_PORT=8080
       - FLEXCORE_GRPC_PORT=50051
       - FLEXCORE_METRICS_PORT=9090
-      
+
       # Database Configuration
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=flexcore
       - POSTGRES_USER=flexcore
       - POSTGRES_PASSWORD=flexcore_dev_2025
-      
+
       # Redis Configuration
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=""
       - REDIS_DB=0
-      
+
       # Event Sourcing Configuration
       - EVENT_STORE_TYPE=postgres
       - EVENT_STORE_CONNECTION=postgres://flexcore:flexcore_dev_2025@postgres:5432/flexcore_events
-      
+
       # CQRS Configuration
       - COMMAND_BUS_TYPE=redis
       - QUERY_BUS_TYPE=redis
       - EVENT_BUS_TYPE=redis
-      
+
       # Observability Configuration
       - OTEL_SERVICE_NAME=flexcore
       - OTEL_RESOURCE_ATTRIBUTES=service.name=flexcore,service.version=0.9.0
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:14268/api/traces
       - PROMETHEUS_ENDPOINT=http://prometheus:9090
-      
+
       # Plugin System Configuration
       - PLUGIN_DIR=/app/plugins
       - PLUGIN_AUTO_DISCOVERY=true
-      
+
       # Integration with FLEXT Service
       - FLEXT_SERVICE_HOST=host.docker.internal
       - FLEXT_SERVICE_PORT=8000
@@ -87,7 +87,7 @@ services:
   # ============================================================================
   # 🗄️ DATA LAYER - PostgreSQL + Redis
   # ============================================================================
-  
+
   postgres:
     image: postgres:15-alpine
     container_name: flexcore-postgres
@@ -144,13 +144,13 @@ services:
   # ============================================================================
   # 📊 OBSERVABILITY STACK - Prometheus + Grafana + Jaeger
   # ============================================================================
-  
+
   prometheus:
     image: prom/prometheus:v2.45.0
     container_name: flexcore-prometheus
     hostname: flexcore-prometheus
     ports:
-      - "9091:9090"  # Changed to avoid conflicts with FlexCore metrics port
+      - "9091:9090" # Changed to avoid conflicts with FlexCore metrics port
     volumes:
       - ./deployments/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deployments/docker/prometheus/rules:/etc/prometheus/rules:ro
@@ -158,13 +158,13 @@ services:
     networks:
       - flexcore-network
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
     restart: unless-stopped
 
   grafana:
@@ -192,9 +192,9 @@ services:
     container_name: flexcore-jaeger
     hostname: flexcore-jaeger
     ports:
-      - "14268:14268"  # HTTP collector
-      - "16686:16686"  # Web UI
-      - "14250:14250"  # gRPC collector
+      - "14268:14268" # HTTP collector
+      - "16686:16686" # Web UI
+      - "14250:14250" # gRPC collector
     environment:
       - COLLECTOR_OTLP_ENABLED=true
       - SPAN_STORAGE_TYPE=memory
@@ -205,7 +205,7 @@ services:
   # ============================================================================
   # 🔧 DEVELOPMENT TOOLS
   # ============================================================================
-  
+
   adminer:
     image: adminer:4.8.1
     container_name: flexcore-adminer
@@ -234,7 +234,6 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
-
 
 # ============================================================================
 # 💾 VOLUMES - Persistent Data
@@ -268,7 +267,6 @@ networks:
     ipam:
       config:
         - subnet: 172.25.0.0/16
-  
 
 # ============================================================================
 # 🏷️ LABELS - Metadata for Container Management

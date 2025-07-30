@@ -122,12 +122,12 @@ type PluginRPCServer struct {
 	Impl PluginInterface
 }
 
-func (s *PluginRPCServer) Name(args interface{}, resp *string) error {
+func (s *PluginRPCServer) Name(_ interface{}, resp *string) error {
 	*resp = s.Impl.Name()
 	return nil
 }
 
-func (s *PluginRPCServer) Version(args interface{}, resp *string) error {
+func (s *PluginRPCServer) Version(_ interface{}, resp *string) error {
 	*resp = s.Impl.Version()
 	return nil
 }
@@ -145,12 +145,12 @@ func (s *PluginRPCServer) Execute(args *ExecuteArgs, resp *ExecuteReply) error {
 	return err
 }
 
-func (s *PluginRPCServer) Health(args interface{}, resp *HealthReply) error {
+func (s *PluginRPCServer) Health(_ interface{}, resp *HealthReply) error {
 	resp.Health = s.Impl.Health()
 	return nil
 }
 
-func (s *PluginRPCServer) Shutdown(args interface{}, resp *bool) error {
+func (s *PluginRPCServer) Shutdown(_ interface{}, resp *bool) error {
 	err := s.Impl.Shutdown()
 	*resp = err == nil
 	return err
@@ -180,6 +180,12 @@ func (p *PluginRPC) Initialize(config map[string]interface{}) error {
 }
 
 func (p *PluginRPC) Execute(ctx context.Context, input interface{}) (interface{}, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	
 	var resp ExecuteReply
 	err := p.client.Call("Plugin.Execute", &ExecuteArgs{Input: input}, &resp)
 	return resp.Result, err
@@ -211,7 +217,7 @@ func (p *FlexCorePlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}
 func main() {
 	// Check if this is being called with --version flag
 	if len(os.Args) > 1 && os.Args[1] == "--version" {
-		fmt.Printf("data-transformer v1.0.0\n")
+		log.Println("data-transformer v1.0.0")
 		os.Exit(0)
 	}
 

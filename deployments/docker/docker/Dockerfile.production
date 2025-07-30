@@ -26,8 +26,8 @@ FROM alpine:latest
 RUN apk add --no-cache ca-certificates curl
 
 # Create non-root user
-RUN addgroup -g 1001 flexcore && \
-    adduser -D -s /bin/sh -u 1001 -G flexcore flexcore
+RUN addgroup -g 1001 flexcore \
+    && adduser -D -s /bin/sh -u 1001 -G flexcore flexcore
 
 # Set working directory
 WORKDIR /app

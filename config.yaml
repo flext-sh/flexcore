@@ -24,7 +24,7 @@ database:
   max_lifetime: "5m"
 
 redis:
-  url: ""  # Leave empty for development mode (simulated coordinator)
+  url: "" # Leave empty for development mode (simulated coordinator)
   # url: "redis://localhost:6379" # Uncomment for production Redis
 
 metrics:

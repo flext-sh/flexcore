@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/flext/flexcore/internal/application/services"
+	"github.com/flext/flexcore/internal/infrastructure/middleware"
 	"github.com/flext/flexcore/pkg/logging"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -297,21 +298,9 @@ func (fs *FlexcoreServer) executeQuery(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// loggingMiddleware provides request logging
+// loggingMiddleware provides request logging - using shared middleware (DRY principle)
 func (fs *FlexcoreServer) loggingMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-
-		c.Next()
-
-		duration := time.Since(start)
-		fs.logger.Info("HTTP Request",
-			zap.String("method", c.Request.Method),
-			zap.String("path", c.Request.URL.Path),
-			zap.Int("status", c.Writer.Status()),
-			zap.String("duration", duration.String()),
-			zap.String("client_ip", c.ClientIP()))
-	}
+	return middleware.LoggingMiddleware(fs.logger)
 }
 
 // corsMiddleware provides CORS headers

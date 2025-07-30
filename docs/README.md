@@ -2,15 +2,17 @@
 
 Welcome to the comprehensive FlexCore documentation. This distributed system core engine combines Go's performance with Python's flexibility, built on enterprise-grade architectural patterns.
 
-## ðŸ“– Table of Contents
+## ðŸ"– Table of Contents
 
 ### Getting Started
+
 - [Installation Guide](getting-started/installation.md)
 - [Quick Start Tutorial](getting-started/quickstart.md)
 - [Configuration Guide](getting-started/configuration.md)
 - [Development Environment](getting-started/development.md)
 
 ### Architecture
+
 - [System Overview](architecture/overview.md)
 - [Clean Architecture](architecture/clean-architecture.md)
 - [Domain-Driven Design](architecture/ddd.md)
@@ -18,6 +20,7 @@ Welcome to the comprehensive FlexCore documentation. This distributed system cor
 - [Plugin System](architecture/plugins.md)
 
 ### Go Development
+
 - [Go API Reference](go/api-reference.md)
 - [Domain Layer](go/domain.md)
 - [Application Layer](go/application.md)
@@ -25,12 +28,14 @@ Welcome to the comprehensive FlexCore documentation. This distributed system cor
 - [Testing in Go](go/testing.md)
 
 ### Python Integration
+
 - [Python API Reference](python/api-reference.md)
 - [FlexCore Python Client](python/client.md)
 - [Event Handlers](python/event-handlers.md)
 - [Plugin Development](python/plugins.md)
 
 ### Observability
+
 - [Monitoring Setup](observability/monitoring.md)
 - [Metrics with Prometheus](observability/metrics.md)
 - [Distributed Tracing](observability/tracing.md)
@@ -38,6 +43,7 @@ Welcome to the comprehensive FlexCore documentation. This distributed system cor
 - [Health Checks](observability/health.md)
 
 ### Deployment
+
 - [Docker Deployment](deployment/docker.md)
 - [Kubernetes Deployment](deployment/kubernetes.md)
 - [Production Checklist](deployment/production.md)
@@ -45,6 +51,7 @@ Welcome to the comprehensive FlexCore documentation. This distributed system cor
 - [Security Configuration](deployment/security.md)
 
 ### Development
+
 - [Contributing Guide](development/contributing.md)
 - [Code Standards](development/standards.md)
 - [Testing Strategy](development/testing.md)
@@ -52,6 +59,7 @@ Welcome to the comprehensive FlexCore documentation. This distributed system cor
 - [Release Process](development/releases.md)
 
 ### Advanced Topics
+
 - [Event Store Implementation](advanced/event-store.md)
 - [Performance Optimization](advanced/performance.md)
 - [Custom Adapters](advanced/adapters.md)
@@ -59,6 +67,7 @@ Welcome to the comprehensive FlexCore documentation. This distributed system cor
 - [Integration Patterns](advanced/integration.md)
 
 ### Operations
+
 - [Monitoring Runbook](operations/monitoring.md)
 - [Troubleshooting Guide](operations/troubleshooting.md)
 - [Performance Tuning](operations/performance.md)
@@ -68,50 +77,57 @@ Welcome to the comprehensive FlexCore documentation. This distributed system cor
 ## ðŸš€ Quick Navigation
 
 ### For Developers
-- **New to FlexCore?** Start with [Installation](getting-started/installation.md) â†’ [Quick Start](getting-started/quickstart.md)
+
+- **New to FlexCore?** Start with [Installation](getting-started/installation.md) â†' [Quick Start](getting-started/quickstart.md)
 - **Go Developer?** Check [Go API Reference](go/api-reference.md) and [Domain Layer](go/domain.md)
 - **Python Developer?** See [Python Client](python/client.md) and [Event Handlers](python/event-handlers.md)
 - **Building Plugins?** Read [Plugin System](architecture/plugins.md) and [Plugin Development](python/plugins.md)
 
 ### For DevOps
+
 - **Deploying FlexCore?** Start with [Docker Deployment](deployment/docker.md) or [Kubernetes](deployment/kubernetes.md)
 - **Setting up Monitoring?** Follow [Monitoring Setup](observability/monitoring.md)
 - **Production Deployment?** Use the [Production Checklist](deployment/production.md)
 - **Need to Scale?** Read [Scaling Strategies](deployment/scaling.md)
 
 ### For Architects
+
 - **Understanding the System?** Read [System Overview](architecture/overview.md)
 - **Architecture Patterns?** Check [Clean Architecture](architecture/clean-architecture.md) and [DDD](architecture/ddd.md)
 - **Event-Driven Design?** See [CQRS + Event Sourcing](architecture/cqrs-event-sourcing.md)
 - **Integration Patterns?** Read [Integration Patterns](advanced/integration.md)
 
-## ðŸ”§ Key Features Covered
+## ðŸ"§ Key Features Covered
 
 ### Performance & Scalability
+
 - High-performance Go core engine
 - Asynchronous event processing
 - Horizontal scaling with Kubernetes
 - Connection pooling and caching strategies
 
 ### Developer Experience
+
 - Type-safe APIs in both Go and Python
 - Hot-swappable plugin system
 - Comprehensive testing frameworks
 - Rich development tooling
 
 ### Enterprise Features
+
 - Built-in observability stack
 - Security best practices
 - High availability patterns
 - Audit logging and compliance
 
 ### Integration Capabilities
+
 - RESTful and gRPC APIs
 - Message queue integration
 - Database connectivity
 - External service adapters
 
-## ðŸ“š Documentation Standards
+## ðŸ"š Documentation Standards
 
 All documentation follows these principles:
 
@@ -123,16 +139,18 @@ All documentation follows these principles:
 ## ðŸ†˜ Getting Help
 
 ### Community Resources
+
 - **GitHub Issues**: [Report bugs and request features](https://github.com/flext-sh/flext/issues)
 - **Discussions**: [Ask questions and share ideas](https://github.com/flext-sh/flext/discussions)
 - **Examples**: [Real-world usage examples](https://github.com/flext-sh/flext-examples)
 
 ### Enterprise Support
+
 - **Support Portal**: [support.flext.sh](https://support.flext.sh)
 - **Professional Services**: Architecture consulting and custom development
 - **Training**: On-site and remote training programs
 
-## ðŸ”„ Documentation Updates
+## ðŸ"„ Documentation Updates
 
 This documentation is actively maintained and updated with each release:
 
@@ -140,11 +158,12 @@ This documentation is actively maintained and updated with each release:
 - **Last Updated**: Latest changes reflected in real-time
 - **Contributing**: Help improve docs via [Contributing Guide](development/contributing.md)
 
-## ðŸ“‹ Prerequisites Knowledge
+## ðŸ"‹ Prerequisites Knowledge
 
 To get the most out of FlexCore documentation:
 
 ### Recommended Background
+
 - **Go Programming**: Understanding of Go syntax and concurrency
 - **Python Development**: Python 3.13+ experience
 - **Distributed Systems**: Basic understanding of microservices
@@ -152,6 +171,7 @@ To get the most out of FlexCore documentation:
 - **Database Systems**: SQL and NoSQL database experience
 
 ### Architecture Patterns
+
 - **Clean Architecture**: Hexagonal architecture concepts
 - **Domain-Driven Design**: Domain modeling principles
 - **Event Sourcing**: Event-driven state management
