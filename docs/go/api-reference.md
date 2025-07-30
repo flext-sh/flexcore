@@ -36,10 +36,10 @@ import (
 type CommandBus interface {
     // Send executes a command and returns any error
     Send(ctx context.Context, cmd Command) error
-    
+
     // RegisterHandler registers a command handler for a specific command type
     RegisterHandler(cmdType string, handler CommandHandler)
-    
+
     // RegisterMiddleware adds middleware to the command processing pipeline
     RegisterMiddleware(middleware CommandMiddleware)
 }
@@ -48,7 +48,7 @@ type CommandBus interface {
 type Command interface {
     // CommandType returns the unique identifier for this command type
     CommandType() string
-    
+
     // Validate performs command validation
     Validate() error
 }
@@ -90,7 +90,7 @@ type CreateUserHandler struct {
 
 func (h *CreateUserHandler) Handle(ctx context.Context, cmd Command) error {
     createCmd := cmd.(CreateUserCommand)
-    
+
     // Check if user already exists
     exists, err := h.userRepo.ExistsByEmail(ctx, createCmd.Email)
     if err != nil {
@@ -99,30 +99,30 @@ func (h *CreateUserHandler) Handle(ctx context.Context, cmd Command) error {
     if exists {
         return ErrUserAlreadyExists
     }
-    
+
     // Create new user aggregate
     user := NewUser(
         UserID(uuid.New().String()),
         Email(createCmd.Email),
         createCmd.Profile,
     )
-    
+
     // Save to repository
     if err := h.userRepo.Save(ctx, user); err != nil {
         return fmt.Errorf("saving user: %w", err)
     }
-    
+
     // Publish domain events
     for _, event := range user.UncommittedEvents() {
         if err := h.eventBus.Publish(ctx, event); err != nil {
-            h.logger.Error("failed to publish event", 
+            h.logger.Error("failed to publish event",
                 "error", err,
                 "event_type", event.EventType(),
                 "aggregate_id", event.AggregateID(),
             )
         }
     }
-    
+
     user.MarkEventsAsCommitted()
     return nil
 }
@@ -150,10 +150,10 @@ package app
 type QueryBus interface {
     // Ask executes a query and returns the result
     Ask(ctx context.Context, query Query) (interface{}, error)
-    
+
     // RegisterHandler registers a query handler for a specific query type
     RegisterHandler(queryType string, handler QueryHandler)
-    
+
     // RegisterMiddleware adds middleware to the query processing pipeline
     RegisterMiddleware(middleware QueryMiddleware)
 }
@@ -162,7 +162,7 @@ type QueryBus interface {
 type Query interface {
     // QueryType returns the unique identifier for this query type
     QueryType() string
-    
+
     // Validate performs query validation
     Validate() error
 }
@@ -221,7 +221,7 @@ type GetUserHandler struct {
 
 func (h *GetUserHandler) Handle(ctx context.Context, query Query) (interface{}, error) {
     getUserQuery := query.(GetUserQuery)
-    
+
     // Check cache first
     cacheKey := fmt.Sprintf("user:%s", getUserQuery.UserID)
     if cached, err := h.cache.Get(ctx, cacheKey); err == nil {
@@ -230,7 +230,7 @@ func (h *GetUserHandler) Handle(ctx context.Context, query Query) (interface{}, 
             return user, nil
         }
     }
-    
+
     // Fetch from repository
     user, err := h.userRepo.FindByID(ctx, UserID(getUserQuery.UserID))
     if err != nil {
@@ -239,7 +239,7 @@ func (h *GetUserHandler) Handle(ctx context.Context, query Query) (interface{}, 
         }
         return nil, fmt.Errorf("fetching user: %w", err)
     }
-    
+
     // Convert to response DTO
     response := UserResponse{
         ID:      user.ID().String(),
@@ -249,12 +249,12 @@ func (h *GetUserHandler) Handle(ctx context.Context, query Query) (interface{}, 
         Created: user.CreatedAt(),
         Updated: user.UpdatedAt(),
     }
-    
+
     // Cache the result
     if data, err := json.Marshal(response); err == nil {
         h.cache.Set(ctx, cacheKey, data, 5*time.Minute)
     }
-    
+
     return response, nil
 }
 ```
@@ -270,16 +270,16 @@ package infrastructure
 type EventStore interface {
     // AppendEvents adds events to a stream
     AppendEvents(ctx context.Context, streamID string, expectedVersion int, events []Event) error
-    
+
     // ReadEvents reads events from a stream
     ReadEvents(ctx context.Context, streamID string, fromVersion int) ([]Event, error)
-    
+
     // ReadAllEvents reads all events from all streams
     ReadAllEvents(ctx context.Context, fromPosition int64) ([]Event, error)
-    
+
     // CreateSnapshot stores an aggregate snapshot
     CreateSnapshot(ctx context.Context, snapshot Snapshot) error
-    
+
     // GetSnapshot retrieves the latest snapshot for an aggregate
     GetSnapshot(ctx context.Context, aggregateID string) (*Snapshot, error)
 }
@@ -288,22 +288,22 @@ type EventStore interface {
 type Event interface {
     // EventID returns the unique event identifier
     EventID() string
-    
+
     // EventType returns the event type name
     EventType() string
-    
+
     // AggregateID returns the ID of the aggregate that generated this event
     AggregateID() string
-    
+
     // AggregateVersion returns the version of the aggregate when this event was generated
     AggregateVersion() int
-    
+
     // EventData returns the event data as bytes
     EventData() []byte
-    
+
     // Metadata returns event metadata
     Metadata() map[string]interface{}
-    
+
     // OccurredAt returns when the event occurred
     OccurredAt() time.Time
 }
@@ -328,7 +328,7 @@ type UserCreatedEvent struct {
     aggregateID      string    `json:"aggregate_id"`
     aggregateVersion int       `json:"aggregate_version"`
     occurredAt       time.Time `json:"occurred_at"`
-    
+
     // Event-specific data
     Email     string      `json:"email"`
     Name      string      `json:"name"`
@@ -367,21 +367,21 @@ func SaveUserAggregate(ctx context.Context, eventStore EventStore, user *User) e
     if len(events) == 0 {
         return nil // No changes to save
     }
-    
+
     streamID := fmt.Sprintf("user-%s", user.ID())
     expectedVersion := user.Version() - len(events)
-    
+
     return eventStore.AppendEvents(ctx, streamID, expectedVersion, events)
 }
 
 func LoadUserAggregate(ctx context.Context, eventStore EventStore, userID string) (*User, error) {
     streamID := fmt.Sprintf("user-%s", userID)
-    
+
     // Try to load from snapshot first
     snapshot, err := eventStore.GetSnapshot(ctx, userID)
     var user *User
     var fromVersion int
-    
+
     if err == nil && snapshot != nil {
         // Deserialize from snapshot
         user = &User{}
@@ -394,20 +394,20 @@ func LoadUserAggregate(ctx context.Context, eventStore EventStore, userID string
         user = NewEmptyUser(UserID(userID))
         fromVersion = 0
     }
-    
+
     // Load events since snapshot
     events, err := eventStore.ReadEvents(ctx, streamID, fromVersion)
     if err != nil {
         return nil, fmt.Errorf("reading events: %w", err)
     }
-    
+
     // Apply events to rebuild state
     for _, event := range events {
         if err := user.ApplyEvent(event); err != nil {
             return nil, fmt.Errorf("applying event %s: %w", event.EventID(), err)
         }
     }
-    
+
     return user, nil
 }
 ```
@@ -423,19 +423,19 @@ package infrastructure
 type Plugin interface {
     // Name returns the plugin name
     Name() string
-    
+
     // Version returns the plugin version
     Version() string
-    
+
     // Initialize initializes the plugin with configuration
     Initialize(config Config) error
-    
+
     // Process processes data through the plugin
     Process(ctx context.Context, data interface{}) (interface{}, error)
-    
+
     // Shutdown gracefully shuts down the plugin
     Shutdown() error
-    
+
     // HealthCheck returns the plugin health status
     HealthCheck() error
 }
@@ -444,19 +444,19 @@ type Plugin interface {
 type PluginManager interface {
     // LoadPlugin loads a plugin from a file
     LoadPlugin(pluginPath string) (Plugin, error)
-    
+
     // RegisterPlugin registers a plugin instance
     RegisterPlugin(name string, plugin Plugin) error
-    
+
     // GetPlugin retrieves a registered plugin
     GetPlugin(name string) (Plugin, bool)
-    
+
     // ListPlugins returns all registered plugins
     ListPlugins() []PluginInfo
-    
+
     // UnloadPlugin unloads a plugin
     UnloadPlugin(name string) error
-    
+
     // ReloadPlugin reloads a plugin
     ReloadPlugin(name string) error
 }
@@ -510,13 +510,13 @@ func (p *DataProcessorPlugin) Version() string {
 func (p *DataProcessorPlugin) Initialize(config Config) error {
     p.config = config
     p.logger = config.Logger
-    
+
     // Initialize plugin resources
     p.logger.Info("Data processor plugin initialized",
         "plugin", p.name,
         "version", p.version,
     )
-    
+
     return nil
 }
 
@@ -526,7 +526,7 @@ func (p *DataProcessorPlugin) Process(ctx context.Context, data interface{}) (in
     if !ok {
         return nil, fmt.Errorf("expected map[string]interface{}, got %T", data)
     }
-    
+
     // Process the data
     result := make(map[string]interface{})
     for key, value := range input {
@@ -534,7 +534,7 @@ func (p *DataProcessorPlugin) Process(ctx context.Context, data interface{}) (in
         processed := p.transformValue(value)
         result[fmt.Sprintf("processed_%s", key)] = processed
     }
-    
+
     return result, nil
 }
 
@@ -578,7 +578,7 @@ func SetupPlugins(manager PluginManager) error {
     if err != nil {
         return fmt.Errorf("loading plugin: %w", err)
     }
-    
+
     // Initialize plugin
     config := Config{
         Logger: logger,
@@ -587,11 +587,11 @@ func SetupPlugins(manager PluginManager) error {
             "batch_size":         100,
         },
     }
-    
+
     if err := plugin.Initialize(config); err != nil {
         return fmt.Errorf("initializing plugin: %w", err)
     }
-    
+
     // Register for use
     return manager.RegisterPlugin(plugin.Name(), plugin)
 }
@@ -608,28 +608,28 @@ package config
 type Config interface {
     // GetString returns a string configuration value
     GetString(key string) string
-    
+
     // GetInt returns an integer configuration value
     GetInt(key string) int
-    
+
     // GetBool returns a boolean configuration value
     GetBool(key string) bool
-    
+
     // GetDuration returns a duration configuration value
     GetDuration(key string) time.Duration
-    
+
     // GetStringSlice returns a string slice configuration value
     GetStringSlice(key string) []string
-    
+
     // IsSet checks if a configuration key is set
     IsSet(key string) bool
-    
+
     // Sub returns a sub-configuration for a key
     Sub(key string) Config
-    
+
     // UnmarshalKey unmarshals a configuration key into a struct
     UnmarshalKey(key string, dest interface{}) error
-    
+
     // WatchConfig watches for configuration changes
     WatchConfig(callback func(Config))
 }
@@ -750,13 +750,13 @@ func NewTestEventStore() *TestEventStore {
 func (s *TestEventStore) AppendEvents(ctx context.Context, streamID string, expectedVersion int, events []Event) error {
     s.mutex.Lock()
     defer s.mutex.Unlock()
-    
+
     currentEvents := s.events[streamID]
     if len(currentEvents) != expectedVersion {
-        return fmt.Errorf("concurrency conflict: expected version %d, got %d", 
+        return fmt.Errorf("concurrency conflict: expected version %d, got %d",
             expectedVersion, len(currentEvents))
     }
-    
+
     s.events[streamID] = append(currentEvents, events...)
     return nil
 }
@@ -783,7 +783,7 @@ func (r *MockRepository[T]) Save(ctx context.Context, id string, entity T) error
 func (r *MockRepository[T]) FindByID(ctx context.Context, id string) (T, error) {
     r.mutex.RLock()
     defer r.mutex.RUnlock()
-    
+
     entity, exists := r.entities[id]
     if !exists {
         var zero T

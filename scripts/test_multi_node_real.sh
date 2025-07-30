@@ -13,10 +13,10 @@ NC='\033[0m'
 
 # Cleanup function
 cleanup() {
-    echo -e "\n${YELLOW}Cleaning up...${NC}"
-    pkill -f "flexcore-node" || true
-    docker stop test-redis 2>/dev/null || true
-    docker rm test-redis 2>/dev/null || true
+	echo -e "\n${YELLOW}Cleaning up...${NC}"
+	pkill -f "flexcore-node" || true
+	docker stop test-redis 2>/dev/null || true
+	docker rm test-redis 2>/dev/null || true
 }
 
 # Set trap for cleanup
@@ -25,7 +25,7 @@ trap cleanup EXIT
 # Start Redis for coordination
 echo -e "\n${BLUE}Starting Redis for distributed coordination...${NC}"
 docker run -d --name test-redis -p 6379:6379 redis:alpine || {
-    echo -e "${YELLOW}Redis might already be running${NC}"
+	echo -e "${YELLOW}Redis might already be running${NC}"
 }
 
 # Wait for Redis
@@ -35,7 +35,7 @@ sleep 2
 mkdir -p /tmp/flexcore-test/{node1,node2,node3}
 
 # Node 1 configuration
-cat > /tmp/flexcore-test/node1/config.yaml <<EOF
+cat >/tmp/flexcore-test/node1/config.yaml <<EOF
 cluster_name: test-cluster
 node_id: node-1
 listen_address: :8001
@@ -52,7 +52,7 @@ event_routes:
 EOF
 
 # Node 2 configuration
-cat > /tmp/flexcore-test/node2/config.yaml <<EOF
+cat >/tmp/flexcore-test/node2/config.yaml <<EOF
 cluster_name: test-cluster
 node_id: node-2
 listen_address: :8002
@@ -69,7 +69,7 @@ event_routes:
 EOF
 
 # Node 3 configuration
-cat > /tmp/flexcore-test/node3/config.yaml <<EOF
+cat >/tmp/flexcore-test/node3/config.yaml <<EOF
 cluster_name: test-cluster
 node_id: node-3
 listen_address: :8003
@@ -86,7 +86,7 @@ event_routes:
 EOF
 
 # Create simple FlexCore node executable
-cat > /tmp/flexcore-test/flexcore-node.go <<'EOF'
+cat >/tmp/flexcore-test/flexcore-node.go <<'EOF'
 package main
 
 import (
@@ -256,15 +256,15 @@ go build -o flexcore-node flexcore-node.go
 
 # Start 3 nodes
 echo -e "\n${GREEN}Starting 3 FlexCore nodes...${NC}"
-./flexcore-node /tmp/flexcore-test/node1/config.yaml > node1.log 2>&1 &
+./flexcore-node /tmp/flexcore-test/node1/config.yaml >node1.log 2>&1 &
 NODE1_PID=$!
 echo "Node 1 started (PID: $NODE1_PID)"
 
-./flexcore-node /tmp/flexcore-test/node2/config.yaml > node2.log 2>&1 &
+./flexcore-node /tmp/flexcore-test/node2/config.yaml >node2.log 2>&1 &
 NODE2_PID=$!
 echo "Node 2 started (PID: $NODE2_PID)"
 
-./flexcore-node /tmp/flexcore-test/node3/config.yaml > node3.log 2>&1 &
+./flexcore-node /tmp/flexcore-test/node3/config.yaml >node3.log 2>&1 &
 NODE3_PID=$!
 echo "Node 3 started (PID: $NODE3_PID)"
 
@@ -274,56 +274,56 @@ sleep 3
 # Test node health
 echo -e "\n${BLUE}Testing node health...${NC}"
 for port in 8001 8002 8003; do
-    response=$(curl -s http://localhost:$port/health)
-    echo "Node on port $port: $response"
+	response=$(curl -s http://localhost:$port/health)
+	echo "Node on port $port: $response"
 done
 
 # Test leader election
 echo -e "\n${BLUE}Checking leader election...${NC}"
 for i in {1..3}; do
-    echo -e "\n${YELLOW}Check $i:${NC}"
-    for port in 8001 8002 8003; do
-        status=$(curl -s http://localhost:$port/status)
-        node_id=$(echo $status | jq -r '.node_id')
-        is_leader=$(echo $status | jq -r '.is_leader')
-        if [ "$is_leader" = "true" ]; then
-            echo -e "${RED}LEADER: $node_id${NC}"
-        else
-            echo "Follower: $node_id"
-        fi
-    done
-    sleep 2
+	echo -e "\n${YELLOW}Check $i:${NC}"
+	for port in 8001 8002 8003; do
+		status=$(curl -s http://localhost:$port/status)
+		node_id=$(echo $status | jq -r '.node_id')
+		is_leader=$(echo $status | jq -r '.is_leader')
+		if [ "$is_leader" = "true" ]; then
+			echo -e "${RED}LEADER: $node_id${NC}"
+		else
+			echo "Follower: $node_id"
+		fi
+	done
+	sleep 2
 done
 
 # Test event distribution
 echo -e "\n${BLUE}Testing event distribution...${NC}"
 for i in {1..5}; do
-    port=$((8000 + (i % 3) + 1))
-    curl -s -X POST http://localhost:$port/event -d '{"event": "test"}' > /dev/null
-    echo "Sent event $i to port $port"
+	port=$((8000 + (i % 3) + 1))
+	curl -s -X POST http://localhost:$port/event -d '{"event": "test"}' >/dev/null
+	echo "Sent event $i to port $port"
 done
 
 # Check final status
 echo -e "\n${BLUE}Final cluster status:${NC}"
 for port in 8001 8002 8003; do
-    status=$(curl -s http://localhost:$port/status | jq)
-    echo "Node $port status:"
-    echo "$status"
+	status=$(curl -s http://localhost:$port/status | jq)
+	echo "Node $port status:"
+	echo "$status"
 done
 
 # Test failover by killing leader
 echo -e "\n${BLUE}Testing failover - killing current leader...${NC}"
 for port in 8001 8002 8003; do
-    status=$(curl -s http://localhost:$port/status)
-    is_leader=$(echo $status | jq -r '.is_leader')
-    if [ "$is_leader" = "true" ]; then
-        node_id=$(echo $status | jq -r '.node_id')
-        echo -e "${RED}Killing leader: $node_id${NC}"
-        if [ "$port" = "8001" ]; then kill $NODE1_PID; fi
-        if [ "$port" = "8002" ]; then kill $NODE2_PID; fi
-        if [ "$port" = "8003" ]; then kill $NODE3_PID; fi
-        break
-    fi
+	status=$(curl -s http://localhost:$port/status)
+	is_leader=$(echo $status | jq -r '.is_leader')
+	if [ "$is_leader" = "true" ]; then
+		node_id=$(echo $status | jq -r '.node_id')
+		echo -e "${RED}Killing leader: $node_id${NC}"
+		if [ "$port" = "8001" ]; then kill $NODE1_PID; fi
+		if [ "$port" = "8002" ]; then kill $NODE2_PID; fi
+		if [ "$port" = "8003" ]; then kill $NODE3_PID; fi
+		break
+	fi
 done
 
 # Wait for new leader
@@ -331,14 +331,14 @@ sleep 7
 
 echo -e "\n${BLUE}New leader after failover:${NC}"
 for port in 8001 8002 8003; do
-    status=$(curl -s http://localhost:$port/status 2>/dev/null)
-    if [ -n "$status" ]; then
-        node_id=$(echo $status | jq -r '.node_id')
-        is_leader=$(echo $status | jq -r '.is_leader')
-        if [ "$is_leader" = "true" ]; then
-            echo -e "${GREEN}NEW LEADER: $node_id${NC}"
-        fi
-    fi
+	status=$(curl -s http://localhost:$port/status 2>/dev/null)
+	if [ -n "$status" ]; then
+		node_id=$(echo $status | jq -r '.node_id')
+		is_leader=$(echo $status | jq -r '.is_leader')
+		if [ "$is_leader" = "true" ]; then
+			echo -e "${GREEN}NEW LEADER: $node_id${NC}"
+		fi
+	fi
 done
 
 echo -e "\n${GREEN}✅ Multi-node coordination test complete!${NC}"

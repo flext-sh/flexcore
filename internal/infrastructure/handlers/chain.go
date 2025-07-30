@@ -16,6 +16,13 @@ const (
 	defaultCacheTTLMinutes = 5
 )
 
+// Context key types to avoid collisions
+type contextKey string
+
+const (
+	userContextKey contextKey = "user"
+)
+
 // Handler represents a request handler
 type Handler interface {
 	Handle(ctx context.Context, req Request) result.Result[Response]
@@ -205,7 +212,7 @@ func AuthenticationMiddleware(authenticator Authenticator) Middleware {
 
 			// Add authenticated user to context
 			user := authResult.Value()
-			ctx = context.WithValue(ctx, "user", user)
+			ctx = context.WithValue(ctx, userContextKey, user)
 
 			return next.Handle(ctx, req)
 		})
