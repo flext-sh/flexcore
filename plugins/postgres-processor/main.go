@@ -4,7 +4,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -24,23 +23,9 @@ const (
 )
 
 // init registers types for gob encoding/decoding
+// DRY PRINCIPLE: Uses shared plugin.RegisterPluginTypesForRPC() eliminating 18-line duplication
 func init() {
-	// Register types for RPC serialization
-	gob.Register(map[string]interface{}{})
-	gob.Register([]interface{}{})
-	gob.Register([]map[string]interface{}{})
-
-	// Register primitive types
-	gob.Register(string(""))
-	gob.Register(int(0))
-	gob.Register(int64(0))
-	gob.Register(float64(0))
-	gob.Register(bool(false))
-	gob.Register(time.Time{})
-
-	// Register plugin types
-	gob.Register(plugin.PluginInfo{})
-	gob.Register(plugin.ProcessingStats{})
+	plugin.RegisterPluginTypesForRPC()
 }
 
 // PostgresProcessor implements a PostgreSQL data processing plugin using shared base implementation

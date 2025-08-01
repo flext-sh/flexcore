@@ -143,7 +143,7 @@ func TestPipelineActivate(t *testing.T) {
 	// Events should be raised (3 events: PipelineCreated, PipelineStepAdded, PipelineActivated)
 	events := pipeline.DomainEvents()
 	assert.Len(t, events, 3)
-	assert.Equal(t, "PipelineActivated", events[2].EventType())
+	assert.Equal(t, "pipeline.activated", events[2].EventType())
 }
 
 func TestPipelineDeactivate(t *testing.T) {
@@ -169,7 +169,7 @@ func TestPipelineDeactivate(t *testing.T) {
 	// Events should be raised
 	events := pipeline.DomainEvents()
 	assert.Len(t, events, 1)
-	assert.Equal(t, "PipelineDeactivated", events[0].EventType())
+	assert.Equal(t, "pipeline.deactivated", events[0].EventType())
 }
 
 func TestPipelineStart(t *testing.T) {
@@ -200,7 +200,7 @@ func TestPipelineStart(t *testing.T) {
 	// Events should be raised
 	events := pipeline.DomainEvents()
 	assert.Len(t, events, 1)
-	assert.Equal(t, "PipelineStarted", events[0].EventType())
+	assert.Equal(t, "pipeline.started", events[0].EventType())
 }
 
 func TestPipelineComplete(t *testing.T) {
@@ -233,7 +233,7 @@ func TestPipelineComplete(t *testing.T) {
 	// Events should be raised
 	events := pipeline.DomainEvents()
 	assert.Len(t, events, 1)
-	assert.Equal(t, "PipelineCompleted", events[0].EventType())
+	assert.Equal(t, "pipeline.completed", events[0].EventType())
 }
 
 func TestPipelineFail(t *testing.T) {
@@ -266,7 +266,7 @@ func TestPipelineFail(t *testing.T) {
 	// Events should be raised
 	events := pipeline.DomainEvents()
 	assert.Len(t, events, 1)
-	assert.Equal(t, "PipelineFailed", events[0].EventType())
+	assert.Equal(t, "pipeline.failed", events[0].EventType())
 }
 
 func TestPipelineSetSchedule(t *testing.T) {

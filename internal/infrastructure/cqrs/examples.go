@@ -189,6 +189,55 @@ func (h *PipelineCommandHandler) handleCreatePipeline(ctx context.Context, cmd *
 	return nil
 }
 
+// PipelineUpdateContext encapsulates data for pipeline status updates - reduces returns
+type PipelineUpdateContext struct {
+	command        *UpdatePipelineStatusCommand
+	projection     map[string]interface{}
+	pipelineData   map[string]interface{}
+	currentVersion int
+}
+
+// validateProjectionData validates projection data format - DRY error handling
+func (h *PipelineCommandHandler) validateProjectionData(ctx *PipelineUpdateContext) error {
+	if ctx.projection == nil {
+		return fmt.Errorf("pipeline not found: %s", ctx.command.AggregateID())
+	}
+
+	// Validate pipeline data format
+	pipelineData, ok := ctx.projection["data"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid pipeline data format")
+	}
+	ctx.pipelineData = pipelineData
+
+	// Validate version format
+	currentVersion, ok := ctx.projection["version"].(int)
+	if !ok {
+		return fmt.Errorf("invalid pipeline version format")
+	}
+	ctx.currentVersion = currentVersion
+
+	return nil
+}
+
+// updatePipelineData updates the pipeline data with new status - SRP
+func (h *PipelineCommandHandler) updatePipelineData(ctx *PipelineUpdateContext) {
+	ctx.pipelineData["status"] = ctx.command.Status
+	ctx.pipelineData["status_message"] = ctx.command.Message
+	ctx.pipelineData["updated_at"] = time.Now()
+}
+
+// persistUpdatedPipeline saves the updated pipeline data - SRP
+func (h *PipelineCommandHandler) persistUpdatedPipeline(ctx *PipelineUpdateContext) error {
+	newVersion := ctx.currentVersion + 1
+	return h.cqrsBus.UpdateProjection(
+		"pipeline",
+		ctx.command.AggregateID(),
+		ctx.pipelineData,
+		newVersion,
+	)
+}
+
 func (h *PipelineCommandHandler) handleUpdatePipelineStatus(
 	ctx context.Context, cmd *UpdatePipelineStatusCommand,
 ) error {
@@ -199,34 +248,26 @@ func (h *PipelineCommandHandler) handleUpdatePipelineStatus(
 	default:
 	}
 
+	// Create update context for consolidated error handling
+	updateCtx := &PipelineUpdateContext{command: cmd}
+
 	// Get existing projection
-	projection, err := h.cqrsBus.GetProjection(cmd.AggregateID())
+	var err error
+	updateCtx.projection, err = h.cqrsBus.GetProjection(cmd.AggregateID())
 	if err != nil {
 		return fmt.Errorf("failed to get pipeline projection: %w", err)
 	}
 
-	if projection == nil {
-		return fmt.Errorf("pipeline not found: %s", cmd.AggregateID())
+	// Validate and extract projection data - consolidated validation
+	if err := h.validateProjectionData(updateCtx); err != nil {
+		return err
 	}
 
 	// Update pipeline data
-	pipelineData, ok := projection["data"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid pipeline data format")
-	}
-	pipelineData["status"] = cmd.Status
-	pipelineData["status_message"] = cmd.Message
-	pipelineData["updated_at"] = time.Now()
+	h.updatePipelineData(updateCtx)
 
-	currentVersion, ok := projection["version"].(int)
-	if !ok {
-		return fmt.Errorf("invalid pipeline version format")
-	}
-	newVersion := currentVersion + 1
-
-	// Update projection
-	err = h.cqrsBus.UpdateProjection("pipeline", cmd.AggregateID(), pipelineData, newVersion)
-	if err != nil {
+	// Persist updated pipeline - single return point for persistence errors
+	if err := h.persistUpdatedPipeline(updateCtx); err != nil {
 		return fmt.Errorf("failed to update pipeline projection: %w", err)
 	}
 

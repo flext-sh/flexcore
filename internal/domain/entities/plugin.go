@@ -4,8 +4,8 @@ package entities
 import (
 	"time"
 
-	"github.com/flext/flexcore/shared/errors"
-	"github.com/flext/flexcore/shared/result"
+	"github.com/flext/flexcore/pkg/errors"
+	"github.com/flext/flexcore/pkg/result"
 	"github.com/google/uuid"
 )
 

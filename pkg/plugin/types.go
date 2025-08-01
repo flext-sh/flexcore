@@ -60,3 +60,12 @@ type ProcessingRequest struct {
 	Metadata map[string]interface{} `json:"metadata"`
 	Timeout  time.Duration          `json:"timeout"`
 }
+
+// HealthCheckError represents a health check error
+type HealthCheckError struct {
+	Message string
+}
+
+func (e *HealthCheckError) Error() string {
+	return e.Message
+}
