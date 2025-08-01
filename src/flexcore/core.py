@@ -6,7 +6,7 @@ from typing import Any
 class FlexCore:
     """Main FlexCore class for event-driven architecture."""
 
-    def __init__(self, config: dict[str, Any] | None = None) -> None:
+    def __init__(self, config: dict[str, object] | None = None) -> None:
         self.config = config or {}
         self._initialized = False
 
