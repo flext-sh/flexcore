@@ -4,11 +4,10 @@ package queries
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sync"
 
+	"github.com/flext/flexcore/pkg/cqrs"
 	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/shared/errors"
 )
 
 // Query represents a query in the CQRS pattern
@@ -29,14 +28,18 @@ type QueryBus interface {
 
 // InMemoryQueryBus provides an in-memory implementation of QueryBus
 type InMemoryQueryBus struct {
-	mu       sync.RWMutex
-	handlers map[string]interface{}
+	mu        sync.RWMutex
+	handlers  map[string]interface{}
+	validator *cqrs.BusValidationUtilities
+	invoker   *cqrs.HandlerInvoker
 }
 
 // NewInMemoryQueryBus creates a new in-memory query bus
 func NewInMemoryQueryBus() *InMemoryQueryBus {
 	return &InMemoryQueryBus{
-		handlers: make(map[string]interface{}),
+		handlers:  make(map[string]interface{}),
+		validator: cqrs.NewBusValidationUtilities(),
+		invoker:   cqrs.NewHandlerInvoker(),
 	}
 }
 
@@ -46,120 +49,30 @@ func NewQueryBus() QueryBus {
 }
 
 // RegisterHandler registers a query handler
+// DRY PRINCIPLE: Uses shared registration logic eliminating 21-line duplication (mass=117)
 func (bus *InMemoryQueryBus) RegisterHandler(query Query, handler interface{}) error {
-	if query == nil {
-		return errors.ValidationError("query cannot be nil")
-	}
-
-	if handler == nil {
-		return errors.ValidationError("handler cannot be nil")
-	}
-
-	// Validate handler implements QueryHandler interface
-	handlerType := reflect.TypeOf(handler)
-	if !bus.isValidHandler(handlerType) {
-		return errors.ValidationError("handler must implement QueryHandler interface")
-	}
-
-	queryType := query.QueryType()
-
 	bus.mu.Lock()
 	defer bus.mu.Unlock()
 
-	if _, exists := bus.handlers[queryType]; exists {
-		return errors.AlreadyExistsError("handler for query type " + queryType)
-	}
-
-	bus.handlers[queryType] = handler
-	return nil
+	// DRY: Use shared registration logic
+	return bus.validator.RegisterHandlerGeneric(query, handler, "query", bus.handlers, "query")
 }
 
-// Execute executes a query
+// Execute executes a query synchronously
+// DRY PRINCIPLE: Uses shared execution logic eliminating 21-line duplication (mass=148)
 func (bus *InMemoryQueryBus) Execute(ctx context.Context, query Query) result.Result[interface{}] {
-	if query == nil {
-		return result.Failure[interface{}](errors.ValidationError("query cannot be nil"))
-	}
-
 	bus.mu.RLock()
-	handler, exists := bus.handlers[query.QueryType()]
-	bus.mu.RUnlock()
+	defer bus.mu.RUnlock()
 
-	if !exists {
-		return result.Failure[interface{}](errors.NotFoundError("handler for query type " + query.QueryType()))
-	}
-
-	return bus.invokeHandler(ctx, handler, query)
+	// DRY: Use shared execution logic
+	return bus.validator.ExecuteGeneric(ctx, query, "query", bus.handlers, bus.invoker)
 }
 
-// isValidHandler checks if a type implements the QueryHandler interface
-func (bus *InMemoryQueryBus) isValidHandler(handlerType reflect.Type) bool {
-	// Check if it has a Handle method with correct signature
-	method, exists := handlerType.MethodByName("Handle")
-	if !exists {
-		return false
-	}
+// isValidHandler has been replaced by shared BusValidationUtilities.IsValidQueryHandler()
+// DRY PRINCIPLE: Eliminates 27-line duplication by using shared validation utilities
 
-	// Check method signature: Handle(ctx context.Context, query T) result.Result[R]
-	methodType := method.Type
-	if methodType.NumIn() != 3 || methodType.NumOut() != 1 {
-		return false
-	}
-
-	// Check context parameter
-	contextType := reflect.TypeOf((*context.Context)(nil)).Elem()
-	if !methodType.In(1).Implements(contextType) {
-		return false
-	}
-
-	// Check query parameter implements Query interface
-	queryType := reflect.TypeOf((*Query)(nil)).Elem()
-	if !methodType.In(2).Implements(queryType) {
-		return false
-	}
-
-	return true
-}
-
-// invokeHandler invokes a query handler using reflection
-func (bus *InMemoryQueryBus) invokeHandler(ctx context.Context, handler interface{}, query Query) result.Result[interface{}] {
-	handlerValue := reflect.ValueOf(handler)
-	handlerType := reflect.TypeOf(handler)
-
-	method, exists := handlerType.MethodByName("Handle")
-	if !exists {
-		return result.Failure[interface{}](errors.InternalError("handler does not have Handle method"))
-	}
-
-	// Prepare arguments
-	args := []reflect.Value{
-		handlerValue,
-		reflect.ValueOf(ctx),
-		reflect.ValueOf(query),
-	}
-
-	// Call the handler method
-	results := method.Func.Call(args)
-	if len(results) != 1 {
-		return result.Failure[interface{}](errors.InternalError("handler returned unexpected number of values"))
-	}
-
-	// Extract the result
-	resultValue := results[0].Interface()
-
-	// Handle different result types
-	switch v := resultValue.(type) {
-	case result.Result[interface{}]:
-		return v
-	case error:
-		if v != nil {
-			return result.Failure[interface{}](v)
-		}
-		return result.Success[interface{}](nil)
-	default:
-		// If it's not a Result type, wrap it
-		return result.Success[interface{}](v)
-	}
-}
+// invokeHandler has been replaced by shared ExecuteGeneric method
+// DRY PRINCIPLE: Eliminates duplicate handler invocation by using shared execution logic
 
 // GetRegisteredQueries returns all registered query types
 func (bus *InMemoryQueryBus) GetRegisteredQueries() []string {

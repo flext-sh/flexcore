@@ -415,7 +415,63 @@ func (h *SearchPipelinesQueryHandler) Handle(ctx context.Context, query SearchPi
 	return result.Success(pagedResult)
 }
 
-// contains checks if s contains substr (case-insensitive)
+// SearchTextMatcher provides specialized text matching for pipeline search
+// SOLID SRP: Eliminates complex binary expression by separating search concerns
+type SearchTextMatcher struct{}
+
+// NewSearchTextMatcher creates a new search text matcher
+func NewSearchTextMatcher() *SearchTextMatcher {
+	return &SearchTextMatcher{}
+}
+
+// contains checks if s contains substr (case-insensitive)  
+// SOLID SRP: Eliminates complex binary expression by using specialized validation methods
+func (m *SearchTextMatcher) contains(s, substr string) bool {
+	if m.isEmptySearch(substr) {
+		return true
+	}
+	
+	if m.isInvalidInput(s, substr) {
+		return false
+	}
+	
+	if m.isExactMatch(s, substr) {
+		return true
+	}
+	
+	return m.isCaseInsensitiveMatch(s, substr)
+}
+
+// isEmptySearch checks if search term is empty (matches everything)
+// SOLID SRP: Single responsibility for empty search validation
+func (m *SearchTextMatcher) isEmptySearch(substr string) bool {
+	return len(substr) == 0
+}
+
+// isInvalidInput checks if input parameters are invalid for search
+// SOLID SRP: Single responsibility for input validation
+func (m *SearchTextMatcher) isInvalidInput(s, substr string) bool {
+	return len(s) == 0 || len(s) < len(substr)
+}
+
+// isExactMatch checks if strings are exactly equal
+// SOLID SRP: Single responsibility for exact match check
+func (m *SearchTextMatcher) isExactMatch(s, substr string) bool {
+	return s == substr
+}
+
+// isCaseInsensitiveMatch performs case-insensitive substring matching
+// SOLID SRP: Single responsibility for case-insensitive matching
+func (m *SearchTextMatcher) isCaseInsensitiveMatch(s, substr string) bool {
+	if len(s) == 0 || len(substr) == 0 {
+		return false
+	}
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
+}
+
+// Legacy function maintained for backward compatibility
+// DRY PRINCIPLE: Delegates to specialized matcher
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 || (len(s) > 0 && len(substr) > 0 && strings.Contains(strings.ToLower(s), strings.ToLower(substr))))
+	matcher := NewSearchTextMatcher()
+	return matcher.contains(s, substr)
 }

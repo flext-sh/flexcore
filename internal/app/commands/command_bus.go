@@ -3,9 +3,9 @@ package commands
 
 import (
 	"context"
-	"reflect"
 	"sync"
 
+	"github.com/flext/flexcore/pkg/cqrs"
 	"github.com/flext/flexcore/pkg/result"
 	"github.com/flext/flexcore/shared/errors"
 )
@@ -29,14 +29,18 @@ type CommandBus interface {
 
 // InMemoryCommandBus provides an in-memory implementation of CommandBus
 type InMemoryCommandBus struct {
-	mu       sync.RWMutex
-	handlers map[string]interface{}
+	mu        sync.RWMutex
+	handlers  map[string]interface{}
+	validator *cqrs.BusValidationUtilities
+	invoker   *cqrs.HandlerInvoker
 }
 
 // NewInMemoryCommandBus creates a new in-memory command bus
 func NewInMemoryCommandBus() *InMemoryCommandBus {
 	return &InMemoryCommandBus{
-		handlers: make(map[string]interface{}),
+		handlers:  make(map[string]interface{}),
+		validator: cqrs.NewBusValidationUtilities(),
+		invoker:   cqrs.NewHandlerInvoker(),
 	}
 }
 
@@ -46,49 +50,23 @@ func NewCommandBus() CommandBus {
 }
 
 // RegisterHandler registers a command handler
+// DRY PRINCIPLE: Uses shared registration logic eliminating 21-line duplication (mass=117)
 func (bus *InMemoryCommandBus) RegisterHandler(command Command, handler interface{}) error {
-	if command == nil {
-		return errors.ValidationError("command cannot be nil")
-	}
-
-	if handler == nil {
-		return errors.ValidationError("handler cannot be nil")
-	}
-
-	// Validate handler implements CommandHandler interface
-	handlerType := reflect.TypeOf(handler)
-	if !bus.isValidHandler(handlerType) {
-		return errors.ValidationError("handler must implement CommandHandler interface")
-	}
-
-	commandType := command.CommandType()
-
 	bus.mu.Lock()
 	defer bus.mu.Unlock()
 
-	if _, exists := bus.handlers[commandType]; exists {
-		return errors.AlreadyExistsError("handler for command type " + commandType)
-	}
-
-	bus.handlers[commandType] = handler
-	return nil
+	// DRY: Use shared registration logic
+	return bus.validator.RegisterHandlerGeneric(command, handler, "command", bus.handlers, "command")
 }
 
 // Execute executes a command synchronously
+// DRY PRINCIPLE: Uses shared execution logic eliminating 21-line duplication (mass=148)
 func (bus *InMemoryCommandBus) Execute(ctx context.Context, command Command) result.Result[interface{}] {
-	if command == nil {
-		return result.Failure[interface{}](errors.ValidationError("command cannot be nil"))
-	}
-
 	bus.mu.RLock()
-	handler, exists := bus.handlers[command.CommandType()]
-	bus.mu.RUnlock()
+	defer bus.mu.RUnlock()
 
-	if !exists {
-		return result.Failure[interface{}](errors.NotFoundError("handler for command type " + command.CommandType()))
-	}
-
-	return bus.invokeHandler(ctx, handler, command)
+	// DRY: Use shared execution logic
+	return bus.validator.ExecuteGeneric(ctx, command, "command", bus.handlers, bus.invoker)
 }
 
 // ExecuteAsync executes a command asynchronously
@@ -104,66 +82,13 @@ func (bus *InMemoryCommandBus) ExecuteAsync(ctx context.Context, command Command
 	return result.Success(resultChan)
 }
 
-// isValidHandler checks if a type implements the CommandHandler interface
-func (bus *InMemoryCommandBus) isValidHandler(handlerType reflect.Type) bool {
-	// Check if it has a Handle method with correct signature
-	method, exists := handlerType.MethodByName("Handle")
-	if !exists {
-		return false
-	}
+// isValidHandler has been replaced by shared BusValidationUtilities.IsValidCommandHandler()
+// DRY PRINCIPLE: Eliminates 27-line duplication by using shared validation utilities
 
-	// Check method signature: Handle(ctx context.Context, command T) result.Result[interface{}]
-	methodType := method.Type
-	if methodType.NumIn() != 3 || methodType.NumOut() != 1 {
-		return false
-	}
-
-	// Check context parameter
-	contextType := reflect.TypeOf((*context.Context)(nil)).Elem()
-	if !methodType.In(1).Implements(contextType) {
-		return false
-	}
-
-	// Check command parameter implements Command interface
-	commandType := reflect.TypeOf((*Command)(nil)).Elem()
-	if !methodType.In(2).Implements(commandType) {
-		return false
-	}
-
-	return true
-}
-
-// invokeHandler invokes a command handler using reflection
-func (bus *InMemoryCommandBus) invokeHandler(ctx context.Context, handler interface{}, command Command) result.Result[interface{}] {
-	handlerValue := reflect.ValueOf(handler)
-	handlerType := reflect.TypeOf(handler)
-
-	method, exists := handlerType.MethodByName("Handle")
-	if !exists {
-		return result.Failure[interface{}](errors.InternalError("handler does not have Handle method"))
-	}
-
-	// Prepare arguments
-	args := []reflect.Value{
-		handlerValue,
-		reflect.ValueOf(ctx),
-		reflect.ValueOf(command),
-	}
-
-	// Call the handler method
-	results := method.Func.Call(args)
-	if len(results) != 1 {
-		return result.Failure[interface{}](errors.InternalError("handler returned unexpected number of values"))
-	}
-
-	// Extract the result
-	resultValue := results[0].Interface()
-	if cmdResult, ok := resultValue.(result.Result[interface{}]); ok {
-		return cmdResult
-	}
-
-	return result.Failure[interface{}](errors.InternalError("handler returned unexpected result type"))
-}
+// invokeHandler invokes a command handler using shared reflection logic
+// DRY PRINCIPLE: Uses shared HandlerInvoker to eliminate duplication with query_bus.go
+// invokeHandler has been replaced by shared ExecuteGeneric method
+// DRY PRINCIPLE: Eliminates duplicate handler invocation by using shared execution logic
 
 // GetRegisteredCommands returns all registered command types
 func (bus *InMemoryCommandBus) GetRegisteredCommands() []string {

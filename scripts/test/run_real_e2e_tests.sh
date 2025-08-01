@@ -25,7 +25,7 @@ check_service() {
 	local check_cmd=$2
 
 	echo -n "Checking $name... "
-	if eval $check_cmd >/dev/null 2>&1; then
+	if eval "$check_cmd" >/dev/null 2>&1; then
 		echo -e "${GREEN}✓${NC}"
 		return 0
 	else

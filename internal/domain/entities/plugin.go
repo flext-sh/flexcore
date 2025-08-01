@@ -359,27 +359,48 @@ func (p *Plugin) IsCompatibleWith(other *Plugin) bool {
 	}
 }
 
-// Validate validates the plugin state
-func (p *Plugin) Validate() result.Result[bool] {
-	if p.id == "" {
-		return result.Failure[bool](errors.ValidationError("plugin ID is required"))
-	}
+// PluginValidator provides specialized validation for plugin entities
+// SOLID SRP: Single responsibility for plugin validation eliminating 6 returns
+type PluginValidator struct{}
 
-	if p.name == "" {
-		return result.Failure[bool](errors.ValidationError("plugin name is required"))
-	}
+// NewPluginValidator creates a new plugin validator
+func NewPluginValidator() *PluginValidator {
+	return &PluginValidator{}
+}
 
-	if p.version == "" {
-		return result.Failure[bool](errors.ValidationError("plugin version is required"))
-	}
+// PluginValidationRule represents a single validation rule for plugins
+type PluginValidationRule struct {
+	FieldName string
+	Check     func(*Plugin) bool
+	Message   string
+}
 
-	if p.createdAt.IsZero() {
-		return result.Failure[bool](errors.ValidationError("created at time is required"))
+// getPluginValidationRules returns all validation rules for Plugin
+// SOLID OCP: Open for extension with new validation rules
+func (v *PluginValidator) getPluginValidationRules() []PluginValidationRule {
+	return []PluginValidationRule{
+		{"ID", func(p *Plugin) bool { return p.id != "" }, "plugin ID is required"},
+		{"Name", func(p *Plugin) bool { return p.name != "" }, "plugin name is required"},
+		{"Version", func(p *Plugin) bool { return p.version != "" }, "plugin version is required"},
+		{"CreatedAt", func(p *Plugin) bool { return !p.createdAt.IsZero() }, "created at time is required"},
+		{"UpdatedAt", func(p *Plugin) bool { return !p.updatedAt.IsZero() }, "updated at time is required"},
 	}
+}
 
-	if p.updatedAt.IsZero() {
-		return result.Failure[bool](errors.ValidationError("updated at time is required"))
+// ValidatePlugin validates plugin using rule-based approach
+// DRY PRINCIPLE: Eliminates 6 return statements using validation rules
+func (v *PluginValidator) ValidatePlugin(plugin *Plugin) result.Result[bool] {
+	for _, rule := range v.getPluginValidationRules() {
+		if !rule.Check(plugin) {
+			return result.Failure[bool](errors.ValidationError(rule.Message))
+		}
 	}
-
 	return result.Success(true)
+}
+
+// Validate validates the plugin state
+// DRY PRINCIPLE: Delegates to specialized validator eliminating multiple returns
+func (p *Plugin) Validate() result.Result[bool] {
+	validator := NewPluginValidator()
+	return validator.ValidatePlugin(p)
 }

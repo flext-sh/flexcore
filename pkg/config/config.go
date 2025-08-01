@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"github.com/flext/flexcore/pkg/logging"
 )
 
 const (
@@ -184,4 +185,53 @@ func GetBool(key string) bool {
 // Set sets a configuration value
 func Set(key string, value interface{}) {
 	V.Set(key, value)
+}
+
+// CommandLineFlags represents command line flags for FlexCore applications
+type CommandLineFlags struct {
+	Environment string
+	LogLevel    string
+	Help        bool
+	Version     bool
+}
+
+// InitializeApplicationWithFlags initializes application with command line flags
+// This eliminates 32 lines of code duplication between flexcore and server main.go
+func InitializeApplicationWithFlags(flags CommandLineFlags) error {
+	// Initialize configuration
+	if err := Initialize(); err != nil {
+		return fmt.Errorf("failed to initialize config: %w", err)
+	}
+
+	// Override environment if provided
+	if flags.Environment != "" {
+		V.Set("app.environment", flags.Environment)
+		Current.App.Environment = flags.Environment
+	}
+
+	// Determine log level
+	logLevel := flags.LogLevel
+	if logLevel == "" {
+		if Current.App.Debug {
+			logLevel = "debug"
+		} else {
+			logLevel = "info"
+		}
+	}
+
+	// Initialize logging - we need to import the logging package
+	return initializeLogging(Current.App.Environment, logLevel)
+}
+
+// initializeLogging initializes logging with given environment and level
+func initializeLogging(environment, logLevel string) error {
+	// Initialize logging
+	if err := logging.Initialize(environment, logLevel); err != nil {
+		return fmt.Errorf("failed to initialize logging: %w", err)
+	}
+
+	// Enable config hot reloading
+	Watch()
+	
+	return nil
 }

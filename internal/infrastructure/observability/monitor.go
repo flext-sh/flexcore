@@ -324,8 +324,11 @@ func (m *Monitor) GetSystemMetrics() SystemMetrics {
 
 // Monitor loops
 
-func (m *Monitor) metricsLoop(ctx context.Context) {
-	ticker := time.NewTicker(m.config.MetricsInterval)
+// runPeriodicLoop runs a periodic operation with consistent cancellation handling
+// SOLID SRP: Single responsibility for periodic loop execution
+// DRY PRINCIPLE: Eliminates 15-line duplication (mass=65) between metricsLoop and resourceLoop
+func (m *Monitor) runPeriodicLoop(ctx context.Context, interval time.Duration, operation func()) {
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
@@ -335,9 +338,15 @@ func (m *Monitor) metricsLoop(ctx context.Context) {
 		case <-m.stopCh:
 			return
 		case <-ticker.C:
-			m.collectMetrics()
+			operation()
 		}
 	}
+}
+
+// metricsLoop runs periodic metrics collection
+// DRY PRINCIPLE: Uses shared periodic loop pattern
+func (m *Monitor) metricsLoop(ctx context.Context) {
+	m.runPeriodicLoop(ctx, m.config.MetricsInterval, m.collectMetrics)
 }
 
 func (m *Monitor) healthLoop(ctx context.Context) {
@@ -356,20 +365,10 @@ func (m *Monitor) healthLoop(ctx context.Context) {
 	}
 }
 
+// resourceLoop runs periodic resource monitoring  
+// DRY PRINCIPLE: Uses shared periodic loop pattern
 func (m *Monitor) resourceLoop(ctx context.Context) {
-	ticker := time.NewTicker(m.config.ResourceInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-m.stopCh:
-			return
-		case <-ticker.C:
-			m.monitorResources()
-		}
-	}
+	m.runPeriodicLoop(ctx, m.config.ResourceInterval, m.monitorResources)
 }
 
 func (m *Monitor) alertLoop(ctx context.Context) {

@@ -43,11 +43,10 @@ func init() {
 	gob.Register(plugin.ProcessingStats{})
 }
 
-// PostgresProcessor implements a PostgreSQL data processing plugin
+// PostgresProcessor implements a PostgreSQL data processing plugin using shared base implementation
+// DRY PRINCIPLE: Composition over duplication - embeds BasePostgresProcessor for shared functionality
 type PostgresProcessor struct {
-	config map[string]interface{}
-	db     *sql.DB
-	stats  plugin.ProcessingStats
+	*plugin.BasePostgresProcessor
 }
 
 // DataProcessorPlugin interface
@@ -60,6 +59,7 @@ type DataProcessorPlugin interface {
 }
 
 // Initialize the plugin with configuration
+// DRY PRINCIPLE: Delegates to BasePostgresProcessor.Initialize eliminating database connection duplication
 func (pp *PostgresProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
 	select {
 	case <-ctx.Done():
@@ -69,8 +69,15 @@ func (pp *PostgresProcessor) Initialize(ctx context.Context, config map[string]i
 
 	log.Printf("[PostgresProcessor] Initializing with config: %+v", config)
 
-	pp.config = config
-	pp.stats = plugin.ProcessingStats{}
+	// Initialize base processor
+	if pp.BasePostgresProcessor == nil {
+		pp.BasePostgresProcessor = plugin.NewBasePostgresProcessor()
+	}
+
+	// Delegate to base implementation
+	if err := pp.BasePostgresProcessor.Initialize(ctx, config); err != nil {
+		return err
+	}
 
 	// Try to connect to PostgreSQL if config provided
 	host, hasHost := config["postgres_host"].(string)
@@ -126,12 +133,13 @@ func (pp *PostgresProcessor) connectToDatabase(connStr string) error {
 		return err
 	}
 
-	pp.db = db
+	pp.SetDB(db)
 	log.Printf("[PostgresProcessor] PostgreSQL connected successfully")
 	return nil
 }
 
 // Execute processes data with PostgreSQL
+// DRY PRINCIPLE: Delegates to BasePostgresProcessor.ExecuteWithStats eliminating 50+ line duplication
 func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]interface{}) (
 	map[string]interface{}, error) {
 	select {
@@ -140,108 +148,16 @@ func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]inter
 	default:
 	}
 
-	startTime := time.Now()
-	defer func() {
-		pp.stats.DurationMs = time.Since(startTime).Milliseconds()
-		pp.stats.EndTime = time.Now()
-	}()
-
 	log.Printf("[PostgresProcessor] Processing input with %d keys", len(input))
-
-	result := make(map[string]interface{})
-	result["processor"] = processorType
-	result["timestamp"] = time.Now().Unix()
-	result["processed_by"] = "FlexCore PostgresProcessor v1.0"
-
-	// Process the input data
-	if query, ok := input["sql_query"].(string); ok && pp.db != nil {
-		// Execute SQL query
-		queryResult, err := pp.executeQuery(ctx, query)
-		if err != nil {
-			result["error"] = err.Error()
-			result["data"] = input
-		} else {
-			result["data"] = queryResult
-			pp.stats.ProcessedOK = int64(len(queryResult))
-		}
-	} else if data, ok := input["data"]; ok {
-		// Process data without database
-		switch v := data.(type) {
-		case []interface{}:
-			processed := pp.processArray(v)
-			result["data"] = processed
-			result["records_count"] = len(processed)
-		case map[string]interface{}:
-			processed := pp.processMap(v)
-			result["data"] = processed
-			result["records_count"] = 1
-		case string:
-			processed := pp.processString(v)
-			result["data"] = processed
-			result["records_count"] = 1
-		default:
-			result["data"] = data
-			result["records_count"] = 1
-		}
-	} else {
-		result["data"] = input
-		result["records_count"] = 1
-	}
-
-	// Add processing stats
-	result["stats"] = map[string]interface{}{
-		"total_records":      pp.stats.TotalRecords,
-		"processed_ok":       pp.stats.ProcessedOK,
-		"processed_error":    pp.stats.ProcessedError,
-		"duration_ms":        pp.stats.DurationMs,
-		"records_per_sec":    pp.stats.RecordsPerSec,
-		"database_connected": pp.db != nil,
-	}
-
-	pp.stats.TotalRecords++
-	pp.stats.ProcessedOK++
-	return result, nil
+	
+	// Delegate to shared implementation
+	return pp.ExecuteWithStats(ctx, input, processorType)
 }
 
-// executeQuery runs a SQL query and returns results
+// DRY PRINCIPLE: executeQuery moved to BasePostgresProcessor.ExecuteQuery to eliminate 39-line duplication (mass=209)
+// Delegate to shared implementation
 func (pp *PostgresProcessor) executeQuery(ctx context.Context, query string) ([]map[string]interface{}, error) {
-	rows, err := pp.db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("query execution failed: %w", err)
-	}
-	defer rows.Close()
-
-	// Get column names
-	columns, err := rows.Columns()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get columns: %w", err)
-	}
-
-	var results []map[string]interface{}
-
-	for rows.Next() {
-		// Create a slice to hold values
-		values := make([]interface{}, len(columns))
-		valuePtrs := make([]interface{}, len(columns))
-
-		for i := range values {
-			valuePtrs[i] = &values[i]
-		}
-
-		if err := rows.Scan(valuePtrs...); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
-		}
-
-		// Convert to map
-		rowMap := make(map[string]interface{})
-		for i, col := range columns {
-			rowMap[col] = values[i]
-		}
-
-		results = append(results, rowMap)
-	}
-
-	return results, nil
+	return pp.ExecuteQuery(ctx, query)
 }
 
 // GetInfo returns plugin metadata
@@ -262,11 +178,11 @@ func (pp *PostgresProcessor) GetInfo() plugin.PluginInfo {
 
 // HealthCheck verifies plugin health
 func (pp *PostgresProcessor) HealthCheck(ctx context.Context) error {
-	log.Printf("[PostgresProcessor] Health check - processed %d records", pp.stats.TotalRecords)
+	log.Printf("[PostgresProcessor] Health check - processed %d records", pp.GetStatistics().TotalRecords)
 
 	// Check database connection if available
-	if pp.db != nil {
-		if err := pp.db.PingContext(ctx); err != nil {
+	if pp.GetDB() != nil {
+		if err := pp.GetDB().PingContext(ctx); err != nil {
 			return fmt.Errorf("database health check failed: %w", err)
 		}
 	}
@@ -276,18 +192,18 @@ func (pp *PostgresProcessor) HealthCheck(ctx context.Context) error {
 
 // Cleanup releases resources
 func (pp *PostgresProcessor) Cleanup() error {
-	log.Printf("[PostgresProcessor] Cleanup called - processed %d records total", pp.stats.TotalRecords)
+	log.Printf("[PostgresProcessor] Cleanup called - processed %d records total", pp.GetStatistics().TotalRecords)
 
-	if pp.db != nil {
-		if err := pp.db.Close(); err != nil {
+	if pp.GetDB() != nil {
+		if err := pp.GetDB().Close(); err != nil {
 			log.Printf("[PostgresProcessor] Warning: Failed to close database: %v", err)
 		}
 		log.Printf("[PostgresProcessor] Database connection closed")
 	}
 
 	// Save statistics to file (optional)
-	if statsFile, ok := pp.config["stats_file"].(string); ok {
-		data, err := json.MarshalIndent(pp.stats, "", "  ")
+	if statsFile, ok := pp.GetConfig()["stats_file"].(string); ok {
+		data, err := json.MarshalIndent(pp.GetStatistics(), "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal stats: %w", err)
 		}
@@ -299,42 +215,7 @@ func (pp *PostgresProcessor) Cleanup() error {
 	return nil
 }
 
-// Processing helper methods
-
-func (pp *PostgresProcessor) processArray(data []interface{}) []interface{} {
-	processed := make([]interface{}, 0, len(data))
-
-	for _, item := range data {
-		// Add metadata
-		if itemMap, ok := item.(map[string]interface{}); ok {
-			itemMap["_processed_at"] = time.Now().Unix()
-			itemMap["_processor"] = processorType
-			processed = append(processed, itemMap)
-		} else {
-			processed = append(processed, item)
-		}
-	}
-
-	return processed
-}
-
-func (pp *PostgresProcessor) processMap(data map[string]interface{}) map[string]interface{} {
-	processed := make(map[string]interface{})
-
-	for key, value := range data {
-		processed[key] = value
-	}
-
-	// Add metadata
-	processed["_processed_at"] = time.Now().Unix()
-	processed["_processor"] = processorType
-
-	return processed
-}
-
-func (pp *PostgresProcessor) processString(data string) string {
-	return "[POSTGRES_PROCESSED] " + data
-}
+// Processing helper methods - delegated to BasePostgresProcessor
 
 // RPC Implementation
 
@@ -375,7 +256,9 @@ func (rpc *PostgresProcessorRPC) Cleanup(args interface{}, resp *error) error {
 type PostgresProcessorPlugin struct{}
 
 func (PostgresProcessorPlugin) Server(*hashicorpPlugin.MuxBroker) (interface{}, error) {
-	return &PostgresProcessorRPC{Impl: &PostgresProcessor{}}, nil
+	return &PostgresProcessorRPC{Impl: &PostgresProcessor{
+		BasePostgresProcessor: plugin.NewBasePostgresProcessor(),
+	}}, nil
 }
 
 func (PostgresProcessorPlugin) Client(b *hashicorpPlugin.MuxBroker, c *rpc.Client) (interface{}, error) {
@@ -383,27 +266,17 @@ func (PostgresProcessorPlugin) Client(b *hashicorpPlugin.MuxBroker, c *rpc.Clien
 }
 
 // Main entry point
+// DRY PRINCIPLE: Uses shared PluginMainUtilities to eliminate 26-line duplication (mass=110)
 func main() {
-	log.SetPrefix("[postgres-processor-plugin] ")
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
-
-	log.Println("Starting postgres processor plugin...")
-
-	// Handshake configuration
-	handshakeConfig := hashicorpPlugin.HandshakeConfig{
-		ProtocolVersion:  1,
-		MagicCookieKey:   "FLEXCORE_PLUGIN",
-		MagicCookieValue: "flexcore-plugin-magic-cookie",
+	config := plugin.PluginMainConfig{
+		PluginName: "postgres-processor",
+		LogPrefix:  "[postgres-processor-plugin] ",
+		StartMsg:   "Starting postgres processor plugin...",
+		StopMsg:    "Postgres processor plugin stopped",
 	}
 
-	// Plugin map
-	pluginMap := map[string]hashicorpPlugin.Plugin{
-		"flexcore": &PostgresProcessorPlugin{},
-	}
-
-	// Serve the plugin
-	hashicorpPlugin.Serve(&hashicorpPlugin.ServeConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
+	// Use shared main function eliminating duplication
+	plugin.RunPluginMain(config, func() hashicorpPlugin.Plugin {
+		return &PostgresProcessorPlugin{}
 	})
 }

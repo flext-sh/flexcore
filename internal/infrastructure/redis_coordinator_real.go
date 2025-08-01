@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext/flexcore/pkg/result"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -62,61 +63,157 @@ func (rc *RealRedisCoordinator) GetNodeID() string {
 }
 
 // CoordinateExecution coordinates pipeline execution across cluster nodes using Redis
+// SOLID SRP: Reduced from 7 returns to 1 return using Result pattern and CoordinationOrchestrator
 func (rc *RealRedisCoordinator) CoordinateExecution(ctx context.Context, workflowID string) error {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 
-	rc.logger.Info("Coordinating distributed execution with Redis",
-		zap.String("workflow_id", workflowID),
-		zap.String("node_id", rc.nodeID))
-
-	// 1. Register this node as active
-	if err := rc.registerNode(ctx); err != nil {
-		return fmt.Errorf("failed to register node: %w", err)
+	// Use orchestrator for centralized error handling
+	orchestrator := rc.createCoordinationOrchestrator(ctx, workflowID)
+	coordinationResult := orchestrator.CoordinateDistributedExecution()
+	
+	if coordinationResult.IsFailure() {
+		return coordinationResult.Error()
 	}
 
-	// 2. Acquire distributed lock for workflow
-	lockKey := rc.lockPrefix + workflowID
-	acquired, err := rc.acquireLock(ctx, lockKey, 30*time.Second)
+	return nil
+}
+
+// CoordinationOrchestrator handles complete coordination execution with Result pattern
+// SOLID SRP: Single responsibility for coordination orchestration
+type CoordinationOrchestrator struct {
+	coordinator *RealRedisCoordinator
+	ctx         context.Context
+	workflowID  string
+}
+
+// createCoordinationOrchestrator creates a specialized coordination orchestrator
+// SOLID SRP: Factory method for creating specialized orchestrators
+func (rc *RealRedisCoordinator) createCoordinationOrchestrator(ctx context.Context, workflowID string) *CoordinationOrchestrator {
+	return &CoordinationOrchestrator{
+		coordinator: rc,
+		ctx:         ctx,
+		workflowID:  workflowID,
+	}
+}
+
+// CoordinateDistributedExecution coordinates distributed execution with centralized error handling
+// SOLID SRP: Single responsibility for complete distributed coordination
+func (orchestrator *CoordinationOrchestrator) CoordinateDistributedExecution() result.Result[bool] {
+	orchestrator.coordinator.logger.Info("Starting distributed coordination using Redis",
+		zap.String("workflow_id", orchestrator.workflowID),
+		zap.String("node_id", orchestrator.coordinator.nodeID))
+
+	// Phase 1: Register node in cluster
+	registrationResult := orchestrator.registerNodeInCluster()
+	if registrationResult.IsFailure() {
+		return result.Failure[bool](registrationResult.Error())
+	}
+
+	// Phase 2: Acquire distributed lock
+	lockResult := orchestrator.acquireDistributedLock()
+	if lockResult.IsFailure() {
+		return result.Failure[bool](lockResult.Error())
+	}
+
+	lockKey := lockResult.Value()
+	defer func() {
+		if err := orchestrator.coordinator.releaseLock(orchestrator.ctx, lockKey); err != nil {
+			orchestrator.coordinator.logger.Error("Failed to release lock", zap.Error(err))
+		}
+	}()
+
+	// Phase 3: Elect leader for workflow
+	leaderResult := orchestrator.electWorkflowLeader()
+	if leaderResult.IsFailure() {
+		return result.Failure[bool](leaderResult.Error())
+	}
+
+	isLeader := leaderResult.Value()
+
+	// Phase 4: Execute coordination based on leadership
+	executionResult := orchestrator.executeCoordinationPhase(isLeader)
+	if executionResult.IsFailure() {
+		return result.Failure[bool](executionResult.Error())
+	}
+
+	orchestrator.coordinator.logger.Info("Distributed coordination completed successfully",
+		zap.String("workflow_id", orchestrator.workflowID),
+		zap.Bool("is_leader", isLeader))
+
+	return result.Success(true)
+}
+
+// registerNodeInCluster registers node in Redis cluster registry
+// SOLID SRP: Single responsibility for node registration
+func (orchestrator *CoordinationOrchestrator) registerNodeInCluster() result.Result[bool] {
+	if err := orchestrator.coordinator.registerNode(orchestrator.ctx); err != nil {
+		return result.Failure[bool](fmt.Errorf("failed to register node in cluster: %w", err))
+	}
+	return result.Success(true)
+}
+
+// acquireDistributedLock acquires distributed lock for workflow
+// SOLID SRP: Single responsibility for lock acquisition
+func (orchestrator *CoordinationOrchestrator) acquireDistributedLock() result.Result[string] {
+	lockKey := orchestrator.coordinator.lockPrefix + orchestrator.workflowID
+	acquired, err := orchestrator.coordinator.acquireLock(orchestrator.ctx, lockKey, 2*time.Minute)
 	if err != nil {
-		return fmt.Errorf("failed to acquire workflow lock: %w", err)
+		return result.Failure[string](fmt.Errorf("failed to acquire coordination lock: %w", err))
 	}
-	defer rc.releaseLock(ctx, lockKey)
-
 	if !acquired {
-		return fmt.Errorf("another node is already processing workflow %s", workflowID)
+		return result.Failure[string](fmt.Errorf("coordination lock is held by another node"))
 	}
+	return result.Success(lockKey)
+}
 
-	// 3. Elect leader for this workflow
-	leaderKey := rc.leaderPrefix + workflowID
-	isLeader, err := rc.electLeader(ctx, leaderKey, workflowID)
+// electWorkflowLeader elects leader for workflow execution
+// SOLID SRP: Single responsibility for leader election
+func (orchestrator *CoordinationOrchestrator) electWorkflowLeader() result.Result[bool] {
+	leaderKey := orchestrator.coordinator.leaderPrefix + orchestrator.workflowID
+	isLeader, err := orchestrator.coordinator.electLeader(orchestrator.ctx, leaderKey, orchestrator.workflowID)
 	if err != nil {
-		return fmt.Errorf("leader election failed: %w", err)
+		return result.Failure[bool](fmt.Errorf("leader election failed: %w", err))
 	}
+	return result.Success(isLeader)
+}
 
-	rc.logger.Info("Leadership determined for workflow",
-		zap.String("workflow_id", workflowID),
-		zap.Bool("is_leader", isLeader),
-		zap.String("node_id", rc.nodeID))
-
-	// 4. If leader, coordinate workload distribution
+// executeCoordinationPhase executes coordination based on leadership role
+// SOLID SRP: Single responsibility for coordination execution
+func (orchestrator *CoordinationOrchestrator) executeCoordinationPhase(isLeader bool) result.Result[bool] {
 	if isLeader {
-		if err := rc.distributeWorkload(ctx, workflowID); err != nil {
-			return fmt.Errorf("workload distribution failed: %w", err)
+		// Leader distributes workload
+		distributionResult := orchestrator.executeLeaderWorkflow()
+		if distributionResult.IsFailure() {
+			return result.Failure[bool](distributionResult.Error())
 		}
 	}
 
-	// 5. Register workflow execution
-	if err := rc.registerWorkflowExecution(ctx, workflowID); err != nil {
-		return fmt.Errorf("workflow registration failed: %w", err)
+	// All nodes register their execution
+	registrationResult := orchestrator.registerWorkflowExecution()
+	if registrationResult.IsFailure() {
+		return result.Failure[bool](registrationResult.Error())
 	}
 
-	rc.logger.Info("Distributed execution coordination completed with Redis",
-		zap.String("workflow_id", workflowID),
-		zap.String("node_id", rc.nodeID),
-		zap.Bool("is_leader", isLeader))
+	return result.Success(true)
+}
 
-	return nil
+// executeLeaderWorkflow executes leader-specific workflow coordination
+// SOLID SRP: Single responsibility for leader workflow execution
+func (orchestrator *CoordinationOrchestrator) executeLeaderWorkflow() result.Result[bool] {
+	if err := orchestrator.coordinator.distributeWorkload(orchestrator.ctx, orchestrator.workflowID); err != nil {
+		return result.Failure[bool](fmt.Errorf("workload distribution failed: %w", err))
+	}
+	return result.Success(true)
+}
+
+// registerWorkflowExecution registers workflow execution in Redis
+// SOLID SRP: Single responsibility for execution registration
+func (orchestrator *CoordinationOrchestrator) registerWorkflowExecution() result.Result[bool] {
+	if err := orchestrator.coordinator.registerWorkflowExecution(orchestrator.ctx, orchestrator.workflowID); err != nil {
+		return result.Failure[bool](fmt.Errorf("workflow execution registration failed: %w", err))
+	}
+	return result.Success(true)
 }
 
 // registerNode registers this node in Redis cluster registry

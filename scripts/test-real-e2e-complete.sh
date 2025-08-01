@@ -26,7 +26,7 @@ for i in {1..10}; do
 		echo "✅ Windmill is ready!"
 		break
 	fi
-	if [ $i -eq 10 ]; then
+	if [ "$i" -eq 10 ]; then
 		echo "❌ Windmill failed to start"
 		kill $WINDMILL_PID || true
 		exit 1
@@ -37,7 +37,7 @@ done
 # Test Windmill API
 echo "🧪 Testing Windmill API..."
 VERSION_RESPONSE=$(curl -s http://localhost:8000/api/version)
-echo "📊 Windmill Version: $(echo $VERSION_RESPONSE | jq -r .windmill_version)"
+echo "📊 Windmill Version: $(echo "$VERSION_RESPONSE" | jq -r .windmill_version)"
 
 # Set environment variables
 export WINDMILL_URL="http://localhost:8000"
@@ -76,10 +76,10 @@ if kill -0 $NODE_PID 2>/dev/null; then
 		if curl -s http://localhost:8001/health >/dev/null 2>&1; then
 			echo "✅ Node health check passed!"
 			HEALTH_RESPONSE=$(curl -s http://localhost:8001/health)
-			echo "📊 Health Status: $(echo $HEALTH_RESPONSE | jq -r .status)"
+			echo "📊 Health Status: $(echo "$HEALTH_RESPONSE" | jq -r .status)"
 			break
 		fi
-		if [ $i -eq 5 ]; then
+		if [ "$i" -eq 5 ]; then
 			echo "❌ Node health check failed"
 		fi
 		sleep 2
@@ -89,7 +89,7 @@ if kill -0 $NODE_PID 2>/dev/null; then
 	echo "🔌 Testing plugin system..."
 	if curl -s http://localhost:8001/plugins >/dev/null 2>&1; then
 		PLUGINS_RESPONSE=$(curl -s http://localhost:8001/plugins)
-		PLUGIN_COUNT=$(echo $PLUGINS_RESPONSE | jq -r .count)
+		PLUGIN_COUNT=$(echo "$PLUGINS_RESPONSE" | jq -r .count)
 		echo "✅ Plugin system working! Found $PLUGIN_COUNT plugins"
 
 		if [ "$PLUGIN_COUNT" -gt 0 ]; then
@@ -98,14 +98,14 @@ if kill -0 $NODE_PID 2>/dev/null; then
 
 			# Test plugin execution
 			echo "⚡ Testing plugin execution..."
-			PLUGIN_ID=$(echo $PLUGINS_RESPONSE | jq -r '.plugins[0].id')
+			PLUGIN_ID=$(echo "$PLUGINS_RESPONSE" | jq -r '.plugins[0].id')
 			if [ "$PLUGIN_ID" != "null" ] && [ -n "$PLUGIN_ID" ]; then
 				TEST_DATA='{"test_input": "real_e2e_test", "timestamp": '$(date +%s)', "items": ["item1", "item2", "item3"]}'
 
 				EXEC_RESPONSE=$(curl -s -X POST \
 					-H "Content-Type: application/json" \
 					-d "{\"input\": $TEST_DATA}" \
-					http://localhost:8001/plugins/$PLUGIN_ID/execute)
+					http://localhost:8001/plugins/"$PLUGIN_ID"/execute)
 
 				if echo "$EXEC_RESPONSE" | jq -e '.result' >/dev/null 2>&1; then
 					echo "✅ Plugin execution successful!"

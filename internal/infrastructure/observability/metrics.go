@@ -35,12 +35,44 @@ type Counter struct {
 	value int64
 }
 
+// GetName returns the counter name
+func (c *Counter) GetName() string {
+	return c.name
+}
+
+// GetTags returns the counter tags
+func (c *Counter) GetTags() map[string]string {
+	return c.tags
+}
+
+// SetMetadata sets the counter metadata
+func (c *Counter) SetMetadata(name string, tags map[string]string) {
+	c.name = name
+	c.tags = tags
+}
+
 // Gauge represents a value that can go up and down
 type Gauge struct {
 	mu    sync.RWMutex
 	name  string
 	tags  map[string]string
 	value float64
+}
+
+// GetName returns the gauge name
+func (g *Gauge) GetName() string {
+	return g.name
+}
+
+// GetTags returns the gauge tags
+func (g *Gauge) GetTags() map[string]string {
+	return g.tags
+}
+
+// SetMetadata sets the gauge metadata
+func (g *Gauge) SetMetadata(name string, tags map[string]string) {
+	g.name = name
+	g.tags = tags
 }
 
 // Histogram tracks distribution of values
@@ -68,6 +100,14 @@ type MetricPoint struct {
 	Tags      map[string]string `json:"tags"`
 	Value     interface{}       `json:"value"`
 	Timestamp time.Time         `json:"timestamp"`
+}
+
+// Metric represents a generic metric interface
+// SOLID SRP: Common interface for all metric types
+type Metric interface {
+	GetName() string
+	GetTags() map[string]string
+	SetMetadata(name string, tags map[string]string)
 }
 
 // NewMetricsCollector creates a new metrics collector
@@ -110,27 +150,13 @@ func (mc *MetricsCollector) IncrementCounter(name string, tags map[string]string
 }
 
 // AddToCounter adds a value to a counter
+// DRY PRINCIPLE: Uses shared metric management logic
 func (mc *MetricsCollector) AddToCounter(name string, value int64, tags map[string]string) {
-	if !mc.IsEnabled() {
-		return
-	}
-
-	mc.mu.Lock()
-	defer mc.mu.Unlock()
-
-	key := mc.getMetricKey(name, tags)
-	counter, exists := mc.counters[key]
-	if !exists {
-		counter = &Counter{
-			name: name,
-			tags: tags,
-		}
-		mc.counters[key] = counter
-	}
-
-	counter.mu.Lock()
-	counter.value += value
-	counter.mu.Unlock()
+	mc.manageCounterMetric(name, tags, func(counter *Counter) {
+		counter.mu.Lock()
+		counter.value += value
+		counter.mu.Unlock()
+	})
 }
 
 // GetCounter returns the current value of a counter
@@ -150,27 +176,13 @@ func (mc *MetricsCollector) GetCounter(name string, tags map[string]string) int6
 // Gauge operations
 
 // SetGauge sets a gauge value
+// DRY PRINCIPLE: Uses shared metric management logic
 func (mc *MetricsCollector) SetGauge(name string, value float64, tags map[string]string) {
-	if !mc.IsEnabled() {
-		return
-	}
-
-	mc.mu.Lock()
-	defer mc.mu.Unlock()
-
-	key := mc.getMetricKey(name, tags)
-	gauge, exists := mc.gauges[key]
-	if !exists {
-		gauge = &Gauge{
-			name: name,
-			tags: tags,
-		}
-		mc.gauges[key] = gauge
-	}
-
-	gauge.mu.Lock()
-	gauge.value = value
-	gauge.mu.Unlock()
+	mc.manageGaugeMetric(name, tags, func(gauge *Gauge) {
+		gauge.mu.Lock()
+		gauge.value = value
+		gauge.mu.Unlock()
+	})
 }
 
 // GetGauge returns the current value of a gauge
@@ -361,6 +373,93 @@ func (mc *MetricsCollector) getMetricKey(name string, tags map[string]string) st
 		}
 	}
 	return key
+}
+
+// MetricCreator interface for creating metrics with unified structure
+// SOLID SRP: Single responsibility for metric creation
+type MetricCreator[T Metric] interface {
+	CreateMetric(name string, tags map[string]string) T
+	GetMetricMap() map[string]T
+}
+
+// CounterCreator implements MetricCreator for Counter metrics
+// SOLID SRP: Single responsibility for counter creation
+type CounterCreator struct {
+	mc *MetricsCollector
+}
+
+// CreateMetric creates a new counter metric
+// SOLID SRP: Factory method for counter creation
+func (cc *CounterCreator) CreateMetric(name string, tags map[string]string) *Counter {
+	return &Counter{
+		name: name,
+		tags: tags,
+	}
+}
+
+// GetMetricMap returns the counter metrics map
+// SOLID SRP: Accessor for counter map
+func (cc *CounterCreator) GetMetricMap() map[string]*Counter {
+	return cc.mc.counters
+}
+
+// GaugeCreator implements MetricCreator for Gauge metrics
+// SOLID SRP: Single responsibility for gauge creation
+type GaugeCreator struct {
+	mc *MetricsCollector
+}
+
+// CreateMetric creates a new gauge metric
+// SOLID SRP: Factory method for gauge creation
+func (gc *GaugeCreator) CreateMetric(name string, tags map[string]string) *Gauge {
+	return &Gauge{
+		name: name,
+		tags: tags,
+	}
+}
+
+// GetMetricMap returns the gauge metrics map
+// SOLID SRP: Accessor for gauge map
+func (gc *GaugeCreator) GetMetricMap() map[string]*Gauge {
+	return gc.mc.gauges
+}
+
+// manageMetric manages metric creation and operation using Go generics
+// SOLID SRP: Single responsibility for unified metric management
+// DRY PRINCIPLE: Eliminates 20-line duplication (mass=106) between manageCounterMetric and manageGaugeMetric
+func manageMetric[T Metric](mc *MetricsCollector, creator MetricCreator[T], name string, tags map[string]string, operation func(T)) {
+	if !mc.IsEnabled() {
+		return
+	}
+
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+
+	key := mc.getMetricKey(name, tags)
+	metricMap := creator.GetMetricMap()
+	metric, exists := metricMap[key]
+	if !exists {
+		metric = creator.CreateMetric(name, tags)
+		metricMap[key] = metric
+	}
+
+	operation(metric)
+}
+
+// manageCounterMetric manages counter metric creation and operation
+// SOLID SRP: Single responsibility for counter metric management
+// DRY PRINCIPLE: Uses unified manageMetric eliminating 20-line duplication (mass=106)
+func (mc *MetricsCollector) manageCounterMetric(name string, tags map[string]string, operation func(*Counter)) {
+	creator := &CounterCreator{mc: mc}
+	manageMetric(mc, creator, name, tags, operation)
+}
+
+// manageGaugeMetric manages gauge metric creation and operation
+// SOLID SRP: Single responsibility for gauge metric management  
+// DRY PRINCIPLE: Uses unified manageMetric eliminating 20-line duplication (mass=106)
+func (mc *MetricsCollector) manageGaugeMetric(name string, tags map[string]string, operation func(*Gauge)) {
+	creator := &GaugeCreator{mc: mc}
+	manageMetric(mc, creator, name, tags, operation)
 }
 
 // Name returns the name of the metrics collector for health checking

@@ -26,7 +26,7 @@ case "$1" in
 	for i in zsyscall*go; do
 		# Run the command line that appears in the first line
 		# of the generated file to regenerate it.
-		sed 1q $i | sed 's;^// ;;' | sh >_$i && gofmt <_$i >$i
+		sed 1q "$i" | sed 's;^// ;;' | sh >_"$i" && gofmt <_$i >$i
 		rm _$i
 	done
 	exit 0
@@ -49,7 +49,7 @@ esac
 if [[ $GOOS == "linux" ]]; then
 	# Use the Docker-based build system
 	# Files generated through docker (use $cmd so you can Ctl-C the build or run)
-	$cmd docker build --tag generate:$GOOS $GOOS
+	$cmd docker build --tag generate:"$GOOS" "$GOOS"
 	$cmd docker run --interactive --tty --volume $(cd -- "$(dirname -- "$0")/.." && pwd):/build generate:$GOOS
 	exit
 fi
@@ -231,7 +231,7 @@ esac
 		if [ -n "$mksyscall" ]; then
 			if [ "$GOOSARCH" == "aix_ppc64" ]; then
 				# aix/ppc64 script generates files instead of writing to stdin.
-				echo "$mksyscall -tags $GOOS,$GOARCH $syscall_goos $GOOSARCH_in && gofmt -w zsyscall_$GOOSARCH.go && gofmt -w zsyscall_"$GOOSARCH"_gccgo.go && gofmt -w zsyscall_"$GOOSARCH"_gc.go "
+				echo "$mksyscall -tags $GOOS,$GOARCH $syscall_goos $GOOSARCH_in && gofmt -w zsyscall_$GOOSARCH.go && gofmt -w zsyscall_""$GOOSARCH""_gccgo.go && gofmt -w zsyscall_""$GOOSARCH""_gc.go "
 			elif [ "$GOOS" == "illumos" ]; then
 				# illumos code generation requires a --illumos switch
 				echo "$mksyscall -illumos -tags illumos,$GOARCH syscall_illumos.go |gofmt > zsyscall_illumos_$GOARCH.go"

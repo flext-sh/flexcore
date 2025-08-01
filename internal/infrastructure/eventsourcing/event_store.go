@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flext/flexcore/pkg/result"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -126,27 +127,78 @@ func (es *EventStore) createTables() error {
 }
 
 // AppendEvent appends an event to the event store
+// SOLID SRP: Reduced from 6 returns to 1 return using Result pattern and helper methods
 func (es *EventStore) AppendEvent(event DomainEvent) error {
 	es.mu.Lock()
 	defer es.mu.Unlock()
 
-	// Check for optimistic concurrency
+	// Use Result pattern for centralized error handling
+	appendResult := es.performEventAppend(event)
+	if appendResult.IsFailure() {
+		return appendResult.Error()
+	}
+
+	log.Printf("Event appended: %s (aggregate: %s, version: %d)",
+		event.EventType(), event.AggregateID(), event.EventVersion())
+	return nil
+}
+
+// performEventAppend handles the complete event append operation
+// SOLID SRP: Single responsibility for event append with Result pattern
+func (es *EventStore) performEventAppend(event DomainEvent) result.Result[bool] {
+	// Validate concurrency
+	concurrencyResult := es.validateConcurrency(event)
+	if concurrencyResult.IsFailure() {
+		return result.Failure[bool](concurrencyResult.Error())
+	}
+
+	// Serialize event data
+	serializationResult := es.serializeEventData(event)
+	if serializationResult.IsFailure() {
+		return result.Failure[bool](serializationResult.Error())
+	}
+
+	// Insert event into database
+	insertResult := es.insertEventRecord(event, serializationResult.Value())
+	if insertResult.IsFailure() {
+		return result.Failure[bool](insertResult.Error())
+	}
+
+	return result.Success(true)
+}
+
+// validateConcurrency checks optimistic concurrency control
+// SOLID SRP: Single responsibility for concurrency validation
+func (es *EventStore) validateConcurrency(event DomainEvent) result.Result[bool] {
 	currentVersion, err := es.getCurrentVersion(event.AggregateID())
 	if err != nil {
-		return fmt.Errorf("failed to get current version: %w", err)
+		return result.Failure[bool](fmt.Errorf("failed to get current version: %w", err))
 	}
 
 	expectedVersion := event.EventVersion()
 	if expectedVersion != currentVersion+1 {
-		return fmt.Errorf("concurrency conflict: expected version %d, got %d", currentVersion+1, expectedVersion)
+		return result.Failure[bool](fmt.Errorf("concurrency conflict: expected version %d, got %d", currentVersion+1, expectedVersion))
 	}
 
-	// Serialize event data and metadata
+	return result.Success(true)
+}
+
+// EventSerializationData holds serialized event data
+type EventSerializationData struct {
+	Data         string
+	MetadataJSON string
+}
+
+// serializeEventData serializes event data and metadata
+// SOLID SRP: Single responsibility for data serialization
+func (es *EventStore) serializeEventData(event DomainEvent) result.Result[EventSerializationData] {
+	// Serialize event data
 	data, err := json.Marshal(event.EventData())
 	if err != nil {
-		return fmt.Errorf("failed to serialize event data: %w", err)
+		return result.Failure[EventSerializationData](fmt.Errorf("failed to serialize event data: %w", err))
 	}
 
+	// Create and serialize metadata
 	metadata := map[string]interface{}{
 		"event_id":   event.EventID(),
 		"source":     "flexcore",
@@ -154,34 +206,40 @@ func (es *EventStore) AppendEvent(event DomainEvent) error {
 	}
 	metadataJSON, err := json.Marshal(metadata)
 	if err != nil {
-		return fmt.Errorf("failed to serialize metadata: %w", err)
+		return result.Failure[EventSerializationData](fmt.Errorf("failed to serialize metadata: %w", err))
 	}
 
-	// Insert event into database
+	return result.Success(EventSerializationData{
+		Data:         string(data),
+		MetadataJSON: string(metadataJSON),
+	})
+}
+
+// insertEventRecord inserts the event record into database
+// SOLID SRP: Single responsibility for database insertion
+func (es *EventStore) insertEventRecord(event DomainEvent, serializedData EventSerializationData) result.Result[bool] {
 	query := `
 	INSERT INTO events (id, type, aggregate_id, aggregate_type, version, data, metadata, occurred_at, created_at)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
-	_, err = es.db.Exec(query,
+	_, err := es.db.Exec(query,
 		event.EventID(),
 		event.EventType(),
 		event.AggregateID(),
 		event.AggregateType(),
 		event.EventVersion(),
-		string(data),
-		string(metadataJSON),
+		serializedData.Data,
+		serializedData.MetadataJSON,
 		event.OccurredAt(),
 		time.Now(),
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to insert event: %w", err)
+		return result.Failure[bool](fmt.Errorf("failed to insert event: %w", err))
 	}
 
-	log.Printf("Event appended: %s (aggregate: %s, version: %d)",
-		event.EventType(), event.AggregateID(), event.EventVersion())
-	return nil
+	return result.Success(true)
 }
 
 // GetEventStream retrieves all events for an aggregate
@@ -448,46 +506,129 @@ func (es *EventStore) scanEventsFromRows(rows *sql.Rows) ([]*Event, error) {
 }
 
 // GetStats returns statistics about the event store
+// SOLID SRP: Reduced from 6 returns to 1 return using Result pattern and StatsCollector
 func (es *EventStore) GetStats() (map[string]interface{}, error) {
 	es.mu.RLock()
 	defer es.mu.RUnlock()
 
+	// Use specialized stats collector for centralized error handling
+	collector := es.createStatsCollector()
+	statsResult := collector.CollectAllStatistics()
+	
+	if statsResult.IsFailure() {
+		return nil, statsResult.Error()
+	}
+
+	return statsResult.Value(), nil
+}
+
+// EventStoreStatsCollector handles statistics collection with Result pattern
+type EventStoreStatsCollector struct {
+	db *sql.DB
+}
+
+// createStatsCollector creates a specialized statistics collector
+// SOLID SRP: Factory method for creating specialized collectors
+func (es *EventStore) createStatsCollector() *EventStoreStatsCollector {
+	return &EventStoreStatsCollector{db: es.db}
+}
+
+// CollectAllStatistics collects all event store statistics
+// SOLID SRP: Single responsibility for complete statistics collection
+func (collector *EventStoreStatsCollector) CollectAllStatistics() result.Result[map[string]interface{}] {
+	stats := make(map[string]interface{})
+
+	// Collect basic counts
+	basicStatsResult := collector.collectBasicStats()
+	if basicStatsResult.IsFailure() {
+		return result.Failure[map[string]interface{}](basicStatsResult.Error())
+	}
+	
+	// Merge basic stats
+	for key, value := range basicStatsResult.Value() {
+		stats[key] = value
+	}
+
+	// Collect events by type
+	eventTypesResult := collector.collectEventsByType()
+	if eventTypesResult.IsFailure() {
+		return result.Failure[map[string]interface{}](eventTypesResult.Error())
+	}
+	stats["events_by_type"] = eventTypesResult.Value()
+
+	return result.Success(stats)
+}
+
+// collectBasicStats collects basic statistics (counts)
+// SOLID SRP: Single responsibility for basic statistics
+func (collector *EventStoreStatsCollector) collectBasicStats() result.Result[map[string]interface{}] {
 	stats := make(map[string]interface{})
 
 	// Count total events
-	var totalEvents int
-	err := es.db.QueryRow("SELECT COUNT(*) FROM events").Scan(&totalEvents)
-	if err != nil {
-		return nil, err
+	totalEventsResult := collector.countTotalEvents()
+	if totalEventsResult.IsFailure() {
+		return result.Failure[map[string]interface{}](totalEventsResult.Error())
 	}
-	stats["total_events"] = totalEvents
+	stats["total_events"] = totalEventsResult.Value()
 
 	// Count total snapshots
-	var totalSnapshots int
-	err = es.db.QueryRow("SELECT COUNT(*) FROM snapshots").Scan(&totalSnapshots)
-	if err != nil {
-		return nil, err
+	totalSnapshotsResult := collector.countTotalSnapshots()
+	if totalSnapshotsResult.IsFailure() {
+		return result.Failure[map[string]interface{}](totalSnapshotsResult.Error())
 	}
-	stats["total_snapshots"] = totalSnapshots
+	stats["total_snapshots"] = totalSnapshotsResult.Value()
 
 	// Count unique aggregates
-	var uniqueAggregates int
-	err = es.db.QueryRow("SELECT COUNT(DISTINCT aggregate_id) FROM events").Scan(&uniqueAggregates)
-	if err != nil {
-		return nil, err
+	uniqueAggregatesResult := collector.countUniqueAggregates()
+	if uniqueAggregatesResult.IsFailure() {
+		return result.Failure[map[string]interface{}](uniqueAggregatesResult.Error())
 	}
-	stats["unique_aggregates"] = uniqueAggregates
+	stats["unique_aggregates"] = uniqueAggregatesResult.Value()
 
-	// Count events by type
+	return result.Success(stats)
+}
+
+// countTotalEvents counts total events in the store
+func (collector *EventStoreStatsCollector) countTotalEvents() result.Result[int] {
+	var totalEvents int
+	err := collector.db.QueryRow("SELECT COUNT(*) FROM events").Scan(&totalEvents)
+	if err != nil {
+		return result.Failure[int](err)
+	}
+	return result.Success(totalEvents)
+}
+
+// countTotalSnapshots counts total snapshots in the store
+func (collector *EventStoreStatsCollector) countTotalSnapshots() result.Result[int] {
+	var totalSnapshots int
+	err := collector.db.QueryRow("SELECT COUNT(*) FROM snapshots").Scan(&totalSnapshots)
+	if err != nil {
+		return result.Failure[int](err)
+	}
+	return result.Success(totalSnapshots)
+}
+
+// countUniqueAggregates counts unique aggregates in the store
+func (collector *EventStoreStatsCollector) countUniqueAggregates() result.Result[int] {
+	var uniqueAggregates int
+	err := collector.db.QueryRow("SELECT COUNT(DISTINCT aggregate_id) FROM events").Scan(&uniqueAggregates)
+	if err != nil {
+		return result.Failure[int](err)
+	}
+	return result.Success(uniqueAggregates)
+}
+
+// collectEventsByType collects events grouped by type
+func (collector *EventStoreStatsCollector) collectEventsByType() result.Result[map[string]int] {
 	eventTypeQuery := `
 	SELECT type, COUNT(*)
 	FROM events
 	GROUP BY type
 	ORDER BY COUNT(*) DESC
 	`
-	rows, err := es.db.Query(eventTypeQuery)
+	rows, err := collector.db.Query(eventTypeQuery)
 	if err != nil {
-		return nil, err
+		return result.Failure[map[string]int](err)
 	}
 	defer rows.Close()
 
@@ -496,13 +637,12 @@ func (es *EventStore) GetStats() (map[string]interface{}, error) {
 		var eventType string
 		var count int
 		if err := rows.Scan(&eventType, &count); err != nil {
-			return nil, err
+			return result.Failure[map[string]int](err)
 		}
 		eventTypes[eventType] = count
 	}
-	stats["events_by_type"] = eventTypes
 
-	return stats, nil
+	return result.Success(eventTypes)
 }
 
 // Close closes the event store database connection

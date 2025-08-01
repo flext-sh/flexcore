@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext/flexcore/pkg/result"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -94,104 +95,42 @@ func (es *PostgreSQLEventStore) SaveEvent(ctx context.Context, event interface{}
 }
 
 // GetEvents retrieves events from PostgreSQL by stream ID
+// DRY PRINCIPLE: Uses shared query execution eliminating 32-line duplication (mass=186)
 func (es *PostgreSQLEventStore) GetEvents(ctx context.Context, streamID string) ([]EventEntry, error) {
-	var events []Event
-
-	if err := es.db.WithContext(ctx).
-		Where("stream_id = ?", streamID).
-		Order("timestamp ASC").
-		Find(&events).Error; err != nil {
-		return nil, fmt.Errorf("failed to retrieve events: %w", err)
+	queryBuilder := es.createEventQueryBuilder(ctx)
+	queryResult := queryBuilder.WithStreamFilter(streamID).ExecuteQuery()
+	
+	if queryResult.IsFailure() {
+		return nil, queryResult.Error()
 	}
 
-	// Convert to EventEntry format
-	var eventEntries []EventEntry
-	for _, event := range events {
-		var eventData interface{}
-		if err := json.Unmarshal([]byte(event.Data), &eventData); err != nil {
-			es.logger.Warn("Failed to unmarshal event data",
-				zap.String("event_id", event.ID),
-				zap.Error(err))
-			continue
-		}
-
-		eventEntries = append(eventEntries, EventEntry{
-			ID:        event.ID,
-			Type:      event.Type,
-			Data:      eventData,
-			Timestamp: event.Timestamp,
-			Version:   event.Version,
-		})
-	}
-
-	return eventEntries, nil
+	return queryResult.Value(), nil
 }
 
 // GetAllEvents retrieves all events from PostgreSQL
+// DRY PRINCIPLE: Uses shared query execution for consistency with other methods
 func (es *PostgreSQLEventStore) GetAllEvents(ctx context.Context) ([]EventEntry, error) {
-	var events []Event
-
-	if err := es.db.WithContext(ctx).
-		Order("timestamp ASC").
-		Find(&events).Error; err != nil {
-		return nil, fmt.Errorf("failed to retrieve all events: %w", err)
+	queryBuilder := es.createEventQueryBuilder(ctx)
+	queryResult := queryBuilder.WithoutFilters().ExecuteQuery()
+	
+	if queryResult.IsFailure() {
+		return nil, queryResult.Error()
 	}
 
-	// Convert to EventEntry format
-	var eventEntries []EventEntry
-	for _, event := range events {
-		var eventData interface{}
-		if err := json.Unmarshal([]byte(event.Data), &eventData); err != nil {
-			es.logger.Warn("Failed to unmarshal event data",
-				zap.String("event_id", event.ID),
-				zap.Error(err))
-			continue
-		}
-
-		eventEntries = append(eventEntries, EventEntry{
-			ID:        event.ID,
-			Type:      event.Type,
-			Data:      eventData,
-			Timestamp: event.Timestamp,
-			Version:   event.Version,
-		})
-	}
-
-	return eventEntries, nil
+	return queryResult.Value(), nil
 }
 
 // GetEventsByType retrieves events by type from PostgreSQL
+// DRY PRINCIPLE: Uses shared query execution eliminating 32-line duplication (mass=186)
 func (es *PostgreSQLEventStore) GetEventsByType(ctx context.Context, eventType string) ([]EventEntry, error) {
-	var events []Event
-
-	if err := es.db.WithContext(ctx).
-		Where("type = ?", eventType).
-		Order("timestamp ASC").
-		Find(&events).Error; err != nil {
-		return nil, fmt.Errorf("failed to retrieve events by type: %w", err)
+	queryBuilder := es.createEventQueryBuilder(ctx)
+	queryResult := queryBuilder.WithTypeFilter(eventType).ExecuteQuery()
+	
+	if queryResult.IsFailure() {
+		return nil, queryResult.Error()
 	}
 
-	// Convert to EventEntry format
-	var eventEntries []EventEntry
-	for _, event := range events {
-		var eventData interface{}
-		if err := json.Unmarshal([]byte(event.Data), &eventData); err != nil {
-			es.logger.Warn("Failed to unmarshal event data",
-				zap.String("event_id", event.ID),
-				zap.Error(err))
-			continue
-		}
-
-		eventEntries = append(eventEntries, EventEntry{
-			ID:        event.ID,
-			Type:      event.Type,
-			Data:      eventData,
-			Timestamp: event.Timestamp,
-			Version:   event.Version,
-		})
-	}
-
-	return eventEntries, nil
+	return queryResult.Value(), nil
 }
 
 // GetEventCount returns the total number of events in the store
@@ -217,6 +156,123 @@ func (es *PostgreSQLEventStore) DeleteEventsByStream(ctx context.Context, stream
 		zap.Int64("deleted_count", result.RowsAffected))
 
 	return nil
+}
+
+// EventQueryBuilder handles event querying with Result pattern
+// SOLID SRP: Single responsibility for event query building and execution
+type EventQueryBuilder struct {
+	es       *PostgreSQLEventStore
+	ctx      context.Context
+	query    *gorm.DB
+	errorMsg string
+}
+
+// createEventQueryBuilder creates a specialized event query builder
+// SOLID SRP: Factory method for creating specialized query builders
+func (es *PostgreSQLEventStore) createEventQueryBuilder(ctx context.Context) *EventQueryBuilder {
+	return &EventQueryBuilder{
+		es:    es,
+		ctx:   ctx,
+		query: es.db.WithContext(ctx).Order("timestamp ASC"),
+	}
+}
+
+// WithStreamFilter adds stream ID filter to the query
+// SOLID SRP: Single responsibility for stream filtering
+func (qb *EventQueryBuilder) WithStreamFilter(streamID string) *EventQueryBuilder {
+	qb.query = qb.query.Where("stream_id = ?", streamID)
+	qb.errorMsg = "failed to retrieve events"
+	return qb
+}
+
+// WithTypeFilter adds event type filter to the query
+// SOLID SRP: Single responsibility for type filtering
+func (qb *EventQueryBuilder) WithTypeFilter(eventType string) *EventQueryBuilder {
+	qb.query = qb.query.Where("type = ?", eventType)
+	qb.errorMsg = "failed to retrieve events by type"
+	return qb
+}
+
+// WithoutFilters configures query builder to retrieve all events
+// SOLID SRP: Single responsibility for unfiltered querying
+func (qb *EventQueryBuilder) WithoutFilters() *EventQueryBuilder {
+	qb.errorMsg = "failed to retrieve all events"
+	return qb
+}
+
+// ExecuteQuery executes the built query and converts results
+// SOLID SRP: Single responsibility for complete query execution and conversion
+func (qb *EventQueryBuilder) ExecuteQuery() result.Result[[]EventEntry] {
+	var events []Event
+
+	// Execute database query
+	if err := qb.query.Find(&events).Error; err != nil {
+		return result.Failure[[]EventEntry](fmt.Errorf("%s: %w", qb.errorMsg, err))
+	}
+
+	// Convert events using specialized converter
+	converter := qb.createEventConverter()
+	conversionResult := converter.ConvertEventsToEntries(events)
+	
+	if conversionResult.IsFailure() {
+		return result.Failure[[]EventEntry](conversionResult.Error())
+	}
+
+	return result.Success(conversionResult.Value())
+}
+
+// EventConverter handles event conversion with Result pattern
+// SOLID SRP: Single responsibility for event conversion
+type EventConverter struct {
+	logger logging.LoggerInterface
+}
+
+// createEventConverter creates a specialized event converter
+// SOLID SRP: Factory method for creating specialized converters
+func (qb *EventQueryBuilder) createEventConverter() *EventConverter {
+	return &EventConverter{
+		logger: qb.es.logger,
+	}
+}
+
+// ConvertEventsToEntries converts database events to EventEntry format
+// SOLID SRP: Single responsibility for complete event conversion
+func (converter *EventConverter) ConvertEventsToEntries(events []Event) result.Result[[]EventEntry] {
+	var eventEntries []EventEntry
+
+	for _, event := range events {
+		conversionResult := converter.convertSingleEvent(event)
+		if conversionResult.IsFailure() {
+			// Log warning but continue processing other events
+			converter.logger.Warn("Failed to convert event",
+				zap.String("event_id", event.ID),
+				zap.Error(conversionResult.Error()))
+			continue
+		}
+		
+		eventEntries = append(eventEntries, conversionResult.Value())
+	}
+
+	return result.Success(eventEntries)
+}
+
+// convertSingleEvent converts a single database event to EventEntry
+// SOLID SRP: Single responsibility for single event conversion
+func (converter *EventConverter) convertSingleEvent(event Event) result.Result[EventEntry] {
+	var eventData interface{}
+	if err := json.Unmarshal([]byte(event.Data), &eventData); err != nil {
+		return result.Failure[EventEntry](fmt.Errorf("failed to unmarshal event data: %w", err))
+	}
+
+	eventEntry := EventEntry{
+		ID:        event.ID,
+		Type:      event.Type,
+		Data:      eventData,
+		Timestamp: event.Timestamp,
+		Version:   event.Version,
+	}
+
+	return result.Success(eventEntry)
 }
 
 // Close closes the database connection
