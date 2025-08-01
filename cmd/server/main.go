@@ -54,36 +54,14 @@ func parseFlags() CommandLineFlags {
 
 // initializeApplication creates and configures the application
 func initializeApplication(flags CommandLineFlags) error {
-	// Initialize configuration
-	if err := config.Initialize(); err != nil {
-		return fmt.Errorf("failed to initialize config: %w", err)
+	// DRY: Use shared initialization function to eliminate 32 lines of duplication
+	configFlags := config.CommandLineFlags{
+		Environment: flags.environment,
+		LogLevel:    flags.logLevel,
+		Help:        flags.help,
+		Version:     flags.version,
 	}
-
-	// Override environment if provided
-	if flags.environment != "" {
-		config.V.Set("app.environment", flags.environment)
-		config.Current.App.Environment = flags.environment
-	}
-
-	// Determine log level
-	logLevel := flags.logLevel
-	if logLevel == "" {
-		if config.Current.App.Debug {
-			logLevel = "debug"
-		} else {
-			logLevel = "info"
-		}
-	}
-
-	// Initialize logging
-	if err := logging.Initialize(config.Current.App.Environment, logLevel); err != nil {
-		return fmt.Errorf("failed to initialize logging: %w", err)
-	}
-
-	// Enable config hot reloading
-	config.Watch()
-
-	return nil
+	return config.InitializeApplicationWithFlags(configFlags)
 }
 
 // setupGracefulShutdown sets up graceful shutdown handling
@@ -164,16 +142,23 @@ func main() {
 	}
 	defer cluster.Stop()
 
-	// 6. Initialize workflow engine with FLEXT service
+	// 6. Initialize workflow engine with FLEXT service using Parameter Object Pattern
 	workflowLogger := logging.NewLogger("workflow-service")
-	workflowService := services.NewWorkflowService(
-		flexcoreContainer.GetEventBus(),
-		pluginLoader,
-		cluster,
-		eventStore,
-		commandBus,
-		workflowLogger,
-	)
+	
+	// PARAMETER OBJECT PATTERN: Eliminates 6-parameter constructor complexity
+	workflowConfig := &services.WorkflowServiceConfig{
+		EventBus:     flexcoreContainer.GetEventBus(),
+		PluginLoader: pluginLoader,
+		Cluster:      cluster,
+		Repository:   eventStore,
+		CommandBus:   commandBus,
+		Logger:       workflowLogger,
+	}
+	
+	workflowService, err := services.NewWorkflowService(workflowConfig)
+	if err != nil {
+		logging.Logger.Fatal("Failed to create WorkflowService", zap.Error(err))
+	}
 
 	// 7. Start FLEXCORE container with real endpoints
 	server := infrastructure.NewRealFlexcoreServer(workflowService, pluginLoader, cluster, eventStore)

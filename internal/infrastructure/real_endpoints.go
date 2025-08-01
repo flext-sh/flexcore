@@ -41,34 +41,16 @@ func NewRealFlexcoreServer(
 }
 
 // Start starts the FLEXCORE server with real functionality
+// DRY PRINCIPLE: Uses shared server starter eliminating 31-line duplication (mass=167)
 func (rfs *RealFlexcoreServer) Start(address string) error {
-	rfs.logger.Info("Starting real FLEXCORE container server", zap.String("address", address))
-
-	// Set Gin to release mode for production
-	gin.SetMode(gin.ReleaseMode)
-
-	// Create Gin router
-	router := gin.New()
-
-	// Add middleware
-	router.Use(gin.Recovery())
-	router.Use(rfs.loggingMiddleware())
-	router.Use(rfs.corsMiddleware())
-
-	// Register real routes
-	rfs.registerRealRoutes(router)
-
-	// Create HTTP server
-	rfs.server = &http.Server{
-		Addr:         address,
-		Handler:      router,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  60 * time.Second,
+	starter := rfs.createRealServerStarter(address)
+	startResult := starter.ConfigureAndStart("real FLEXCORE container server", rfs.setupRealRouterWithMiddleware)
+	
+	if startResult.IsFailure() {
+		return startResult.Error()
 	}
 
-	rfs.logger.Info("Real FLEXCORE container server started successfully", zap.String("address", address))
-
+	rfs.server = startResult.Value()
 	// Start server (this blocks)
 	return rfs.server.ListenAndServe()
 }
@@ -570,4 +552,24 @@ func (rfs *RealFlexcoreServer) realGetSystemStatus(c *gin.Context) {
 		"timestamp": time.Now().UTC(),
 		"node_id":   rfs.coordinator.GetNodeID(),
 	})
+}
+
+// setupRealRouterWithMiddleware configures router with middleware and real routes
+// SOLID SRP: Single responsibility for complete real router setup
+func (rfs *RealFlexcoreServer) setupRealRouterWithMiddleware(router *gin.Engine) {
+	// Add middleware
+	router.Use(rfs.loggingMiddleware())
+	router.Use(rfs.corsMiddleware())
+
+	// Register real routes
+	rfs.registerRealRoutes(router)
+}
+
+// createRealServerStarter creates a specialized server starter for real server
+// SOLID SRP: Factory method for creating specialized real server starters
+func (rfs *RealFlexcoreServer) createRealServerStarter(address string) *FlexcoreServerStarter {
+	return &FlexcoreServerStarter{
+		address: address,
+		logger:  rfs.logger,
+	}
 }

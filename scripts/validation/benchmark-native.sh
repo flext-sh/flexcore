@@ -154,7 +154,7 @@ else
 	echo "❌ Release build < 600s: FAIL (${RELEASE_TIME}s)"
 fi
 
-if [ $BINARY_SIZE_MB -lt 100 ] && [ $BINARY_SIZE_MB -gt 50 ]; then
+if [ "$BINARY_SIZE_MB" -lt 100 ] && [ "$BINARY_SIZE_MB" -gt 50 ]; then
 	echo "✅ Binary size 50-100MB: PASS"
 	((PERFORMANCE_SCORE++))
 else

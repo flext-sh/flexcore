@@ -43,26 +43,51 @@ const (
 	PipelineStatusArchived
 )
 
-// String returns the string representation of the pipeline status
-func (s PipelineStatus) String() string {
-	switch s {
-	case PipelineStatusDraft:
-		return "draft"
-	case PipelineStatusActive:
-		return "active"
-	case PipelineStatusRunning:
-		return "running"
-	case PipelineStatusCompleted:
-		return "completed"
-	case PipelineStatusFailed:
-		return "failed"
-	case PipelineStatusPaused:
-		return "paused"
-	case PipelineStatusArchived:
-		return "archived"
-	default:
-		return unknownStatusString
+// PipelineStatusMapper provides mapping functionality for pipeline status
+// SOLID SRP: Single responsibility for status string mapping eliminating 8 returns
+type PipelineStatusMapper struct {
+	statusMap map[PipelineStatus]string
+}
+
+// NewPipelineStatusMapper creates a new status mapper
+func NewPipelineStatusMapper() *PipelineStatusMapper {
+	return &PipelineStatusMapper{
+		statusMap: map[PipelineStatus]string{
+			PipelineStatusDraft:     "draft",
+			PipelineStatusActive:    "active",
+			PipelineStatusRunning:   "running",
+			PipelineStatusCompleted: "completed",
+			PipelineStatusFailed:    "failed",
+			PipelineStatusPaused:    "paused",
+			PipelineStatusArchived:  "archived",
+		},
 	}
+}
+
+// ToString converts pipeline status to string using map lookup
+// DRY PRINCIPLE: Eliminates switch statement with 8 return points
+func (mapper *PipelineStatusMapper) ToString(status PipelineStatus) string {
+	if statusStr, exists := mapper.statusMap[status]; exists {
+		return statusStr
+	}
+	return unknownStatusString
+}
+
+// GetAllStatuses returns all valid pipeline statuses with their string representations
+// SOLID OCP: Open for extension with new status types
+func (mapper *PipelineStatusMapper) GetAllStatuses() map[PipelineStatus]string {
+	result := make(map[PipelineStatus]string)
+	for status, str := range mapper.statusMap {
+		result[status] = str
+	}
+	return result
+}
+
+// String returns the string representation of the pipeline status
+// DRY PRINCIPLE: Delegates to specialized mapper eliminating multiple returns
+func (s PipelineStatus) String() string {
+	mapper := NewPipelineStatusMapper()
+	return mapper.ToString(s)
 }
 
 // PipelineStep represents a step in a pipeline

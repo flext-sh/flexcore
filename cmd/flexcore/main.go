@@ -52,36 +52,14 @@ func parseFlags() CommandLineFlags {
 
 // initializeApplication creates and configures the application
 func initializeApplication(flags CommandLineFlags) error {
-	// Initialize configuration
-	if err := config.Initialize(); err != nil {
-		return fmt.Errorf("failed to initialize config: %w", err)
+	// DRY: Use shared initialization function to eliminate 32 lines of duplication
+	configFlags := config.CommandLineFlags{
+		Environment: flags.environment,
+		LogLevel:    flags.logLevel,
+		Help:        flags.help,
+		Version:     flags.version,
 	}
-
-	// Override environment if provided
-	if flags.environment != "" {
-		config.V.Set("app.environment", flags.environment)
-		config.Current.App.Environment = flags.environment
-	}
-
-	// Determine log level
-	logLevel := flags.logLevel
-	if logLevel == "" {
-		if config.Current.App.Debug {
-			logLevel = "debug"
-		} else {
-			logLevel = "info"
-		}
-	}
-
-	// Initialize logging
-	if err := logging.Initialize(config.Current.App.Environment, logLevel); err != nil {
-		return fmt.Errorf("failed to initialize logging: %w", err)
-	}
-
-	// Enable config hot reloading
-	config.Watch()
-
-	return nil
+	return config.InitializeApplicationWithFlags(configFlags)
 }
 
 // setupGracefulShutdown sets up graceful shutdown handling

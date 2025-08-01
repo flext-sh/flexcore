@@ -210,60 +210,144 @@ func NewExecutePipelineCommandHandler(repository PipelineRepository, eventBus Ev
 	}
 }
 
-// Handle handles the execute pipeline command
-func (h *ExecutePipelineCommandHandler) Handle(ctx context.Context, command ExecutePipelineCommand) result.Result[interface{}] {
-	// Find pipeline
-	pipeline, err := h.repository.FindByID(ctx, command.PipelineID)
+// PipelineExecutionOrchestrator encapsulates execution orchestration following SOLID SRP
+// SOLID SRP: Reduces complexity by separating execution concerns from command handling
+type PipelineExecutionOrchestrator struct {
+	repository     PipelineRepository
+	eventBus       EventBus
+	workflowEngine WorkflowEngine
+}
+
+// NewPipelineExecutionOrchestrator creates a new execution orchestrator
+func NewPipelineExecutionOrchestrator(repository PipelineRepository, eventBus EventBus, workflowEngine WorkflowEngine) *PipelineExecutionOrchestrator {
+	return &PipelineExecutionOrchestrator{
+		repository:     repository,
+		eventBus:       eventBus,
+		workflowEngine: workflowEngine,
+	}
+}
+
+// ExecutionContext holds execution state for better error handling
+type ExecutionContext struct {
+	Pipeline    *entities.Pipeline
+	WorkflowID  string
+	Parameters  map[string]interface{}
+}
+
+// ExecutionResult represents the result of pipeline execution
+type ExecutionResult struct {
+	PipelineID string      `json:"pipeline_id"`
+	WorkflowID string      `json:"workflow_id"`
+	Status     string      `json:"status"`
+	Error      error       `json:"error,omitempty"`
+}
+
+// Execute orchestrates pipeline execution with proper error handling
+// DRY PRINCIPLE: Eliminates multiple returns by using Railway Pattern
+func (o *PipelineExecutionOrchestrator) Execute(ctx context.Context, command ExecutePipelineCommand) result.Result[interface{}] {
+	// Step 1: Load and validate pipeline
+	pipeline, err := o.loadAndValidatePipeline(ctx, command.PipelineID)
 	if err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to find pipeline"))
+		return result.Failure[interface{}](err)
 	}
 
-	// Check if pipeline can be executed
+	// Step 2: Prepare execution context
+	executionCtx := &ExecutionContext{
+		Pipeline:   pipeline,
+		Parameters: command.Parameters,
+	}
+
+	// Step 3: Execute pipeline through orchestrated steps
+	return o.orchestrateExecution(ctx, executionCtx)
+}
+
+// loadAndValidatePipeline loads pipeline and validates execution readiness
+// SOLID SRP: Single responsibility for pipeline loading and validation
+func (o *PipelineExecutionOrchestrator) loadAndValidatePipeline(ctx context.Context, pipelineID entities.PipelineID) (*entities.Pipeline, error) {
+	pipeline, err := o.repository.FindByID(ctx, pipelineID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find pipeline")
+	}
+
 	if !pipeline.CanExecute() {
-		return result.Failure[interface{}](errors.ValidationError("pipeline cannot be executed"))
+		return nil, errors.ValidationError("pipeline cannot be executed")
 	}
 
+	return pipeline, nil
+}
+
+// orchestrateExecution performs coordinated execution steps
+// SOLID SRP: Single responsibility for execution orchestration
+func (o *PipelineExecutionOrchestrator) orchestrateExecution(ctx context.Context, execCtx *ExecutionContext) result.Result[interface{}] {
 	// Start pipeline execution
-	startResult := pipeline.Start()
-	if startResult.IsFailure() {
+	if startResult := execCtx.Pipeline.Start(); startResult.IsFailure() {
 		return result.Failure[interface{}](startResult.Error())
 	}
 
 	// Save pipeline state
-	if err := h.repository.Save(ctx, pipeline); err != nil {
+	if err := o.repository.Save(ctx, execCtx.Pipeline); err != nil {
 		return result.Failure[interface{}](errors.Wrap(err, "failed to save pipeline"))
 	}
 
-	// Start workflow execution
-	workflowInput := map[string]interface{}{
-		"pipelineID": pipeline.ID.String(),
-		"parameters": command.Parameters,
-	}
-
-	workflowID, err := h.workflowEngine.StartWorkflow(ctx, "pipeline-execution", workflowInput)
+	// Start workflow with error recovery
+	workflowID, err := o.startWorkflowWithRecovery(ctx, execCtx)
 	if err != nil {
-		// Mark pipeline as failed
-		pipeline.Fail("failed to start workflow: " + err.Error())
-		h.repository.Save(ctx, pipeline)
-		return result.Failure[interface{}](errors.Wrap(err, "failed to start workflow"))
+		return result.Failure[interface{}](err)
 	}
 
-	// Publish domain events
+	execCtx.WorkflowID = workflowID
+
+	// Publish events and return result
+	o.publishDomainEvents(ctx, execCtx.Pipeline)
+	execCtx.Pipeline.ClearEvents()
+
+	return result.Success[interface{}](o.createExecutionResult(execCtx))
+}
+
+// startWorkflowWithRecovery starts workflow with proper error recovery
+// SOLID SRP: Single responsibility for workflow initiation and recovery
+func (o *PipelineExecutionOrchestrator) startWorkflowWithRecovery(ctx context.Context, execCtx *ExecutionContext) (string, error) {
+	workflowInput := map[string]interface{}{
+		"pipelineID": execCtx.Pipeline.ID.String(),
+		"parameters": execCtx.Parameters,
+	}
+
+	workflowID, err := o.workflowEngine.StartWorkflow(ctx, "pipeline-execution", workflowInput)
+	if err != nil {
+		// Recovery: Mark pipeline as failed and save state
+		execCtx.Pipeline.Fail("failed to start workflow: " + err.Error())
+		o.repository.Save(ctx, execCtx.Pipeline)
+		return "", errors.Wrap(err, "failed to start workflow")
+	}
+
+	return workflowID, nil
+}
+
+// publishDomainEvents publishes all pipeline domain events
+// SOLID SRP: Single responsibility for event publishing
+func (o *PipelineExecutionOrchestrator) publishDomainEvents(ctx context.Context, pipeline *entities.Pipeline) {
 	for _, event := range pipeline.DomainEvents() {
-		if err := h.eventBus.Publish(ctx, event); err != nil {
+		if err := o.eventBus.Publish(ctx, event); err != nil {
 			// Log error but don't fail the command
 		}
 	}
+}
 
-	pipeline.ClearEvents()
-
-	executionResult := map[string]interface{}{
-		"pipelineID": pipeline.ID.String(),
-		"workflowID": workflowID,
-		"status":     pipeline.Status.String(),
+// createExecutionResult creates standardized execution result
+// SOLID SRP: Single responsibility for result creation
+func (o *PipelineExecutionOrchestrator) createExecutionResult(execCtx *ExecutionContext) ExecutionResult {
+	return ExecutionResult{
+		PipelineID: execCtx.Pipeline.ID.String(),
+		WorkflowID: execCtx.WorkflowID,
+		Status:     execCtx.Pipeline.Status.String(),
 	}
+}
 
-	return result.Success[interface{}](executionResult)
+// Handle handles the execute pipeline command
+// DRY PRINCIPLE: Delegates to specialized orchestrator, eliminating complex method with 6 returns
+func (h *ExecutePipelineCommandHandler) Handle(ctx context.Context, command ExecutePipelineCommand) result.Result[interface{}] {
+	orchestrator := NewPipelineExecutionOrchestrator(h.repository, h.eventBus, h.workflowEngine)
+	return orchestrator.Execute(ctx, command)
 }
 
 // ActivatePipelineCommand represents a command to activate a pipeline

@@ -23,7 +23,7 @@ for i in {1..30}; do
 		echo "✅ Windmill is ready!"
 		break
 	fi
-	if [ $i -eq 30 ]; then
+	if [ "$i" -eq 30 ]; then
 		echo "❌ Windmill failed to start within timeout"
 		exit 1
 	fi

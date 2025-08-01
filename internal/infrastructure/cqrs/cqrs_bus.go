@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flext/flexcore/pkg/cqrs"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -482,58 +483,37 @@ func (bus *CQRSBus) GetQueryMetrics() map[string]*QueryMetrics {
 }
 
 // GetCQRSStats returns overall CQRS statistics
+// SOLID SRP: Reduced from 7 returns to 2 returns using specialized StatsCollector
 func (bus *CQRSBus) GetCQRSStats() (map[string]interface{}, error) {
-	stats := make(map[string]interface{})
-
-	// Command statistics from write database
-	var totalCommands, successfulCommands, failedCommands int
-	err := bus.writeDB.QueryRow("SELECT COUNT(*) FROM commands").Scan(&totalCommands)
-	if err != nil {
-		return nil, err
-	}
-
-	err = bus.writeDB.QueryRow("SELECT COUNT(*) FROM commands WHERE status = ?", StatusSuccess).Scan(&successfulCommands)
-	if err != nil {
-		return nil, err
-	}
-
-	err = bus.writeDB.QueryRow("SELECT COUNT(*) FROM commands WHERE status = ?", StatusFailed).Scan(&failedCommands)
-	if err != nil {
-		return nil, err
-	}
-
-	stats["commands"] = map[string]interface{}{
-		"total":      totalCommands,
-		"successful": successfulCommands,
-		"failed":     failedCommands,
-		"success_rate": func() float64 {
-			if totalCommands == 0 {
-				return 0
-			}
-			return float64(successfulCommands) / float64(totalCommands) * percentageMultiplier
-		}(),
-	}
-
-	// Query statistics from read database
-	var totalQueries int
-	err = bus.readDB.QueryRow("SELECT COUNT(*) FROM query_results").Scan(&totalQueries)
-	if err != nil {
-		return nil, err
-	}
-
-	stats["queries"] = map[string]interface{}{
-		"total": totalQueries,
-	}
-
-	// Handler counts
+	// Create specialized statistics collector
+	collector := bus.getStatsCollector()
+	
+	// Get handler counts safely
 	bus.mu.RLock()
-	stats["handlers"] = map[string]interface{}{
-		"command_handlers": len(bus.commandHandlers),
-		"query_handlers":   len(bus.queryHandlers),
-	}
+	commandHandlersCount := len(bus.commandHandlers)
+	queryHandlersCount := len(bus.queryHandlers)
 	bus.mu.RUnlock()
+	
+	// Collect all statistics with centralized error handling
+	result, err := collector.CollectAllStatistics(commandHandlersCount, queryHandlersCount)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to expected format
+	stats := map[string]interface{}{
+		"commands": result.Commands,
+		"queries":  result.Queries,
+		"handlers": result.Handlers,
+	}
 
 	return stats, nil
+}
+
+// getStatsCollector creates a stats collector for this bus
+// SOLID SRP: Factory method for creating specialized collectors
+func (bus *CQRSBus) getStatsCollector() *cqrs.StatsCollector {
+	return cqrs.NewStatsCollector(bus.writeDB, bus.readDB)
 }
 
 // UpdateProjection updates a read-side projection

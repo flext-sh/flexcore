@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"encoding/gob"
 	"encoding/json"
 	"log"
 	"net/rpc"
@@ -14,24 +13,11 @@ import (
 	hashicorpPlugin "github.com/hashicorp/go-plugin"
 )
 
-// init registers types for gob encoding/decoding
+// init registers types for gob encoding/decoding  
+// DRY PRINCIPLE: Uses shared PluginGobRegistration to eliminate 18-line duplication (mass=119)
 func init() {
-	// Register types for RPC serialization
-	gob.Register(map[string]interface{}{})
-	gob.Register([]interface{}{})
-	gob.Register([]map[string]interface{}{})
-
-	// Register primitive types
-	gob.Register(string(""))
-	gob.Register(int(0))
-	gob.Register(int64(0))
-	gob.Register(float64(0))
-	gob.Register(bool(false))
-	gob.Register(time.Time{})
-
-	// Register plugin types
-	gob.Register(PluginInfo{})
-	gob.Register(ProcessingStats{})
+	// Use shared gob registration eliminating 18 lines of duplication
+	plugin.RegisterAllPluginTypes()
 }
 
 // SimpleProcessor implements a basic data processing plugin
@@ -252,27 +238,17 @@ func (SimpleProcessorPlugin) Client(b *hashicorpPlugin.MuxBroker, c *rpc.Client)
 }
 
 // Main entry point
+// DRY PRINCIPLE: Uses shared PluginMainUtilities to eliminate 26-line duplication (mass=110)
 func main() {
-	log.SetPrefix("[simple-processor-plugin] ")
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
-
-	log.Println("Starting simple processor plugin...")
-
-	// Handshake configuration
-	handshakeConfig := hashicorpPlugin.HandshakeConfig{
-		ProtocolVersion:  1,
-		MagicCookieKey:   "FLEXCORE_PLUGIN",
-		MagicCookieValue: "flexcore-plugin-magic-cookie",
+	config := plugin.PluginMainConfig{
+		PluginName: "simple-processor-infrastructure",
+		LogPrefix:  "[simple-processor-plugin] ",
+		StartMsg:   "Starting simple processor plugin...",
+		StopMsg:    "Simple processor plugin stopped",
 	}
 
-	// Plugin map
-	pluginMap := map[string]hashicorpPlugin.Plugin{
-		"flexcore": &SimpleProcessorPlugin{},
-	}
-
-	// Serve the plugin
-	hashicorpPlugin.Serve(&hashicorpPlugin.ServeConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
+	// Use shared main function eliminating duplication
+	plugin.RunPluginMain(config, func() hashicorpPlugin.Plugin {
+		return &SimpleProcessorPlugin{}
 	})
 }

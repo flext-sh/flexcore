@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/rpc"
 	"os"
-	"strings"
 	"time"
 
 	hashicorpPlugin "github.com/hashicorp/go-plugin"
@@ -37,10 +36,10 @@ func init() {
 	gob.Register(plugin.ProcessingStats{})
 }
 
-// JSONProcessor implements a JSON data processing plugin
+// JSONProcessor implements a JSON data processing plugin using shared base implementation
+// DRY PRINCIPLE: Composition over duplication - embeds BaseJSONProcessor for shared functionality
 type JSONProcessor struct {
-	config map[string]interface{}
-	stats  plugin.ProcessingStats
+	*plugin.BaseJSONProcessor
 }
 
 // DataProcessorPlugin interface
@@ -52,20 +51,25 @@ type DataProcessorPlugin interface {
 	Cleanup() error
 }
 
+// NewJSONProcessor creates a new JSON processor using shared base implementation
+func NewJSONProcessor() *JSONProcessor {
+	return &JSONProcessor{
+		BaseJSONProcessor: plugin.NewBaseJSONProcessor(),
+	}
+}
+
 // Initialize the plugin with configuration
+// DRY PRINCIPLE: Uses shared BaseJSONProcessor.Initialize eliminating duplication
 func (jp *JSONProcessor) Initialize(ctx context.Context, config map[string]interface{}) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
 	}
-
+	
 	log.Printf("[JSONProcessor] Initializing with config: %+v", config)
-	jp.config = config
-	jp.stats = plugin.ProcessingStats{
-		StartTime: time.Now(),
-	}
-	return nil
+	// Delegate to base implementation
+	return jp.BaseJSONProcessor.Initialize(config)
 }
 
 // Execute processes JSON data
@@ -78,8 +82,8 @@ func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface
 
 	startTime := time.Now()
 	defer func() {
-		jp.stats.DurationMs = time.Since(startTime).Milliseconds()
-		jp.stats.EndTime = time.Now()
+		jp.GetStatistics().DurationMs = time.Since(startTime).Milliseconds()
+		jp.GetStatistics().EndTime = time.Now()
 	}()
 
 	log.Printf("[JSONProcessor] Processing input with %d keys", len(input))
@@ -93,201 +97,50 @@ func (jp *JSONProcessor) Execute(ctx context.Context, input map[string]interface
 	jp.processInputData(input, result)
 
 	// Add processing stats
+	stats := jp.GetStatistics()
 	result["stats"] = map[string]interface{}{
-		"total_records":   jp.stats.TotalRecords,
-		"processed_ok":    jp.stats.ProcessedOK,
-		"processed_error": jp.stats.ProcessedError,
-		"duration_ms":     jp.stats.DurationMs,
-		"records_per_sec": jp.stats.RecordsPerSec,
+		"total_records":   stats.TotalRecords,
+		"processed_ok":    stats.ProcessedOK,
+		"processed_error": stats.ProcessedError,
+		"duration_ms":     stats.DurationMs,
+		"records_per_sec": stats.RecordsPerSec,
 	}
 
-	jp.stats.TotalRecords++
-	jp.stats.ProcessedOK++
+	jp.GetStatistics().TotalRecords++
+	jp.GetStatistics().ProcessedOK++
 	return result, nil
 }
 
 // processInputData handles different types of input data
 func (jp *JSONProcessor) processInputData(input, result map[string]interface{}) {
 	if data, ok := input["data"]; ok {
-		jp.processDataField(data, result)
+		transformed, err := jp.TransformData(data)
+		if err != nil {
+			result["error"] = err.Error()
+			result["data"] = data
+		} else {
+			result["data"] = transformed
+			jp.GetStatistics().ProcessedOK++
+		}
 	} else if jsonStr, ok := input["json_string"].(string); ok {
-		jp.processJSONString(jsonStr, result)
-	} else {
-		jp.processRawInput(input, result)
-	}
-}
-
-// processDataField processes the data field
-func (jp *JSONProcessor) processDataField(data interface{}, result map[string]interface{}) {
-	transformed, err := jp.transformData(data)
-	if err != nil {
-		result["error"] = err.Error()
-		result["data"] = data
-	} else {
-		result["data"] = transformed
-		jp.stats.ProcessedOK++
-	}
-}
-
-// processJSONString processes JSON string input
-func (jp *JSONProcessor) processJSONString(jsonStr string, result map[string]interface{}) {
-	parsed, err := jp.parseJSONString(jsonStr)
-	if err != nil {
-		result["error"] = err.Error()
-		result["data"] = jsonStr
-	} else {
-		result["data"] = parsed
-		jp.stats.ProcessedOK++
-	}
-}
-
-// processRawInput processes raw input data
-func (jp *JSONProcessor) processRawInput(input, result map[string]interface{}) {
-	result["data"] = jp.processRawData(input)
-}
-
-// transformData applies JSON transformations
-func (jp *JSONProcessor) transformData(data interface{}) (interface{}, error) {
-	operation := "prettify"
-	if op, ok := jp.config["operation"].(string); ok {
-		operation = op
-	}
-
-	switch operation {
-	case "prettify":
-		return jp.prettifyJSON(data)
-	case "minify":
-		return jp.minifyJSON(data)
-	case "validate":
-		return jp.validateJSON(data)
-	case "transform":
-		return jp.applyTransformations(data)
-	default:
-		return data, nil
-	}
-}
-
-// prettifyJSON formats JSON data nicely
-func (jp *JSONProcessor) prettifyJSON(data interface{}) (interface{}, error) {
-	// Convert to JSON and back for pretty formatting
-	jsonBytes, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return data, err
-	}
-
-	return map[string]interface{}{
-		"pretty_json": string(jsonBytes),
-		"original":    data,
-		"formatted":   true,
-	}, nil
-}
-
-// minifyJSON compacts JSON data
-func (jp *JSONProcessor) minifyJSON(data interface{}) (interface{}, error) {
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		return data, err
-	}
-
-	return map[string]interface{}{
-		"minified_json": string(jsonBytes),
-		"original":      data,
-		"size_bytes":    len(jsonBytes),
-	}, nil
-}
-
-// validateJSON checks if data is valid JSON
-func (jp *JSONProcessor) validateJSON(data interface{}) (interface{}, error) {
-	_, err := json.Marshal(data)
-
-	return map[string]interface{}{
-		"is_valid": err == nil,
-		"data":     data,
-		"error": func() string {
-			if err != nil {
-				return err.Error()
-			}
-			return ""
-		}(),
-	}, nil
-}
-
-// applyTransformations applies custom transformations
-func (jp *JSONProcessor) applyTransformations(data interface{}) (interface{}, error) {
-	switch v := data.(type) {
-	case map[string]interface{}:
-		return jp.transformMap(v), nil
-	case []interface{}:
-		return jp.transformArray(v), nil
-	case string:
-		return jp.transformString(v), nil
-	default:
-		return data, nil
-	}
-}
-
-// transformMap applies transformations to a map
-func (jp *JSONProcessor) transformMap(data map[string]interface{}) map[string]interface{} {
-	transformed := make(map[string]interface{})
-
-	for key, value := range data {
-		// Transform key to snake_case if configured
-		if jp.config["snake_case_keys"] == true {
-			key = jp.toSnakeCase(key)
+		parsed, err := jp.parseJSONString(jsonStr)
+		if err != nil {
+			result["error"] = err.Error()
+			result["data"] = jsonStr
+		} else {
+			result["data"] = parsed
+			jp.GetStatistics().ProcessedOK++
 		}
-
-		// Transform value recursively
-		switch v := value.(type) {
-		case map[string]interface{}:
-			transformed[key] = jp.transformMap(v)
-		case []interface{}:
-			transformed[key] = jp.transformArray(v)
-		case string:
-			transformed[key] = jp.transformString(v)
-		default:
-			transformed[key] = value
-		}
+	} else {
+		result["data"] = jp.processRawData(input)
 	}
-
-	// Add metadata
-	transformed["_json_processed"] = true
-	transformed["_processed_at"] = time.Now().Unix()
-
-	return transformed
 }
 
-// transformArray applies transformations to an array
-func (jp *JSONProcessor) transformArray(data []interface{}) []interface{} {
-	transformed := make([]interface{}, len(data))
-
-	for i, item := range data {
-		switch v := item.(type) {
-		case map[string]interface{}:
-			transformed[i] = jp.transformMap(v)
-		case []interface{}:
-			transformed[i] = jp.transformArray(v)
-		case string:
-			transformed[i] = jp.transformString(v)
-		default:
-			transformed[i] = item
-		}
-	}
-
-	return transformed
-}
-
-// transformString applies string transformations
-func (jp *JSONProcessor) transformString(data string) string {
-	if jp.config["trim_strings"] == true {
-		data = strings.TrimSpace(data)
-	}
-
-	if jp.config["lowercase_strings"] == true {
-		data = strings.ToLower(data)
-	}
-
-	return data
-}
+// DRY PRINCIPLE: Removed 140+ lines of duplicated transformation functions
+// Now using BaseJSONProcessor shared implementation:
+// - TransformData (19 lines eliminated)
+// - PrettifyJSON, MinifyJSON, ValidateJSON (90+ lines eliminated) 
+// - ApplyTransformations, TransformMap, TransformArray, TransformString (50+ lines eliminated)
 
 // parseJSONString parses a JSON string
 func (jp *JSONProcessor) parseJSONString(jsonStr string) (interface{}, error) {
@@ -319,17 +172,7 @@ func (jp *JSONProcessor) processRawData(input map[string]interface{}) map[string
 	return processed
 }
 
-// toSnakeCase converts camelCase to snake_case
-func (jp *JSONProcessor) toSnakeCase(s string) string {
-	var result strings.Builder
-	for i, r := range s {
-		if i > 0 && (r >= 'A' && r <= 'Z') {
-			result.WriteRune('_')
-		}
-		result.WriteRune(r)
-	}
-	return strings.ToLower(result.String())
-}
+// DRY PRINCIPLE: Removed toSnakeCase - now using BaseJSONProcessor.ToSnakeCase
 
 // GetInfo returns plugin metadata
 func (jp *JSONProcessor) GetInfo() plugin.PluginInfo {
@@ -355,17 +198,18 @@ func (jp *JSONProcessor) HealthCheck(ctx context.Context) error {
 	default:
 	}
 
-	log.Printf("[JSONProcessor] Health check - processed %d records", jp.stats.TotalRecords)
+	log.Printf("[JSONProcessor] Health check - processed %d records", jp.GetStatistics().TotalRecords)
 	return nil
 }
 
 // Cleanup releases resources
 func (jp *JSONProcessor) Cleanup() error {
-	log.Printf("[JSONProcessor] Cleanup called - processed %d records total", jp.stats.TotalRecords)
+	stats := jp.GetStatistics()
+	log.Printf("[JSONProcessor] Cleanup called - processed %d records total", stats.TotalRecords)
 
 	// Save statistics to file (optional)
-	if statsFile, ok := jp.config["stats_file"].(string); ok {
-		data, err := json.MarshalIndent(jp.stats, "", "  ")
+	if statsFile, ok := jp.GetConfig()["stats_file"].(string); ok {
+		data, err := json.MarshalIndent(stats, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal stats: %w", err)
 		}
@@ -416,7 +260,7 @@ func (rpc *JSONProcessorRPC) Cleanup(args interface{}, resp *error) error {
 type JSONProcessorPlugin struct{}
 
 func (JSONProcessorPlugin) Server(*hashicorpPlugin.MuxBroker) (interface{}, error) {
-	return &JSONProcessorRPC{Impl: &JSONProcessor{}}, nil
+	return &JSONProcessorRPC{Impl: NewJSONProcessor()}, nil
 }
 
 func (JSONProcessorPlugin) Client(b *hashicorpPlugin.MuxBroker, c *rpc.Client) (interface{}, error) {
@@ -424,27 +268,17 @@ func (JSONProcessorPlugin) Client(b *hashicorpPlugin.MuxBroker, c *rpc.Client) (
 }
 
 // Main entry point
+// DRY PRINCIPLE: Uses shared PluginMainUtilities to eliminate 26-line duplication (mass=110)
 func main() {
-	log.SetPrefix("[json-processor-plugin] ")
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
-
-	log.Println("Starting JSON processor plugin...")
-
-	// Handshake configuration
-	handshakeConfig := hashicorpPlugin.HandshakeConfig{
-		ProtocolVersion:  1,
-		MagicCookieKey:   "FLEXCORE_PLUGIN",
-		MagicCookieValue: "flexcore-plugin-magic-cookie",
+	config := plugin.PluginMainConfig{
+		PluginName: "json-processor",
+		LogPrefix:  "[json-processor-plugin] ",
+		StartMsg:   "Starting JSON processor plugin...",
+		StopMsg:    "JSON processor plugin stopped",
 	}
 
-	// Plugin map
-	pluginMap := map[string]hashicorpPlugin.Plugin{
-		"flexcore": &JSONProcessorPlugin{},
-	}
-
-	// Serve the plugin
-	hashicorpPlugin.Serve(&hashicorpPlugin.ServeConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
+	// Use shared main function eliminating duplication
+	plugin.RunPluginMain(config, func() hashicorpPlugin.Plugin {
+		return &JSONProcessorPlugin{}
 	})
 }

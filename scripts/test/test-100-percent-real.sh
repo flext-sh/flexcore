@@ -107,7 +107,7 @@ else
 
 		# Cleanup
 		kill $ETCD_NODE_PID 2>/dev/null || true
-		kill $ETCD_SERVER_PID 2>/dev/null || true
+		kill "$ETCD_SERVER_PID" 2>/dev/null || true
 		etcdctl del --prefix "/flexcore/" >/dev/null 2>&1
 	else
 		echo "❌ etcd: NOT AVAILABLE"

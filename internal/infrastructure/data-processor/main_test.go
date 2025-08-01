@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/flext/flexcore/pkg/plugin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,12 +69,12 @@ func TestDataProcessor_Initialize(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.config, dp.config)
-			assert.NotNil(t, dp.statistics)
-			assert.False(t, dp.statistics.StartTime.IsZero())
-			assert.Equal(t, int64(0), dp.statistics.TotalRecords)
-			assert.Equal(t, int64(0), dp.statistics.ProcessedOK)
-			assert.Equal(t, int64(0), dp.statistics.ProcessedError)
+			assert.Equal(t, tt.config, dp.GetConfig())
+			assert.NotNil(t, dp.GetStatistics())
+			assert.False(t, dp.GetStatistics().StartTime.IsZero())
+			assert.Equal(t, int64(0), dp.GetStatistics().TotalRecords)
+			assert.Equal(t, int64(0), dp.GetStatistics().ProcessedOK)
+			assert.Equal(t, int64(0), dp.GetStatistics().ProcessedError)
 		})
 	}
 }
@@ -225,11 +226,11 @@ func TestDataProcessor_Execute(t *testing.T) {
 			assert.NotNil(t, statsMap["records_per_sec"])
 
 			// Verify stats were updated
-			assert.Equal(t, int64(1), dp.statistics.ProcessedOK)
-			assert.Equal(t, int64(1), dp.statistics.TotalRecords)
-			assert.Equal(t, int64(0), dp.statistics.ProcessedError)
-			assert.Greater(t, dp.statistics.DurationMs, int64(0))
-			assert.False(t, dp.statistics.EndTime.IsZero())
+			assert.Equal(t, int64(1), dp.GetStatistics().ProcessedOK)
+			assert.Equal(t, int64(1), dp.GetStatistics().TotalRecords)
+			assert.Equal(t, int64(0), dp.GetStatistics().ProcessedError)
+			assert.Greater(t, dp.GetStatistics().DurationMs, int64(0))
+			assert.False(t, dp.GetStatistics().EndTime.IsZero())
 		})
 	}
 }
@@ -429,7 +430,7 @@ func TestDataProcessor_Cleanup(t *testing.T) {
 		data, err := os.ReadFile(statsFile)
 		require.NoError(t, err)
 
-		var stats ProcessingStats
+		var stats plugin.ProcessingStats
 		err = json.Unmarshal(data, &stats)
 		require.NoError(t, err)
 
@@ -449,10 +450,10 @@ func TestDataProcessor_StatsTracking(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify initial stats
-		assert.Equal(t, int64(0), dp.statistics.TotalRecords)
-		assert.Equal(t, int64(0), dp.statistics.ProcessedOK)
-		assert.Equal(t, int64(0), dp.statistics.ProcessedError)
-		assert.False(t, dp.statistics.StartTime.IsZero())
+		assert.Equal(t, int64(0), dp.GetStatistics().TotalRecords)
+		assert.Equal(t, int64(0), dp.GetStatistics().ProcessedOK)
+		assert.Equal(t, int64(0), dp.GetStatistics().ProcessedError)
+		assert.False(t, dp.GetStatistics().StartTime.IsZero())
 
 		// Process multiple items
 		for i := 0; i < 10; i++ {
@@ -466,11 +467,11 @@ func TestDataProcessor_StatsTracking(t *testing.T) {
 		}
 
 		// Verify final stats
-		assert.Equal(t, int64(10), dp.statistics.TotalRecords)
-		assert.Equal(t, int64(10), dp.statistics.ProcessedOK)
-		assert.Equal(t, int64(0), dp.statistics.ProcessedError)
-		assert.False(t, dp.statistics.EndTime.IsZero())
-		assert.Greater(t, dp.statistics.DurationMs, int64(0))
+		assert.Equal(t, int64(10), dp.GetStatistics().TotalRecords)
+		assert.Equal(t, int64(10), dp.GetStatistics().ProcessedOK)
+		assert.Equal(t, int64(0), dp.GetStatistics().ProcessedError)
+		assert.False(t, dp.GetStatistics().EndTime.IsZero())
+		assert.Greater(t, dp.GetStatistics().DurationMs, int64(0))
 	})
 }
 
@@ -497,7 +498,7 @@ func TestDataProcessor_ConfigurationHandling(t *testing.T) {
 
 		err := dp.Initialize(ctx, complexConfig)
 		require.NoError(t, err)
-		assert.Equal(t, complexConfig, dp.config)
+		assert.Equal(t, complexConfig, dp.GetConfig())
 
 		// Verify processor can handle complex data
 		input := map[string]interface{}{
@@ -640,9 +641,9 @@ func TestDataProcessor_Concurrent(t *testing.T) {
 
 		// Verify final stats
 		expectedTotal := int64(numGoroutines * numOperations)
-		assert.Equal(t, expectedTotal, dp.statistics.TotalRecords)
-		assert.Equal(t, expectedTotal, dp.statistics.ProcessedOK)
-		assert.Equal(t, int64(0), dp.statistics.ProcessedError)
+		assert.Equal(t, expectedTotal, dp.GetStatistics().TotalRecords)
+		assert.Equal(t, expectedTotal, dp.GetStatistics().ProcessedOK)
+		assert.Equal(t, int64(0), dp.GetStatistics().ProcessedError)
 	})
 }
 

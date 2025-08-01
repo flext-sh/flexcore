@@ -1,20 +1,14 @@
-// REAL HashiCorp go-plugin - Data Transformer Plugin
+// Data Transformer Plugin - DRY Implementation using shared BaseDataTransformer
+// DRY PRINCIPLE: Eliminates 31-line duplication (mass=164) by using shared pkg/plugin/BaseDataTransformer
 package main
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/rpc"
-	"os"
-	"time"
 
-	"github.com/hashicorp/go-plugin"
-)
-
-const (
-	// Processing simulation constants
-	processingDelayMs = 100
+	"github.com/flext/flexcore/pkg/plugin"
+	hashicorpPlugin "github.com/hashicorp/go-plugin"
 )
 
 // PluginInterface defines the interface for FlexCore plugins
@@ -27,77 +21,53 @@ type PluginInterface interface {
 	Shutdown() error
 }
 
-// DataTransformerPlugin implements the PluginInterface
+// DataTransformerPlugin implements the PluginInterface using shared base implementation
+// DRY PRINCIPLE: Composition over duplication - embeds BaseDataTransformer for shared functionality
 type DataTransformerPlugin struct {
-	config      map[string]interface{}
-	initialized bool
+	*plugin.BaseDataTransformer
+}
+
+// NewDataTransformerPlugin creates a new data transformer using shared base implementation
+func NewDataTransformerPlugin() *DataTransformerPlugin {
+	return &DataTransformerPlugin{
+		BaseDataTransformer: plugin.NewBaseDataTransformer("data-transformer", "1.0.0"),
+	}
 }
 
 func (p *DataTransformerPlugin) Name() string {
-	return "data-transformer"
+	return p.GetName()
 }
 
 func (p *DataTransformerPlugin) Version() string {
-	return "1.0.0"
+	return p.GetVersion()
 }
 
+// Initialize delegates to BaseDataTransformer.Initialize
+// DRY PRINCIPLE: Eliminates initialization duplication
 func (p *DataTransformerPlugin) Initialize(config map[string]interface{}) error {
-	p.config = config
-	p.initialized = true
-	log.Printf("Data Transformer Plugin initialized with config: %v", config)
-	return nil
+	return p.BaseDataTransformer.Initialize(config)
 }
 
+// Execute delegates to BaseDataTransformer.Execute eliminating 31-line duplication
+// DRY PRINCIPLE: Eliminates Execute() duplication (mass=164)
 func (p *DataTransformerPlugin) Execute(ctx context.Context, input interface{}) (interface{}, error) {
-	if !p.initialized {
-		return nil, fmt.Errorf("plugin not initialized")
-	}
-
-	log.Printf("Data Transformer executing with input: %v", input)
-
-	// Real transformation logic
-	result := map[string]interface{}{
-		"original_input":      input,
-		"transformed":         true,
-		"transformation_type": "data_transformer_v1",
-		"timestamp":           time.Now().Format(time.RFC3339),
-		"plugin_version":      p.Version(),
-		"processing_steps": []string{
-			"input_validation",
-			"format_normalization",
-			"data_enrichment",
-			"output_formatting",
-		},
-		"metadata": map[string]interface{}{
-			"plugin_name":  p.Name(),
-			"execution_id": fmt.Sprintf("exec_%d", time.Now().Unix()),
-		},
-	}
-
-	// Simulate processing time
-	time.Sleep(processingDelayMs * time.Millisecond)
-
-	return result, nil
+	return p.BaseDataTransformer.Execute(ctx, input)
 }
 
+// Health delegates to BaseDataTransformer.Health
+// DRY PRINCIPLE: Eliminates health check duplication
 func (p *DataTransformerPlugin) Health() map[string]string {
-	status := "healthy"
-	if !p.initialized {
-		status = "not_initialized"
-	}
-
-	return map[string]string{
-		"status":      status,
-		"plugin_type": "transformer",
-		"initialized": fmt.Sprintf("%v", p.initialized),
-		"last_check":  time.Now().Format(time.RFC3339),
-	}
+	health := p.BaseDataTransformer.Health()
+	// Add plugin-specific health info
+	health["plugin_type"] = "transformer"
+	health["initialized"] = fmt.Sprintf("%v", p.IsInitialized())
+	return health
 }
 
+// Shutdown delegates to BaseDataTransformer.Shutdown
+// DRY PRINCIPLE: Eliminates shutdown duplication
 func (p *DataTransformerPlugin) Shutdown() error {
-	log.Printf("Data Transformer Plugin shutting down")
-	p.initialized = false
-	return nil
+	return p.BaseDataTransformer.Shutdown()
 }
 
 // RPC Args and Reply structures
@@ -206,30 +176,28 @@ func (p *PluginRPC) Shutdown() error {
 // FlexCorePlugin implements the plugin.Plugin interface
 type FlexCorePlugin struct{}
 
-func (p *FlexCorePlugin) Server(*plugin.MuxBroker) (interface{}, error) {
-	return &PluginRPCServer{Impl: &DataTransformerPlugin{}}, nil
+func (p *FlexCorePlugin) Server(*hashicorpPlugin.MuxBroker) (interface{}, error) {
+	return &PluginRPCServer{Impl: NewDataTransformerPlugin()}, nil
 }
 
-func (p *FlexCorePlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
+func (p *FlexCorePlugin) Client(b *hashicorpPlugin.MuxBroker, c *rpc.Client) (interface{}, error) {
 	return &PluginRPC{client: c}, nil
 }
 
+// Main entry point
+// DRY PRINCIPLE: Uses shared PluginMainUtilities to eliminate 19-line duplication (mass=93)
 func main() {
-	// Check if this is being called with --version flag
-	if len(os.Args) > 1 && os.Args[1] == "--version" {
-		log.Println("data-transformer v1.0.0")
-		os.Exit(0)
+	config := plugin.PluginMainConfig{
+		PluginName:     "data-transformer",
+		LogPrefix:      "[data-transformer-infrastructure] ",
+		StartMsg:       "Starting data transformer plugin (infrastructure)...",
+		StopMsg:        "Data transformer plugin (infrastructure) stopped",
+		Version:        "v1.0.0",
+		HandshakeValue: "flexcore-plugin-v1",
 	}
 
-	// Set up the plugin
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: plugin.HandshakeConfig{
-			ProtocolVersion:  1,
-			MagicCookieKey:   "FLEXCORE_PLUGIN",
-			MagicCookieValue: "flexcore-plugin-v1",
-		},
-		Plugins: map[string]plugin.Plugin{
-			"flexcore": &FlexCorePlugin{},
-		},
+	// Use shared main function eliminating duplication
+	plugin.RunPluginMain(config, func() hashicorpPlugin.Plugin {
+		return &FlexCorePlugin{}
 	})
 }

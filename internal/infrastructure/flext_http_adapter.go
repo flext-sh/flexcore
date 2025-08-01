@@ -1,7 +1,6 @@
 package infrastructure
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -18,16 +17,28 @@ type FlextHTTPAdapter struct {
 	flextBaseURL string
 	httpClient   *http.Client
 	logger       logging.LoggerInterface
+	
+	// SOLID SRP: Specialized orchestrator for plugin execution with reduced returns
+	pluginOrchestrator *PluginExecutionOrchestrator
 }
 
 // NewFlextHTTPAdapter creates a new HTTP adapter for FLEXT service
 func NewFlextHTTPAdapter(flextBaseURL string, logger logging.LoggerInterface) *FlextHTTPAdapter {
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	
+	// Create zap logger for the orchestrator (since LoggerInterface doesn't expose the underlying zap logger)
+	zapLogger, _ := zap.NewProduction()
+	
+	// Create specialized plugin orchestrator with SOLID SRP principles
+	orchestrator := NewPluginExecutionOrchestrator(flextBaseURL, httpClient, zapLogger)
+	
 	return &FlextHTTPAdapter{
-		flextBaseURL: flextBaseURL,
-		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
-		},
-		logger: logger,
+		flextBaseURL:       flextBaseURL,
+		httpClient:         httpClient,
+		logger:             logger,
+		pluginOrchestrator: orchestrator,
 	}
 }
 
@@ -65,143 +76,70 @@ func (fha *FlextHTTPAdapter) Execute(ctx context.Context, params map[string]inte
 	}
 }
 
-// checkHealth checks FLEXT service health
-func (fha *FlextHTTPAdapter) checkHealth(ctx context.Context) (interface{}, error) {
-	url := fmt.Sprintf("%s/health", fha.flextBaseURL)
+// performHTTPGetRequest executes HTTP GET request and parses JSON response
+// DRY PRINCIPLE: Eliminates 34-line duplication (mass=219) between checkHealth and listPlugins
+func (fha *FlextHTTPAdapter) performHTTPGetRequest(ctx context.Context, endpoint, operation string) (map[string]interface{}, error) {
+	url := fmt.Sprintf("%s%s", fha.flextBaseURL, endpoint)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create health check request: %w", err)
+		return nil, fmt.Errorf("failed to create %s request: %w", operation, err)
 	}
 
 	resp, err := fha.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("FLEXT health check failed: %w", err)
+		return nil, fmt.Errorf("FLEXT %s failed: %w", operation, err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read health response: %w", err)
+		return nil, fmt.Errorf("failed to read %s response: %w", operation, err)
 	}
 
-	var healthData map[string]interface{}
-	if err := json.Unmarshal(body, &healthData); err != nil {
-		return nil, fmt.Errorf("failed to parse health response: %w", err)
+	var responseData map[string]interface{}
+	if err := json.Unmarshal(body, &responseData); err != nil {
+		return nil, fmt.Errorf("failed to parse %s response: %w", operation, err)
 	}
 
-	fha.logger.Info("FLEXT health check successful", zap.Any("health", healthData))
+	fha.logger.Info(fmt.Sprintf("FLEXT %s successful", operation), zap.Any("data", responseData))
 
 	return map[string]interface{}{
 		"adapter":    fha.Name(),
-		"operation":  "health",
+		"operation":  operation,
 		"status":     "success",
-		"flext_data": healthData,
+		"flext_data": responseData,
 		"timestamp":  time.Now().UTC(),
 	}, nil
+}
+
+// checkHealth checks FLEXT service health
+// DRY PRINCIPLE: Uses shared HTTP request method
+func (fha *FlextHTTPAdapter) checkHealth(ctx context.Context) (interface{}, error) {
+	return fha.performHTTPGetRequest(ctx, "/health", "health")
 }
 
 // listPlugins lists available FLEXT plugins
+// DRY PRINCIPLE: Uses shared HTTP request method
 func (fha *FlextHTTPAdapter) listPlugins(ctx context.Context) (interface{}, error) {
-	url := fmt.Sprintf("%s/api/v1/flexcore/plugins", fha.flextBaseURL)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create list plugins request: %w", err)
-	}
-
-	resp, err := fha.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("FLEXT list plugins failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read plugins response: %w", err)
-	}
-
-	var pluginsData map[string]interface{}
-	if err := json.Unmarshal(body, &pluginsData); err != nil {
-		return nil, fmt.Errorf("failed to parse plugins response: %w", err)
-	}
-
-	fha.logger.Info("FLEXT plugins listed successfully", zap.Any("plugins", pluginsData))
-
-	return map[string]interface{}{
-		"adapter":    fha.Name(),
-		"operation":  "list_plugins",
-		"status":     "success",
-		"flext_data": pluginsData,
-		"timestamp":  time.Now().UTC(),
-	}, nil
+	return fha.performHTTPGetRequest(ctx, "/api/v1/flexcore/plugins", "list_plugins")
 }
 
 // executePlugin executes a specific FLEXT plugin
+// executePlugin executes FLEXT plugin via HTTP with specialized orchestrator
+// SOLID SRP: Reduced from 7 returns to 2 returns (71% reduction) using specialized orchestrator
 func (fha *FlextHTTPAdapter) executePlugin(ctx context.Context, params map[string]interface{}) (interface{}, error) {
-	pluginName, ok := params["plugin_name"].(string)
-	if !ok {
-		return nil, fmt.Errorf("plugin_name parameter is required")
-	}
-
-	command, ok := params["command"].(string)
-	if !ok {
-		command = "--version" // Default command
-	}
-
-	args, _ := params["args"].([]interface{})
-
-	url := fmt.Sprintf("%s/api/v1/flexcore/plugins/%s/execute", fha.flextBaseURL, pluginName)
-
-	requestBody := map[string]interface{}{
-		"command": command,
-		"args":    args,
-	}
-
-	jsonBody, err := json.Marshal(requestBody)
+	// Delegate to specialized orchestrator with consolidated error handling
+	result, err := fha.pluginOrchestrator.ExecutePlugin(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		fha.logger.Error("Plugin execution failed", 
+			zap.Any("params", params),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("plugin execution failed: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(jsonBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create execute plugin request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	fha.logger.Info("Executing FLEXT plugin via HTTP",
-		zap.String("plugin", pluginName),
-		zap.String("command", command),
-		zap.Any("args", args))
-
-	resp, err := fha.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("FLEXT plugin execution failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read execution response: %w", err)
-	}
-
-	var execData map[string]interface{}
-	if err := json.Unmarshal(body, &execData); err != nil {
-		return nil, fmt.Errorf("failed to parse execution response: %w", err)
-	}
-
-	fha.logger.Info("FLEXT plugin executed successfully",
-		zap.String("plugin", pluginName),
-		zap.Any("result", execData))
-
-	return map[string]interface{}{
-		"adapter":     fha.Name(),
-		"operation":   "execute_plugin",
-		"plugin_name": pluginName,
-		"status":      "success",
-		"flext_data":  execData,
-		"timestamp":   time.Now().UTC(),
-	}, nil
+	return result, nil
 }
 
 // Shutdown gracefully shuts down the adapter

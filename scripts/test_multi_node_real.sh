@@ -248,7 +248,7 @@ EOF
 
 # Build the node executable
 echo -e "\n${BLUE}Building FlexCore nodes...${NC}"
-cd /tmp/flexcore-test
+cd /tmp/flexcore-test || exit
 go mod init flexcore-test 2>/dev/null || true
 go get github.com/go-redis/redis/v8
 go get gopkg.in/yaml.v2
@@ -284,8 +284,8 @@ for i in {1..3}; do
 	echo -e "\n${YELLOW}Check $i:${NC}"
 	for port in 8001 8002 8003; do
 		status=$(curl -s http://localhost:$port/status)
-		node_id=$(echo $status | jq -r '.node_id')
-		is_leader=$(echo $status | jq -r '.is_leader')
+		node_id=$(echo "$status" | jq -r '.node_id')
+		is_leader=$(echo "$status" | jq -r '.is_leader')
 		if [ "$is_leader" = "true" ]; then
 			echo -e "${RED}LEADER: $node_id${NC}"
 		else
@@ -315,9 +315,9 @@ done
 echo -e "\n${BLUE}Testing failover - killing current leader...${NC}"
 for port in 8001 8002 8003; do
 	status=$(curl -s http://localhost:$port/status)
-	is_leader=$(echo $status | jq -r '.is_leader')
+	is_leader=$(echo "$status" | jq -r '.is_leader')
 	if [ "$is_leader" = "true" ]; then
-		node_id=$(echo $status | jq -r '.node_id')
+		node_id=$(echo "$status" | jq -r '.node_id')
 		echo -e "${RED}Killing leader: $node_id${NC}"
 		if [ "$port" = "8001" ]; then kill $NODE1_PID; fi
 		if [ "$port" = "8002" ]; then kill $NODE2_PID; fi
@@ -333,8 +333,8 @@ echo -e "\n${BLUE}New leader after failover:${NC}"
 for port in 8001 8002 8003; do
 	status=$(curl -s http://localhost:$port/status 2>/dev/null)
 	if [ -n "$status" ]; then
-		node_id=$(echo $status | jq -r '.node_id')
-		is_leader=$(echo $status | jq -r '.is_leader')
+		node_id=$(echo "$status" | jq -r '.node_id')
+		is_leader=$(echo "$status" | jq -r '.is_leader')
 		if [ "$is_leader" = "true" ]; then
 			echo -e "${GREEN}NEW LEADER: $node_id${NC}"
 		fi

@@ -295,7 +295,7 @@ echo -e "\n📊 Build Summary:"
 echo -e "   ✅ Successfully built: ${GREEN}$success_count${NC}/$total_count plugins"
 echo -e "   📂 Distribution directory: $DIST_DIR"
 
-if [ $success_count -eq $total_count ]; then
+if [ $success_count -eq "$total_count" ]; then
 	echo -e "\n${GREEN}🎉 All plugins built successfully!${NC}"
 	echo -e "\n📦 To install plugins, run:"
 	echo -e "   cd $DIST_DIR && ./install.sh"
