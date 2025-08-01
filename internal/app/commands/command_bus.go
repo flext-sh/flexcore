@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/flext/flexcore/pkg/cqrs"
+	"github.com/flext/flexcore/pkg/errors"
 	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/shared/errors"
 )
 
 // Command represents a command in the CQRS pattern

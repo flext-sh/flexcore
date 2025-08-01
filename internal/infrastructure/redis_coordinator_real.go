@@ -217,75 +217,146 @@ func (orchestrator *CoordinationOrchestrator) registerWorkflowExecution() result
 }
 
 // registerNode registers this node in Redis cluster registry
+// RedisOperationTemplate provides template method for Redis operations
+// SOLID Template Method Pattern: Eliminates repetitive error handling and logging patterns
+type RedisOperationTemplate struct {
+	coordinator *RealRedisCoordinator
+	ctx         context.Context
+	operation   string
+}
+
+// NewRedisOperationTemplate creates a new Redis operation template
+func NewRedisOperationTemplate(coordinator *RealRedisCoordinator, ctx context.Context, operation string) *RedisOperationTemplate {
+	return &RedisOperationTemplate{
+		coordinator: coordinator,
+		ctx:         ctx,
+		operation:   operation,
+	}
+}
+
+// ExecuteRedisOperation executes Redis operation using template method pattern
+// SOLID Template Method: Common algorithm with customizable operation execution
+func (rot *RedisOperationTemplate) ExecuteRedisOperation(
+	executeOp func() error,
+	logFields []zap.Field,
+) error {
+	// Step 1: Log operation start
+	rot.coordinator.logger.Debug(fmt.Sprintf("Starting Redis %s operation", rot.operation), logFields...)
+
+	// Step 2: Execute operation
+	if err := executeOp(); err != nil {
+		// Step 3a: Handle error
+		errorFields := append(logFields, zap.Error(err))
+		rot.coordinator.logger.Error(fmt.Sprintf("Redis %s operation failed", rot.operation), errorFields...)
+		return err
+	}
+
+	// Step 3b: Log success
+	rot.coordinator.logger.Debug(fmt.Sprintf("Redis %s operation completed", rot.operation), logFields...)
+	return nil
+}
+
 func (rc *RealRedisCoordinator) registerNode(ctx context.Context) error {
-	nodeKey := rc.nodePrefix + rc.nodeID
-	nodeInfo := NodeInfo{
-		ID:        rc.nodeID,
-		Address:   "localhost:8080", // In real implementation, get actual address
-		LastSeen:  time.Now().UTC(),
-		Status:    "healthy",
-		Workloads: []string{},
-	}
+	template := NewRedisOperationTemplate(rc, ctx, "node registration")
+	
+	return template.ExecuteRedisOperation(
+		func() error {
+			nodeKey := rc.nodePrefix + rc.nodeID
+			nodeInfo := NodeInfo{
+				ID:        rc.nodeID,
+				Address:   "localhost:8080", // In real implementation, get actual address
+				LastSeen:  time.Now().UTC(),
+				Status:    "healthy",
+				Workloads: []string{},
+			}
 
-	nodeData, err := json.Marshal(nodeInfo)
-	if err != nil {
-		return fmt.Errorf("failed to marshal node info: %w", err)
-	}
+			nodeData, err := json.Marshal(nodeInfo)
+			if err != nil {
+				return fmt.Errorf("failed to marshal node info: %w", err)
+			}
 
-	// Set node info with expiration (heartbeat mechanism)
-	if err := rc.client.Set(ctx, nodeKey, nodeData, 60*time.Second).Err(); err != nil {
-		return fmt.Errorf("failed to register node in Redis: %w", err)
-	}
+			// Set node info with expiration (heartbeat mechanism)
+			if err := rc.client.Set(ctx, nodeKey, nodeData, 60*time.Second).Err(); err != nil {
+				return fmt.Errorf("failed to register node in Redis: %w", err)
+			}
 
-	rc.logger.Debug("Node registered in Redis cluster",
-		zap.String("node_id", rc.nodeID),
-		zap.String("node_key", nodeKey))
-
-	return nil
+			return nil
+		},
+		[]zap.Field{
+			zap.String("node_id", rc.nodeID),
+			zap.String("node_key", rc.nodePrefix+rc.nodeID),
+		},
+	)
 }
 
-// acquireLock acquires a distributed lock in Redis
+// LockOperationResult encapsulates lock operation results
+// SOLID Result Pattern: Consolidates lock operation outcomes reducing conditional complexity
+type LockOperationResult struct {
+	Success bool
+	Error   error
+}
+
+// NewLockOperationResult creates a lock operation result
+func NewLockOperationResult(success bool, err error) *LockOperationResult {
+	return &LockOperationResult{Success: success, Error: err}
+}
+
+// acquireLock acquires a distributed lock using template method pattern
 func (rc *RealRedisCoordinator) acquireLock(ctx context.Context, lockKey string, expiration time.Duration) (bool, error) {
-	lockValue := rc.nodeID + ":" + time.Now().Format(time.RFC3339)
+	template := NewRedisOperationTemplate(rc, ctx, "lock acquisition")
+	
+	var acquired bool
+	err := template.ExecuteRedisOperation(
+		func() error {
+			lockValue := rc.nodeID + ":" + time.Now().Format(time.RFC3339)
 
-	// Use SET NX EX for atomic lock acquisition
-	result := rc.client.SetNX(ctx, lockKey, lockValue, expiration)
-	if result.Err() != nil {
-		return false, fmt.Errorf("Redis lock acquisition error: %w", result.Err())
-	}
+			// Use SET NX EX for atomic lock acquisition
+			result := rc.client.SetNX(ctx, lockKey, lockValue, expiration)
+			if result.Err() != nil {
+				return fmt.Errorf("Redis lock acquisition error: %w", result.Err())
+			}
 
-	acquired := result.Val()
-
-	rc.logger.Debug("Lock acquisition attempt",
-		zap.String("lock_key", lockKey),
-		zap.Bool("acquired", acquired),
-		zap.String("node_id", rc.nodeID))
-
-	return acquired, nil
+			acquired = result.Val()
+			return nil
+		},
+		[]zap.Field{
+			zap.String("lock_key", lockKey),
+			zap.String("node_id", rc.nodeID),
+			zap.Duration("expiration", expiration),
+		},
+	)
+	
+	return acquired, err
 }
 
-// releaseLock releases a distributed lock in Redis
+// releaseLock releases a distributed lock using template method pattern
 func (rc *RealRedisCoordinator) releaseLock(ctx context.Context, lockKey string) error {
-	// Use Lua script to ensure we only delete our own lock
-	luaScript := `
-		if redis.call("get", KEYS[1]) == ARGV[1] then
-			return redis.call("del", KEYS[1])
-		else
-			return 0
-		end
-	`
+	template := NewRedisOperationTemplate(rc, ctx, "lock release")
+	
+	return template.ExecuteRedisOperation(
+		func() error {
+			// Use Lua script to ensure we only delete our own lock
+			luaScript := `
+				if redis.call("get", KEYS[1]) == ARGV[1] then
+					return redis.call("del", KEYS[1])
+				else
+					return 0
+				end
+			`
 
-	lockValue := rc.nodeID + ":"
-	result := rc.client.Eval(ctx, luaScript, []string{lockKey}, lockValue)
-	if result.Err() != nil {
-		return fmt.Errorf("Redis lock release error: %w", result.Err())
-	}
+			lockValue := rc.nodeID + ":"
+			result := rc.client.Eval(ctx, luaScript, []string{lockKey}, lockValue)
+			if result.Err() != nil {
+				return fmt.Errorf("Redis lock release error: %w", result.Err())
+			}
 
-	rc.logger.Debug("Lock released",
-		zap.String("lock_key", lockKey),
-		zap.String("node_id", rc.nodeID))
-
-	return nil
+			return nil
+		},
+		[]zap.Field{
+			zap.String("lock_key", lockKey),
+			zap.String("node_id", rc.nodeID),
+		},
+	)
 }
 
 // electLeader elects a leader for workflow execution using Redis
@@ -321,59 +392,140 @@ func (rc *RealRedisCoordinator) electLeader(ctx context.Context, leaderKey, work
 }
 
 // distributeWorkload distributes workload across available nodes using Redis
+// SOLID SRP: Reduced complexity using specialized WorkloadDistributor
 func (rc *RealRedisCoordinator) distributeWorkload(ctx context.Context, workflowID string) error {
-	rc.logger.Info("Distributing workload as leader using Redis",
-		zap.String("workflow_id", workflowID),
-		zap.String("node_id", rc.nodeID))
+	distributor := rc.createWorkloadDistributor(ctx, workflowID)
+	distributionResult := distributor.DistributeWorkloadAcrossNodes()
+	
+	if distributionResult.IsFailure() {
+		return distributionResult.Error()
+	}
+	
+	return nil
+}
 
-	// Get all active nodes from Redis
-	nodeKeys, err := rc.client.Keys(ctx, rc.nodePrefix+"*").Result()
-	if err != nil {
-		return fmt.Errorf("failed to get active nodes: %w", err)
+// WorkloadDistributor handles workload distribution operations
+// SOLID SRP: Single responsibility for workload distribution
+type WorkloadDistributor struct {
+	coordinator *RealRedisCoordinator
+	ctx         context.Context
+	workflowID  string
+}
+
+// createWorkloadDistributor creates specialized workload distributor
+// SOLID SRP: Factory method for creating specialized distributors
+func (rc *RealRedisCoordinator) createWorkloadDistributor(ctx context.Context, workflowID string) *WorkloadDistributor {
+	return &WorkloadDistributor{
+		coordinator: rc,
+		ctx:         ctx,
+		workflowID:  workflowID,
+	}
+}
+
+// DistributeWorkloadAcrossNodes distributes workload with centralized error handling
+// SOLID SRP: Single responsibility for complete workload distribution
+func (distributor *WorkloadDistributor) DistributeWorkloadAcrossNodes() result.Result[bool] {
+	distributor.coordinator.logger.Info("Distributing workload as leader using Redis",
+		zap.String("workflow_id", distributor.workflowID),
+		zap.String("node_id", distributor.coordinator.nodeID))
+
+	// Phase 1: Discover available nodes
+	nodesResult := distributor.discoverAvailableNodes()
+	if nodesResult.IsFailure() {
+		return result.Failure[bool](nodesResult.Error())
+	}
+	
+	availableNodes := nodesResult.Value()
+
+	// Phase 2: Create and store distribution plan
+	planResult := distributor.createAndStoreDistributionPlan(availableNodes)
+	if planResult.IsFailure() {
+		return result.Failure[bool](planResult.Error())
 	}
 
+	distributor.coordinator.logger.Info("Workload distribution completed using Redis",
+		zap.String("workflow_id", distributor.workflowID),
+		zap.Int("available_nodes", len(availableNodes)),
+		zap.String("strategy", "round_robin"))
+
+	return result.Success(true)
+}
+
+// discoverAvailableNodes discovers healthy nodes in the cluster
+// SOLID SRP: Single responsibility for node discovery
+func (distributor *WorkloadDistributor) discoverAvailableNodes() result.Result[[]string] {
+	// Get all node keys from Redis
+	nodeKeys, err := distributor.coordinator.client.Keys(distributor.ctx, distributor.coordinator.nodePrefix+"*").Result()
+	if err != nil {
+		return result.Failure[[]string](fmt.Errorf("failed to get active nodes: %w", err))
+	}
+
+	// Filter healthy nodes
+	healthyNodes := distributor.filterHealthyNodes(nodeKeys)
+	return result.Success(healthyNodes)
+}
+
+// filterHealthyNodes filters nodes by health status
+// SOLID SRP: Single responsibility for health filtering
+func (distributor *WorkloadDistributor) filterHealthyNodes(nodeKeys []string) []string {
 	var availableNodes []string
+	
 	for _, nodeKey := range nodeKeys {
-		nodeData, err := rc.client.Get(ctx, nodeKey).Result()
-		if err != nil {
-			continue
-		}
-
-		var nodeInfo NodeInfo
-		if err := json.Unmarshal([]byte(nodeData), &nodeInfo); err != nil {
-			continue
-		}
-
-		if nodeInfo.Status == "healthy" {
+		if nodeInfo := distributor.getNodeInfo(nodeKey); nodeInfo != nil && nodeInfo.Status == "healthy" {
 			availableNodes = append(availableNodes, nodeInfo.ID)
 		}
 	}
+	
+	return availableNodes
+}
 
-	// Store workload distribution plan in Redis
-	distributionKey := rc.workflowPrefix + workflowID + ":distribution"
-	distributionPlan := map[string]interface{}{
-		"workflow_id":     workflowID,
-		"leader_node":     rc.nodeID,
+// getNodeInfo retrieves node information from Redis
+// SOLID SRP: Single responsibility for node info retrieval
+func (distributor *WorkloadDistributor) getNodeInfo(nodeKey string) *NodeInfo {
+	nodeData, err := distributor.coordinator.client.Get(distributor.ctx, nodeKey).Result()
+	if err != nil {
+		return nil
+	}
+
+	var nodeInfo NodeInfo
+	if err := json.Unmarshal([]byte(nodeData), &nodeInfo); err != nil {
+		return nil
+	}
+
+	return &nodeInfo
+}
+
+// createAndStoreDistributionPlan creates and stores the distribution plan
+// SOLID SRP: Single responsibility for plan creation and storage
+func (distributor *WorkloadDistributor) createAndStoreDistributionPlan(availableNodes []string) result.Result[bool] {
+	// Create distribution plan
+	distributionPlan := distributor.createDistributionPlan(availableNodes)
+	
+	// Marshal plan to JSON
+	planData, err := json.Marshal(distributionPlan)
+	if err != nil {
+		return result.Failure[bool](fmt.Errorf("failed to marshal distribution plan: %w", err))
+	}
+
+	// Store plan in Redis
+	distributionKey := distributor.coordinator.workflowPrefix + distributor.workflowID + ":distribution"
+	if err := distributor.coordinator.client.Set(distributor.ctx, distributionKey, planData, 1*time.Hour).Err(); err != nil {
+		return result.Failure[bool](fmt.Errorf("failed to store distribution plan: %w", err))
+	}
+
+	return result.Success(true)
+}
+
+// createDistributionPlan creates the distribution plan structure
+// SOLID SRP: Single responsibility for plan structure creation
+func (distributor *WorkloadDistributor) createDistributionPlan(availableNodes []string) map[string]interface{} {
+	return map[string]interface{}{
+		"workflow_id":     distributor.workflowID,
+		"leader_node":     distributor.coordinator.nodeID,
 		"available_nodes": availableNodes,
 		"strategy":        "round_robin",
 		"created_at":      time.Now().UTC(),
 	}
-
-	planData, err := json.Marshal(distributionPlan)
-	if err != nil {
-		return fmt.Errorf("failed to marshal distribution plan: %w", err)
-	}
-
-	if err := rc.client.Set(ctx, distributionKey, planData, 1*time.Hour).Err(); err != nil {
-		return fmt.Errorf("failed to store distribution plan: %w", err)
-	}
-
-	rc.logger.Info("Workload distribution completed using Redis",
-		zap.String("workflow_id", workflowID),
-		zap.Int("available_nodes", len(availableNodes)),
-		zap.String("strategy", "round_robin"))
-
-	return nil
 }
 
 // registerWorkflowExecution registers workflow execution in Redis
@@ -486,27 +638,88 @@ func (rc *RealRedisCoordinator) Stop() error {
 }
 
 // GetClusterStatus returns the current cluster status from Redis
+// SOLID SRP: Reduced complexity using specialized ClusterStatusCollector
 func (rc *RealRedisCoordinator) GetClusterStatus() (map[string]NodeInfo, error) {
+	collector := rc.createClusterStatusCollector()
+	statusResult := collector.CollectClusterStatus()
+	
+	if statusResult.IsFailure() {
+		return nil, statusResult.Error()
+	}
+	
+	return statusResult.Value(), nil
+}
+
+// ClusterStatusCollector handles cluster status collection operations
+// SOLID SRP: Single responsibility for cluster status collection
+type ClusterStatusCollector struct {
+	coordinator *RealRedisCoordinator
+}
+
+// createClusterStatusCollector creates specialized cluster status collector
+// SOLID SRP: Factory method for creating specialized collectors
+func (rc *RealRedisCoordinator) createClusterStatusCollector() *ClusterStatusCollector {
+	return &ClusterStatusCollector{
+		coordinator: rc,
+	}
+}
+
+// CollectClusterStatus collects cluster status with centralized error handling
+// SOLID SRP: Single responsibility for complete cluster status collection
+func (collector *ClusterStatusCollector) CollectClusterStatus() result.Result[map[string]NodeInfo] {
 	ctx := context.Background()
-	nodeKeys, err := rc.client.Keys(ctx, rc.nodePrefix+"*").Result()
+	
+	// Phase 1: Get all node keys
+	nodeKeysResult := collector.getAllNodeKeys(ctx)
+	if nodeKeysResult.IsFailure() {
+		return result.Failure[map[string]NodeInfo](nodeKeysResult.Error())
+	}
+	
+	nodeKeys := nodeKeysResult.Value()
+	
+	// Phase 2: Collect all node information
+	cluster := collector.collectAllNodeInformation(ctx, nodeKeys)
+	
+	return result.Success(cluster)
+}
+
+// getAllNodeKeys retrieves all node keys from Redis
+// SOLID SRP: Single responsibility for node key retrieval
+func (collector *ClusterStatusCollector) getAllNodeKeys(ctx context.Context) result.Result[[]string] {
+	nodeKeys, err := collector.coordinator.client.Keys(ctx, collector.coordinator.nodePrefix+"*").Result()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster nodes: %w", err)
+		return result.Failure[[]string](fmt.Errorf("failed to get cluster nodes: %w", err))
 	}
+	
+	return result.Success(nodeKeys)
+}
 
+// collectAllNodeInformation collects information for all nodes
+// SOLID SRP: Single responsibility for node information collection
+func (collector *ClusterStatusCollector) collectAllNodeInformation(ctx context.Context, nodeKeys []string) map[string]NodeInfo {
 	cluster := make(map[string]NodeInfo)
+	
 	for _, nodeKey := range nodeKeys {
-		nodeData, err := rc.client.Get(ctx, nodeKey).Result()
-		if err != nil {
-			continue
+		if nodeInfo := collector.getNodeInformation(ctx, nodeKey); nodeInfo != nil {
+			cluster[nodeInfo.ID] = *nodeInfo
 		}
+	}
+	
+	return cluster
+}
 
-		var nodeInfo NodeInfo
-		if err := json.Unmarshal([]byte(nodeData), &nodeInfo); err != nil {
-			continue
-		}
-
-		cluster[nodeInfo.ID] = nodeInfo
+// getNodeInformation retrieves and parses node information
+// SOLID SRP: Single responsibility for individual node information retrieval
+func (collector *ClusterStatusCollector) getNodeInformation(ctx context.Context, nodeKey string) *NodeInfo {
+	nodeData, err := collector.coordinator.client.Get(ctx, nodeKey).Result()
+	if err != nil {
+		return nil
 	}
 
-	return cluster, nil
+	var nodeInfo NodeInfo
+	if err := json.Unmarshal([]byte(nodeData), &nodeInfo); err != nil {
+		return nil
+	}
+
+	return &nodeInfo
 }

@@ -55,6 +55,41 @@ func (r Result[T]) ValueOr(defaultValue T) T {
 	return defaultValue
 }
 
+// Get returns the value if successful, panics if failed
+func (r Result[T]) Get() T {
+	if r.err != nil {
+		panic(r.err)
+	}
+	return r.value
+}
+
+// Filter filters the result based on a predicate
+func Filter[T any](r Result[T], predicate func(T) bool) Result[T] {
+	if r.IsFailure() {
+		return r
+	}
+	if !predicate(r.value) {
+		return Failure[T](fmt.Errorf("filter predicate failed"))
+	}
+	return r
+}
+
+// OrElse returns this result if successful, or the alternative if failed
+func OrElse[T any](r Result[T], alternative Result[T]) Result[T] {
+	if r.IsSuccess() {
+		return r
+	}
+	return alternative
+}
+
+// OrElseGet returns this result if successful, or calls supplier if failed
+func OrElseGet[T any](r Result[T], supplier func() Result[T]) Result[T] {
+	if r.IsSuccess() {
+		return r
+	}
+	return supplier()
+}
+
 // ValueOrZero returns the value if successful, or the zero value if failed
 func (r Result[T]) ValueOrZero() T {
 	var zero T

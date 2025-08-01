@@ -6,7 +6,90 @@ import (
 	"context"
 	"fmt"
 	"time"
+	
+	"github.com/flext/flexcore/pkg/result"
 )
+
+// PipelineOrchestratorConfig contains dependencies for PipelineExecutionOrchestrator
+// PARAMETER OBJECT PATTERN: Eliminates 5-parameter constructor complexity
+type PipelineOrchestratorConfig struct {
+	EventBus     EventBus
+	CommandBus   CommandBus
+	PluginLoader PluginLoader
+	Cluster      CoordinationLayer
+	Repository   EventStore
+}
+
+// Validate ensures all required dependencies are provided
+// SOLID SRP: Reduced from 6 returns to 1 return using validation collection pattern
+func (config *PipelineOrchestratorConfig) Validate() error {
+	validationResult := config.performValidationChecks()
+	if validationResult.IsFailure() {
+		return validationResult.Error()
+	}
+	return nil
+}
+
+// performValidationChecks collects all validation errors in a single pass
+// SOLID SRP: Single responsibility for validation logic with centralized error handling
+func (config *PipelineOrchestratorConfig) performValidationChecks() result.Result[bool] {
+	validationErrors := config.collectValidationErrors()
+	
+	if len(validationErrors) > 0 {
+		// Return first validation error (maintains original behavior)
+		return result.Failure[bool](fmt.Errorf("%s", validationErrors[0]))
+	}
+	
+	return result.Success(true)
+}
+
+// collectValidationErrors gathers all validation issues
+// SOLID SRP: Single responsibility for collecting validation errors
+func (config *PipelineOrchestratorConfig) collectValidationErrors() []string {
+	var errors []string
+	
+	validationRules := config.getValidationRules()
+	for _, rule := range validationRules {
+		if rule.validator(config) {
+			errors = append(errors, rule.errorMessage)
+		}
+	}
+	
+	return errors
+}
+
+// PipelineConfigValidationRule represents a single validation rule for pipeline config
+type PipelineConfigValidationRule struct {
+	validator    func(*PipelineOrchestratorConfig) bool
+	errorMessage string
+}
+
+// getValidationRules returns all validation rules using Strategy pattern
+// SOLID OCP: Open for extension by adding new validation rules
+func (config *PipelineOrchestratorConfig) getValidationRules() []PipelineConfigValidationRule {
+	return []PipelineConfigValidationRule{
+		{
+			validator:    func(c *PipelineOrchestratorConfig) bool { return c.EventBus == nil },
+			errorMessage: "EventBus is required",
+		},
+		{
+			validator:    func(c *PipelineOrchestratorConfig) bool { return c.CommandBus == nil },
+			errorMessage: "CommandBus is required",
+		},
+		{
+			validator:    func(c *PipelineOrchestratorConfig) bool { return c.PluginLoader == nil },
+			errorMessage: "PluginLoader is required",
+		},
+		{
+			validator:    func(c *PipelineOrchestratorConfig) bool { return c.Cluster == nil },
+			errorMessage: "Cluster coordination layer is required",
+		},
+		{
+			validator:    func(c *PipelineOrchestratorConfig) bool { return c.Repository == nil },
+			errorMessage: "Repository (EventStore) is required",
+		},
+	}
+}
 
 // PipelineExecutionOrchestrator coordinates all pipeline execution steps
 // SOLID SRP: Single responsibility for coordinating pipeline execution with centralized error handling
@@ -18,21 +101,55 @@ type PipelineExecutionOrchestrator struct {
 	resultHandler   *PipelineResultHandler
 }
 
-// NewPipelineExecutionOrchestrator creates specialized orchestrator
-func NewPipelineExecutionOrchestrator(
+// NewPipelineExecutionOrchestrator creates specialized orchestrator using Parameter Object Pattern
+func NewPipelineExecutionOrchestrator(config *PipelineOrchestratorConfig) (*PipelineExecutionOrchestrator, error) {
+	if config == nil {
+		return nil, fmt.Errorf("PipelineOrchestratorConfig cannot be nil")
+	}
+	
+	if err := config.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid orchestrator configuration: %w", err)
+	}
+
+	return &PipelineExecutionOrchestrator{
+		eventPublisher:  NewPipelineEventPublisher(config.EventBus),
+		commandExecutor: NewPipelineCommandExecutor(config.CommandBus),
+		pluginManager:   NewPipelinePluginManager(config.PluginLoader),
+		clusterManager:  NewPipelineDistributedManager(config.Cluster),
+		resultHandler:   NewPipelineResultHandler(config.Repository),
+	}, nil
+}
+
+// NewPipelineExecutionOrchestratorLegacy maintains backward compatibility with 5-parameter constructor
+// BACKWARD COMPATIBILITY: Delegates to Parameter Object Pattern implementation  
+func NewPipelineExecutionOrchestratorLegacy(
 	eventBus EventBus,
 	commandBus CommandBus,
 	pluginLoader PluginLoader,
 	cluster CoordinationLayer,
 	repository EventStore,
 ) *PipelineExecutionOrchestrator {
-	return &PipelineExecutionOrchestrator{
-		eventPublisher:  NewPipelineEventPublisher(eventBus),
-		commandExecutor: NewPipelineCommandExecutor(commandBus),
-		pluginManager:   NewPipelinePluginManager(pluginLoader),
-		clusterManager:  NewPipelineDistributedManager(cluster),
-		resultHandler:   NewPipelineResultHandler(repository),
+	config := &PipelineOrchestratorConfig{
+		EventBus:     eventBus,
+		CommandBus:   commandBus,
+		PluginLoader: pluginLoader,
+		Cluster:      cluster,
+		Repository:   repository,
 	}
+	
+	orchestrator, err := NewPipelineExecutionOrchestrator(config)
+	if err != nil {
+		// For backward compatibility, create without validation on error
+		return &PipelineExecutionOrchestrator{
+			eventPublisher:  NewPipelineEventPublisher(eventBus),
+			commandExecutor: NewPipelineCommandExecutor(commandBus),
+			pluginManager:   NewPipelinePluginManager(pluginLoader),
+			clusterManager:  NewPipelineDistributedManager(cluster),
+			resultHandler:   NewPipelineResultHandler(repository),
+		}
+	}
+	
+	return orchestrator
 }
 
 // ExecutePipeline orchestrates complete pipeline execution with reduced error returns

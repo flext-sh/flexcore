@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/shared/errors"
+	"github.com/flext/flexcore/pkg/errors"
 )
 
 // BusValidationUtilities provides shared validation logic for CQRS buses

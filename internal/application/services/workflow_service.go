@@ -119,8 +119,8 @@ func NewWorkflowService(config *WorkflowServiceConfig) (*WorkflowService, error)
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	// Create specialized pipeline orchestrator with SOLID SRP principles
-	orchestrator := NewPipelineExecutionOrchestrator(
+	// Create specialized pipeline orchestrator using legacy constructor for compatibility
+	orchestrator := NewPipelineExecutionOrchestratorLegacy(
 		config.EventBus,
 		config.CommandBus,
 		config.PluginLoader,
@@ -139,8 +139,63 @@ func NewWorkflowService(config *WorkflowServiceConfig) (*WorkflowService, error)
 	}, nil
 }
 
-// NewWorkflowServiceLegacy maintains backward compatibility with 6-parameter constructor
-// BACKWARD COMPATIBILITY: Delegates to Parameter Object Pattern implementation
+// WorkflowServiceBuilder applies Builder Pattern to eliminate parameter explosion
+// SOLID Builder Pattern: Reduces 6-parameter constructor to fluent interface
+type WorkflowServiceBuilder struct {
+	config *WorkflowServiceConfig
+}
+
+// NewWorkflowServiceBuilder creates a new workflow service builder
+func NewWorkflowServiceBuilder() *WorkflowServiceBuilder {
+	return &WorkflowServiceBuilder{
+		config: &WorkflowServiceConfig{},
+	}
+}
+
+// WithEventBus sets the event bus for Event Sourcing + CQRS
+func (b *WorkflowServiceBuilder) WithEventBus(eventBus EventBus) *WorkflowServiceBuilder {
+	b.config.EventBus = eventBus
+	return b
+}
+
+// WithPluginLoader sets the plugin loader for HashiCorp-style plugins
+func (b *WorkflowServiceBuilder) WithPluginLoader(pluginLoader PluginLoader) *WorkflowServiceBuilder {
+	b.config.PluginLoader = pluginLoader
+	return b
+}
+
+// WithCluster sets the coordination layer for distributed coordination
+func (b *WorkflowServiceBuilder) WithCluster(cluster CoordinationLayer) *WorkflowServiceBuilder {
+	b.config.Cluster = cluster
+	return b
+}
+
+// WithRepository sets the event store for audit trail
+func (b *WorkflowServiceBuilder) WithRepository(repository EventStore) *WorkflowServiceBuilder {
+	b.config.Repository = repository
+	return b
+}
+
+// WithCommandBus sets the CQRS command bus
+func (b *WorkflowServiceBuilder) WithCommandBus(commandBus CommandBus) *WorkflowServiceBuilder {
+	b.config.CommandBus = commandBus
+	return b
+}
+
+// WithLogger sets the structured logger
+func (b *WorkflowServiceBuilder) WithLogger(logger logging.LoggerInterface) *WorkflowServiceBuilder {
+	b.config.Logger = logger
+	return b
+}
+
+// Build creates the WorkflowService using Parameter Object Pattern
+func (b *WorkflowServiceBuilder) Build() (*WorkflowService, error) {
+	return NewWorkflowService(b.config)
+}
+
+// NewWorkflowServiceLegacy maintains backward compatibility using Builder Pattern
+// DEPRECATED: Use NewWorkflowService with WorkflowServiceConfig for better maintainability
+// BUILDER PATTERN: Eliminates 6-parameter constructor complexity using fluent interface
 func NewWorkflowServiceLegacy(
 	eventBus EventBus,
 	pluginLoader PluginLoader,
@@ -149,21 +204,22 @@ func NewWorkflowServiceLegacy(
 	commandBus CommandBus,
 	logger logging.LoggerInterface,
 ) *WorkflowService {
-	config := &WorkflowServiceConfig{
-		EventBus:     eventBus,
-		PluginLoader: pluginLoader,
-		Cluster:      cluster,
-		Repository:   repository,
-		CommandBus:   commandBus,
-		Logger:       logger,
-	}
+	// Apply Builder Pattern to eliminate parameter explosion
+	service, err := NewWorkflowServiceBuilder().
+		WithEventBus(eventBus).
+		WithPluginLoader(pluginLoader).
+		WithCluster(cluster).
+		WithRepository(repository).
+		WithCommandBus(commandBus).
+		WithLogger(logger).
+		Build()
 	
-	service, err := NewWorkflowService(config)
 	if err != nil {
 		// Log error but maintain backward compatibility by creating service anyway
 		if logger != nil {
 			logger.Error("Failed to create WorkflowService with validation", zap.Error(err))
 		}
+		// Fallback to direct construction for backward compatibility
 		return &WorkflowService{
 			eventBus:     eventBus,
 			pluginLoader: pluginLoader,

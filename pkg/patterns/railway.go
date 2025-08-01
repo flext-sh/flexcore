@@ -3,7 +3,7 @@ package patterns
 
 import (
 	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/shared/errors"
+	"github.com/flext/flexcore/pkg/errors"
 )
 
 // Railway represents a computation that can succeed or fail
