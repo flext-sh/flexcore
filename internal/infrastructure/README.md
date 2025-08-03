@@ -34,6 +34,7 @@ This layer implements Clean Architecture infrastructure patterns:
 ### Event Sourcing (`eventsourcing/`, `postgres_event_store.go`)
 
 #### Event Store Implementation
+
 PostgreSQL-based event storage with stream management.
 
 ```go
@@ -66,6 +67,7 @@ func (es *PostgreSQLEventStore) LoadEvents(
 ```
 
 #### Event Types and Serialization
+
 ```go
 // Located in: eventsourcing/event_types.go
 type EventData struct {
@@ -82,6 +84,7 @@ type EventData struct {
 ### Plugin System (`plugin_loader.go`, `plugin_execution_services.go`)
 
 #### Dynamic Plugin Loading
+
 ```go
 // Located in: plugin_loader.go
 type PluginLoader struct {
@@ -99,6 +102,7 @@ func (pl *PluginLoader) LoadPlugin(name string) (*plugin.Plugin, error) {
 ```
 
 #### Plugin Execution Services
+
 ```go
 // Located in: plugin_execution_services.go
 type PluginExecutionService struct {
@@ -122,6 +126,7 @@ func (pes *PluginExecutionService) ExecutePlugin(
 ### Distributed Coordination (`redis_coordinator.go`)
 
 #### Redis-Based Coordination
+
 ```go
 // Located in: redis_coordinator.go
 type RedisCoordinator struct {
@@ -154,6 +159,7 @@ func (rc *RedisCoordinator) Publish(
 ### Observability (`observability/`)
 
 #### Comprehensive Monitoring
+
 ```go
 // Located in: observability/metrics.go
 type Metrics struct {
@@ -171,6 +177,7 @@ func (m *Metrics) RecordPipelineExecution(duration time.Duration, status string)
 ```
 
 #### Distributed Tracing
+
 ```go
 // Located in: observability/tracing.go
 type TracingService struct {
@@ -191,6 +198,7 @@ func (ts *TracingService) StartSpan(
 ### CQRS Infrastructure (`cqrs/`)
 
 #### Command/Query Bus Implementation
+
 ```go
 // Located in: cqrs/cqrs_bus.go
 type CQRSBus struct {
@@ -216,12 +224,13 @@ func (bus *CQRSBus) ExecuteCommand(
 Various specialized data processing components:
 
 - **Data Processor**: Generic data transformation pipeline
-- **PostgreSQL Processor**: Database-specific operations and optimizations  
+- **PostgreSQL Processor**: Database-specific operations and optimizations
 - **JSON Processor**: JSON data parsing, validation, and transformation
 
 ### External Integration
 
 #### HTTP Adapters (`flext_http_adapter.go`, `flext_proxy_adapter.go`)
+
 ```go
 // Located in: flext_http_adapter.go
 type FlextHTTPAdapter struct {
@@ -245,32 +254,38 @@ func (adapter *FlextHTTPAdapter) ExecutePlugin(
 ## Observability Stack
 
 ### Monitoring Components
+
 Located in dedicated directories with configuration:
 
 #### Prometheus (`prometheus/`)
+
 - **Metrics Collection**: System and business metrics
 - **Alert Rules**: Proactive monitoring and alerting
 - **Configuration**: `prometheus.yml` with scraping targets
 
 #### Grafana (`grafana/`)
+
 - **Dashboards**: Visual monitoring and analytics
 - **Data Sources**: Prometheus integration configuration
 - **Alerts**: Visual alerting and notification management
 
 #### Jaeger (`jaeger/`)
+
 - **Distributed Tracing**: Request flow across services
 - **Performance Analysis**: Latency and bottleneck identification
 - **Service Map**: Visual service dependency mapping
 
 #### Alertmanager (`alertmanager/`)
+
 - **Alert Routing**: Notification management and escalation
 - **Silence Management**: Temporary alert suppression
 - **Integration**: Email, Slack, PagerDuty notifications
 
 ### Docker Compose Integration
+
 ```yaml
 # Located in: docker-compose.observability.yml
-version: '3.8'
+version: "3.8"
 services:
   prometheus:
     image: prom/prometheus:latest
@@ -278,14 +293,14 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus:/etc/prometheus
-  
+
   grafana:
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
     volumes:
       - ./grafana:/etc/grafana/provisioning
-  
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
@@ -296,12 +311,14 @@ services:
 ## Data Persistence
 
 ### PostgreSQL Integration (`database.go`)
+
 - **Connection Management**: Connection pooling and lifecycle
 - **Schema Management**: Automatic migrations and versioning
 - **Transaction Support**: ACID compliance and isolation levels
 - **Performance Optimization**: Prepared statements and query optimization
 
 ### Event Store Schema
+
 ```sql
 -- Event storage table structure
 CREATE TABLE events (
@@ -324,6 +341,7 @@ CREATE INDEX idx_events_created_at ON events(created_at);
 ## Middleware (`middleware/`)
 
 ### Logging Middleware
+
 ```go
 // Located in: middleware/logging.go
 type LoggingMiddleware struct {
@@ -345,12 +363,14 @@ func (lm *LoggingMiddleware) Handle(
 ## Performance Considerations
 
 ### Current Bottlenecks
+
 - **Database Access**: N+1 query problems and missing indexes
 - **Plugin Loading**: Synchronous loading blocks request processing
 - **Event Processing**: Lack of async processing and batching
 - **Memory Usage**: Plugin instances not properly cleaned up
 
 ### Planned Optimizations
+
 - **Connection Pooling**: Optimized database connection management
 - **Async Processing**: Background event processing and plugin execution
 - **Caching Strategies**: Redis integration for frequently accessed data
@@ -359,12 +379,14 @@ func (lm *LoggingMiddleware) Handle(
 ## Security Considerations
 
 ### Current Security Issues
+
 - **Plugin Isolation**: No sandboxing or resource limits
 - **Input Validation**: Insufficient validation of plugin parameters
 - **Access Control**: Limited authentication and authorization
 - **Secret Management**: Hardcoded credentials and configuration
 
 ### Planned Security Enhancements
+
 - **Plugin Sandboxing**: Containerized plugin execution
 - **Input Sanitization**: Comprehensive validation and sanitization
 - **OAuth/JWT Integration**: Proper authentication and authorization
@@ -373,12 +395,15 @@ func (lm *LoggingMiddleware) Handle(
 ## Deployment and Operations
 
 ### Docker Configuration
+
 Multiple Dockerfile configurations for different components:
+
 - **Metrics**: `Dockerfile.metrics` for monitoring stack
 - **Processors**: Individual containers for data processing components
 - **Observability**: Complete monitoring and alerting stack
 
 ### Configuration Management
+
 - **Environment Variables**: Runtime configuration
 - **Config Files**: YAML-based configuration for complex settings
 - **Feature Flags**: Runtime behavior modification
@@ -387,6 +412,7 @@ Multiple Dockerfile configurations for different components:
 ## Integration Testing
 
 ### Test Infrastructure
+
 - **PostgreSQL Test Database**: Isolated testing environment
 - **Redis Test Instance**: Separate coordination layer for tests
 - **Mock Services**: External service simulation
@@ -395,21 +421,25 @@ Multiple Dockerfile configurations for different components:
 ## Migration and Refactoring Plan
 
 ### Phase 1: Architecture Cleanup
+
 - Separate infrastructure concerns from application logic
 - Consolidate CQRS implementations into single pattern
 - Implement proper Clean Architecture boundaries
 
 ### Phase 2: Event Sourcing Enhancement
+
 - Replace in-memory stores with persistent implementations
 - Add event replay and snapshot capabilities
 - Implement proper event versioning and migration
 
 ### Phase 3: Plugin System Security
+
 - Add proper plugin isolation and sandboxing
 - Implement resource limits and monitoring
 - Add comprehensive security validation
 
 ### Phase 4: Performance Optimization
+
 - Optimize database access patterns
 - Implement async processing where appropriate
 - Add comprehensive caching strategies

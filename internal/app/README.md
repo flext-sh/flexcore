@@ -23,6 +23,7 @@ This layer implements Clean Architecture principles with clear separation of con
 ⚠️ **Important**: This layer requires significant refactoring to properly implement Clean Architecture and CQRS patterns. See [TODO.md](../../docs/TODO.md) for architectural issues.
 
 ### Known Issues
+
 - Mixed responsibilities between application and infrastructure concerns
 - Incomplete CQRS implementation with multiple conflicting patterns
 - Insufficient separation between command and query processing
@@ -34,6 +35,7 @@ This layer implements Clean Architecture principles with clear separation of con
 ### Command Processing (`commands/`)
 
 #### Command Bus
+
 Central dispatcher for command processing with middleware support.
 
 ```go
@@ -55,6 +57,7 @@ type CommandHandler interface {
 ```
 
 #### Pipeline Commands
+
 Business operations for pipeline management.
 
 ```go
@@ -80,6 +83,7 @@ type AddPipelineStepCommand struct {
 ### Query Processing (`queries/`)
 
 #### Query Bus
+
 Central dispatcher for query processing with caching and optimization support.
 
 ```go
@@ -101,6 +105,7 @@ type QueryHandler interface {
 ```
 
 #### Pipeline Queries
+
 Read operations for pipeline data retrieval.
 
 ```go
@@ -133,11 +138,11 @@ type ApplicationService interface {
     CreatePipeline(ctx context.Context, cmd CreatePipelineCommand) error
     UpdatePipeline(ctx context.Context, cmd UpdatePipelineCommand) error
     DeletePipeline(ctx context.Context, cmd DeletePipelineCommand) error
-    
+
     // Pipeline Execution
     StartPipeline(ctx context.Context, cmd StartPipelineCommand) error
     StopPipeline(ctx context.Context, cmd StopPipelineCommand) error
-    
+
     // Pipeline Queries
     GetPipeline(ctx context.Context, query GetPipelineQuery) (*PipelineView, error)
     ListPipelines(ctx context.Context, query ListPipelinesQuery) (*PipelineListView, error)
@@ -151,7 +156,7 @@ type ApplicationService interface {
 Commands represent user intentions to change system state:
 
 1. **Command Validation**: Ensure command structure and business rules
-2. **Domain Operation**: Execute business logic through aggregates  
+2. **Domain Operation**: Execute business logic through aggregates
 3. **Event Generation**: Domain events are raised for state changes
 4. **Persistence**: Save aggregate state and events to storage
 5. **Event Publication**: Publish events to update read models
@@ -163,24 +168,24 @@ func (s *ApplicationService) CreatePipeline(ctx context.Context, cmd CreatePipel
     if err := cmd.Validate(); err != nil {
         return err
     }
-    
+
     // 2. Execute domain logic
     pipeline := entities.NewPipeline(cmd.Name, cmd.Description, cmd.Owner)
     if pipeline.IsFailure() {
         return pipeline.Error()
     }
-    
+
     // 3. Save aggregate (generates events)
     if err := s.pipelineRepo.Save(pipeline.Value()); err != nil {
         return err
     }
-    
+
     // 4. Publish events
     events := pipeline.Value().DomainEvents()
     for _, event := range events {
         s.eventBus.Publish(ctx, event)
     }
-    
+
     return nil
 }
 ```
@@ -201,13 +206,13 @@ func (s *ApplicationService) GetPipeline(ctx context.Context, query GetPipelineQ
     if err := query.Validate(); err != nil {
         return nil, err
     }
-    
+
     // 2. Retrieve from read model
     pipeline, err := s.pipelineReadModel.GetByID(query.PipelineID)
     if err != nil {
         return nil, err
     }
-    
+
     // 3. Build view model
     view := &PipelineView{
         ID:          pipeline.ID,
@@ -217,7 +222,7 @@ func (s *ApplicationService) GetPipeline(ctx context.Context, query GetPipelineQ
         LastRunAt:   pipeline.LastRunAt,
         NextRunAt:   pipeline.NextRunAt,
     }
-    
+
     return view, nil
 }
 ```
@@ -225,6 +230,7 @@ func (s *ApplicationService) GetPipeline(ctx context.Context, query GetPipelineQ
 ## Use Case Patterns
 
 ### Transaction Management
+
 Ensuring consistency across multiple operations:
 
 ```go
@@ -235,12 +241,12 @@ func (s *ApplicationService) ExecutePipelineWorkflow(ctx context.Context, cmd Ex
         if err != nil {
             return err
         }
-        
+
         // 2. Execute business operations
         if err := pipeline.Start(); err.IsFailure() {
             return err.Error()
         }
-        
+
         // 3. Process each step
         for _, step := range pipeline.Steps {
             if err := s.executeStep(txCtx, step); err != nil {
@@ -248,12 +254,12 @@ func (s *ApplicationService) ExecutePipelineWorkflow(ctx context.Context, cmd Ex
                 break
             }
         }
-        
+
         // 4. Complete or fail pipeline
         if pipeline.Status == PipelineStatusRunning {
             pipeline.Complete()
         }
-        
+
         // 5. Save final state
         return s.pipelineRepo.Save(pipeline)
     })
@@ -261,23 +267,24 @@ func (s *ApplicationService) ExecutePipelineWorkflow(ctx context.Context, cmd Ex
 ```
 
 ### Event-Driven Workflows
+
 Coordinating operations through domain events:
 
 ```go
 // Event handler for pipeline completion
 func (h *PipelineCompletedHandler) Handle(ctx context.Context, event domain.DomainEvent) error {
     completedEvent := event.(*PipelineCompletedEvent)
-    
+
     // Update read models
     if err := h.updatePipelineView(completedEvent); err != nil {
         return err
     }
-    
+
     // Trigger downstream processes
     if err := h.triggerNotifications(completedEvent); err != nil {
         return err
     }
-    
+
     // Update metrics and analytics
     return h.updatePipelineMetrics(completedEvent)
 }
@@ -286,18 +293,21 @@ func (h *PipelineCompletedHandler) Handle(ctx context.Context, event domain.Doma
 ## Integration Patterns
 
 ### Domain Layer Integration
+
 - **Aggregate Operations**: Execute business logic through domain entities
 - **Event Processing**: Handle domain events for cross-aggregate coordination
 - **Business Rules**: Enforce domain invariants and validation rules
 - **Result Patterns**: Use Result types for explicit error handling
 
 ### Infrastructure Layer Integration
+
 - **Repository Access**: Persist and retrieve aggregates
 - **Event Store**: Save and replay domain events
 - **External Services**: Integrate with plugins and external systems
 - **Caching**: Optimize read operations with cached data
 
 ### Presentation Layer Integration
+
 - **API Controllers**: Receive HTTP requests and delegate to application services
 - **Command/Query DTOs**: Data transfer objects for request/response mapping
 - **View Models**: Optimized data structures for presentation needs
@@ -306,24 +316,28 @@ func (h *PipelineCompletedHandler) Handle(ctx context.Context, event domain.Doma
 ## Planned Improvements (Post-Refactoring)
 
 ### Enhanced CQRS Implementation
+
 - Clear separation of command and query models
 - Optimized read projections for complex queries
 - Event-driven read model updates
 - Command validation and authorization middleware
 
 ### Advanced Transaction Management
+
 - Saga pattern for long-running workflows
 - Compensation logic for distributed transactions
 - Event-driven process coordination
 - Retry and error recovery mechanisms
 
 ### Performance Optimizations
+
 - Async command processing for non-critical operations
 - Query result caching with intelligent invalidation
 - Batch processing for bulk operations
 - Connection pooling and resource management
 
 ### Monitoring and Observability
+
 - Command and query execution metrics
 - Performance tracking and alerting
 - Distributed tracing for workflow visibility
@@ -341,18 +355,21 @@ func (h *PipelineCompletedHandler) Handle(ctx context.Context, event domain.Doma
 ## Testing Strategy
 
 ### Unit Testing
+
 - Test command and query handlers in isolation
 - Mock domain services and repositories
 - Verify proper error handling and validation
 - Test event generation and publication
 
 ### Integration Testing
+
 - Test complete use case workflows
 - Verify transaction boundary management
 - Test event-driven process coordination
 - Validate read model consistency
 
 ### Performance Testing
+
 - Load test command and query processing
 - Benchmark critical business workflows
 - Test system behavior under concurrent load

@@ -1,4 +1,11 @@
-"""FlexCore main class - Event-driven architecture core."""
+"""FlexCore main class - Event-driven architecture core.
+
+Copyright (c) 2025 Flext. All rights reserved.
+SPDX-License-Identifier: MIT
+
+"""
+
+from __future__ import annotations
 
 
 class FlexCore:
