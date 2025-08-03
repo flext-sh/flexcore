@@ -13,7 +13,7 @@ The Domain Layer implements FlexCore's core business logic using Domain-Driven D
 This package forms the heart of FlexCore's Clean Architecture implementation:
 
 - **Domain Entities**: Business objects with identity and lifecycle
-- **Aggregate Roots**: Consistency boundaries with transaction scope  
+- **Aggregate Roots**: Consistency boundaries with transaction scope
 - **Value Objects**: Immutable concepts defined by attributes
 - **Domain Events**: Event sourcing for state change tracking
 - **Domain Services**: Complex business operations spanning aggregates
@@ -22,6 +22,7 @@ This package forms the heart of FlexCore's Clean Architecture implementation:
 ## Core Components
 
 ### Entity[T]
+
 Base type for all domain entities with identity, lifecycle tracking, and optimistic concurrency control.
 
 ```go
@@ -45,6 +46,7 @@ func NewProduct(id ProductID, name string, price decimal.Decimal) *Product {
 ```
 
 ### AggregateRoot[T]
+
 Foundation for aggregates with domain event management and consistency enforcement.
 
 ```go
@@ -63,20 +65,21 @@ func (o *Order) AddItem(item OrderItem) error {
     if o.Status != OrderStatusDraft {
         return errors.New("cannot modify confirmed order")
     }
-    
+
     // State change
     o.Items = append(o.Items, item)
     o.Touch() // Update entity metadata
-    
+
     // Generate domain event
     event := NewOrderItemAddedEvent(o.ID, item)
     o.RaiseEvent(event)
-    
+
     return nil
 }
 ```
 
 ### Domain Events
+
 Event sourcing support with immutable event patterns for CQRS integration.
 
 ```go
@@ -96,6 +99,7 @@ func NewUserCreatedEvent(userID UserID, name, email string) *UserCreatedEvent {
 ```
 
 ### Value Objects
+
 Immutable objects representing domain concepts without identity.
 
 ```go
@@ -117,6 +121,7 @@ func (m Money) String() string {
 ```
 
 ### Specifications
+
 Composable business rules with logical operations for complex validation.
 
 ```go
@@ -125,7 +130,7 @@ ageSpec := domain.NewSpecification(func(user User) bool {
     return user.Age >= 18
 })
 
-// Email validation specification  
+// Email validation specification
 emailSpec := domain.NewSpecification(func(user User) bool {
     return strings.Contains(user.Email, "@")
 })
@@ -141,6 +146,7 @@ if validUserSpec.IsSatisfiedBy(user) {
 ## Domain Entities
 
 ### Pipeline
+
 Main aggregate root for data processing pipeline management.
 
 ```go
@@ -160,6 +166,7 @@ type Pipeline struct {
 ```
 
 **Key Operations**:
+
 - `NewPipeline()` - Create with validation and event generation
 - `AddStep()` / `RemoveStep()` - Manage processing steps
 - `Activate()` / `Deactivate()` - Control pipeline availability
@@ -167,6 +174,7 @@ type Pipeline struct {
 - `SetSchedule()` / `ClearSchedule()` - Automated scheduling
 
 ### Plugin
+
 Entity representing executable data processing components.
 
 ```go
@@ -186,7 +194,7 @@ type Plugin struct {
 All aggregate operations generate domain events for:
 
 - **State Change Tracking**: Complete audit trail of business operations
-- **CQRS Read Models**: Event handlers update query projections  
+- **CQRS Read Models**: Event handlers update query projections
 - **Cross-Aggregate Communication**: Eventual consistency through events
 - **Integration Events**: External system notifications and webhooks
 
@@ -202,25 +210,27 @@ All aggregate operations generate domain events for:
 ## Business Rules & Validation
 
 ### Pipeline Business Rules
+
 - Pipeline names must be unique within owner context
-- Steps must have unique names within the pipeline  
+- Steps must have unique names within the pipeline
 - Status transitions follow defined state machine rules
 - Dependencies between steps must form valid DAG (no cycles)
 - Only active pipelines can be started
 - Running pipelines cannot be modified
 
 ### Validation Patterns
+
 ```go
 // Input validation in constructors
 func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
     if name == "" {
         return result.Failure[*Pipeline](errors.ValidationError("pipeline name cannot be empty"))
     }
-    
+
     if owner == "" {
         return result.Failure[*Pipeline](errors.ValidationError("pipeline owner cannot be empty"))
     }
-    
+
     // Create pipeline and raise creation event
     // ...
 }
@@ -230,7 +240,7 @@ func (p *Pipeline) Start() result.Result[bool] {
     if p.Status != PipelineStatusActive {
         return result.Failure[bool](errors.ValidationError("can only start active pipelines"))
     }
-    
+
     // State transition and event generation
     // ...
 }

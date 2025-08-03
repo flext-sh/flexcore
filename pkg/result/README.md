@@ -20,6 +20,7 @@ The Result package provides railway-oriented programming patterns for FlexCore a
 ## Core Types
 
 ### Result[T]
+
 The main Result type representing either success with a value or failure with an error.
 
 ```go
@@ -35,6 +36,7 @@ if success.IsSuccess() {
 ```
 
 ### Async[T]
+
 Asynchronous Result delivery using channels for non-blocking operations.
 
 ```go
@@ -50,6 +52,7 @@ result := async.Await() // Blocks until completion
 ```
 
 ### Tuple[T, U]
+
 Pair of values for combining multiple Results.
 
 ```go
@@ -64,6 +67,7 @@ combined.ForEach(func(tuple result.Tuple[User, Profile]) {
 ## Functional Operations
 
 ### Map - Transform Values
+
 Transform successful values while preserving error propagation.
 
 ```go
@@ -75,6 +79,7 @@ result := result.Success(42)
 ```
 
 ### FlatMap - Chain Operations
+
 Chain operations that can fail, flattening nested Results.
 
 ```go
@@ -89,6 +94,7 @@ result := result.Success("42")
 ```
 
 ### Filter - Validate Values
+
 Apply validation predicates to successful values.
 
 ```go
@@ -100,6 +106,7 @@ result := result.Success(42)
 ## Error Handling Patterns
 
 ### Safe Value Access
+
 ```go
 // With default fallback
 value := result.ValueOr("default")
@@ -115,6 +122,7 @@ if result.IsSuccess() {
 ```
 
 ### Go-style Error Handling
+
 ```go
 value, err := result.Unwrap()
 if err != nil {
@@ -124,6 +132,7 @@ return processValue(value)
 ```
 
 ### Panic-based Patterns (Use with Caution)
+
 ```go
 // Will panic if Result is failed
 value := result.Get()
@@ -135,6 +144,7 @@ value := result.UnwrapOrPanic()
 ## Async Operations
 
 ### Background Processing
+
 ```go
 async := result.NewAsync[ProcessedData]()
 
@@ -152,6 +162,7 @@ result := async.Await()
 ```
 
 ### Safe Async Execution
+
 ```go
 // Execute function that might panic in background
 async := result.TryAsync(func() Data {
