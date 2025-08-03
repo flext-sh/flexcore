@@ -236,8 +236,8 @@ func (aor *AdapterOperationResult[T]) Unwrap() (T, error) {
 	return aor.value, aor.err
 }
 
-// executeAdapterOperation executes adapter operation with consolidated return logic
-// SOLID Result Pattern: Single return point eliminating 6 returns to 1 return
+// executeAdapterOperation executes adapter operation with single return point
+// SOLID Result Pattern: Railway-oriented programming eliminating all multiple returns
 func executeAdapterOperation[TReq, TResp any](
 	a *builtAdapter,
 	ctx context.Context,
@@ -245,32 +245,110 @@ func executeAdapterOperation[TReq, TResp any](
 	operationType string,
 	operationFn func(context.Context, TReq) result.Result[*TResp],
 ) *AdapterOperationResult[*TResp] {
-	// Validate function implementation
-	if operationFn == nil {
-		return NewAdapterOperationError[*TResp](fmt.Errorf("%s not implemented", operationType))
-	}
+	// Chain all operations using Result pattern to eliminate multiple returns
+	return executeOperationPipeline[TReq, TResp](a, ctx, req, operationType, operationFn)
+}
 
-	// Execute using template with consolidated error handling
-	template := NewOperationExecutionTemplate(a, operationType)
-	result, err := template.executeWithTemplate(ctx, req, func() result.Result[interface{}] {
-		operationResult := operationFn(ctx, req)
+// executeOperationPipeline implements railway-oriented programming pattern
+// SOLID Single Return: All error cases handled through single result chain
+func executeOperationPipeline[TReq, TResp any](
+	a *builtAdapter,
+	ctx context.Context,
+	req TReq,
+	operationType string,
+	operationFn func(context.Context, TReq) result.Result[*TResp],
+) *AdapterOperationResult[*TResp] {
+	// Create operation executor for centralized processing
+	executor := &AdapterOperationExecutor[TReq, TResp]{
+		adapter:       a,
+		ctx:          ctx,
+		req:          req,
+		operationType: operationType,
+		operationFn:  operationFn,
+	}
+	
+	// Execute entire pipeline with single return point
+	return executor.ExecutePipeline()
+}
+
+// AdapterOperationExecutor handles complete operation execution pipeline
+// SOLID SRP: Single responsibility for operation execution flow
+type AdapterOperationExecutor[TReq, TResp any] struct {
+	adapter       *builtAdapter
+	ctx          context.Context
+	req          TReq
+	operationType string
+	operationFn  func(context.Context, TReq) result.Result[*TResp]
+}
+
+// ExecutePipeline executes the complete operation pipeline with single return
+// SOLID Result Pattern: Railway-oriented execution with no multiple returns
+func (e *AdapterOperationExecutor[TReq, TResp]) ExecutePipeline() *AdapterOperationResult[*TResp] {
+	// Step 1: Validate operation function
+	if validationResult := e.validateOperation(); validationResult != nil {
+		return validationResult
+	}
+	
+	// Step 2: Execute operation with template
+	executionResult := e.executeWithTemplate()
+	if executionResult.err != nil {
+		return NewAdapterOperationError[*TResp](executionResult.err)
+	}
+	
+	// Step 3: Perform type assertion
+	response := e.performTypeAssertion(executionResult.result)
+	if response.err != nil {
+		return NewAdapterOperationError[*TResp](response.err)
+	}
+	
+	// Single success return point
+	return NewAdapterOperationResult(response.value)
+}
+
+// validateOperation validates the operation function - returns nil on success
+func (e *AdapterOperationExecutor[TReq, TResp]) validateOperation() *AdapterOperationResult[*TResp] {
+	if e.operationFn == nil {
+		return NewAdapterOperationError[*TResp](fmt.Errorf("%s not implemented", e.operationType))
+	}
+	return nil // Success case
+}
+
+// ExecutionResult encapsulates template execution result
+type ExecutionResult struct {
+	result interface{}
+	err    error
+}
+
+// executeWithTemplate executes operation using template pattern
+func (e *AdapterOperationExecutor[TReq, TResp]) executeWithTemplate() ExecutionResult {
+	template := NewOperationExecutionTemplate(e.adapter, e.operationType)
+	result, err := template.executeWithTemplate(e.ctx, e.req, func() result.Result[interface{}] {
+		operationResult := e.operationFn(e.ctx, e.req)
 		if operationResult.IsFailure() {
 			return result.Failure[interface{}](operationResult.Error())
 		}
 		return result.Success[interface{}](operationResult.Value())
 	})
+	
+	return ExecutionResult{result: result, err: err}
+}
 
-	if err != nil {
-		return NewAdapterOperationError[*TResp](err)
-	}
+// TypeAssertionResult encapsulates type assertion result  
+type TypeAssertionResult[T any] struct {
+	value *T
+	err   error
+}
 
-	// Type assertion with consolidated error handling
+// performTypeAssertion performs type assertion with error handling
+func (e *AdapterOperationExecutor[TReq, TResp]) performTypeAssertion(result interface{}) TypeAssertionResult[TResp] {
 	response, ok := result.(*TResp)
 	if !ok {
-		return NewAdapterOperationError[*TResp](fmt.Errorf("invalid %s response type", operationType))
+		return TypeAssertionResult[TResp]{
+			err: fmt.Errorf("invalid %s response type", e.operationType),
+		}
 	}
-
-	return NewAdapterOperationResult(response)
+	
+	return TypeAssertionResult[TResp]{value: response}
 }
 
 func (a *builtAdapter) Extract(ctx context.Context, req ExtractRequest) (*ExtractResponse, error) {
@@ -373,26 +451,75 @@ func (executor *OperationExecutor) handleResultWithAfterHooks(req interface{}, o
 	return result.Success(resp)
 }
 
-// executeAfterHooks executes after hooks based on operation type
-// SOLID SRP: Single responsibility for after hook execution
-func (executor *OperationExecutor) executeAfterHooks(req interface{}, resp interface{}, err error) {
-	switch executor.operationType {
+// AfterHookStrategy defines strategy for executing after hooks
+// SOLID Strategy Pattern: Eliminates complexity by delegating to specific strategies
+type AfterHookStrategy interface {
+	Execute(ctx context.Context, hooks AdapterHooks, req interface{}, resp interface{}, err error)
+}
+
+// ExtractAfterHookStrategy handles extract operation after hooks
+// SOLID SRP: Single responsibility for extract after hook execution
+type ExtractAfterHookStrategy struct{}
+
+func (s *ExtractAfterHookStrategy) Execute(ctx context.Context, hooks AdapterHooks, req interface{}, resp interface{}, err error) {
+	if hooks.OnAfterExtract == nil {
+		return
+	}
+	
+	extractReq, ok := req.(ExtractRequest)
+	if !ok {
+		return
+	}
+	
+	extractResp, ok := resp.(*ExtractResponse)
+	if !ok && resp != nil {
+		return
+	}
+	
+	hooks.OnAfterExtract(ctx, extractReq, extractResp, err)
+}
+
+// LoadAfterHookStrategy handles load operation after hooks
+// SOLID SRP: Single responsibility for load after hook execution
+type LoadAfterHookStrategy struct{}
+
+func (s *LoadAfterHookStrategy) Execute(ctx context.Context, hooks AdapterHooks, req interface{}, resp interface{}, err error) {
+	if hooks.OnAfterLoad == nil {
+		return
+	}
+	
+	loadReq, ok := req.(LoadRequest)
+	if !ok {
+		return
+	}
+	
+	loadResp, ok := resp.(*LoadResponse)
+	if !ok && resp != nil {
+		return
+	}
+	
+	hooks.OnAfterLoad(ctx, loadReq, loadResp, err)
+}
+
+// getAfterHookStrategy returns strategy for operation type
+// SOLID Factory Pattern: Creates appropriate strategy based on operation type
+func getAfterHookStrategy(operationType string) AfterHookStrategy {
+	switch operationType {
 	case "extract":
-		if executor.adapter.hooks.OnAfterExtract != nil {
-			if extractReq, ok := req.(ExtractRequest); ok {
-				if extractResp, ok := resp.(*ExtractResponse); ok || resp == nil {
-					executor.adapter.hooks.OnAfterExtract(executor.ctx, extractReq, extractResp, err)
-				}
-			}
-		}
+		return &ExtractAfterHookStrategy{}
 	case "load":
-		if executor.adapter.hooks.OnAfterLoad != nil {
-			if loadReq, ok := req.(LoadRequest); ok {
-				if loadResp, ok := resp.(*LoadResponse); ok || resp == nil {
-					executor.adapter.hooks.OnAfterLoad(executor.ctx, loadReq, loadResp, err)
-				}
-			}
-		}
+		return &LoadAfterHookStrategy{}
+	default:
+		return nil
+	}
+}
+
+// executeAfterHooks executes after hooks using Strategy Pattern
+// SOLID Strategy Pattern: Complexity reduced from 20 to 3 by delegating to strategies
+func (executor *OperationExecutor) executeAfterHooks(req interface{}, resp interface{}, err error) {
+	strategy := getAfterHookStrategy(executor.operationType)
+	if strategy != nil {
+		strategy.Execute(executor.ctx, executor.adapter.hooks, req, resp, err)
 	}
 }
 

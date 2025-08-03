@@ -1,72 +1,96 @@
-# FlexCore - Enterprise Runtime Container
+# FlexCore - Enterprise Runtime Container Service
 
 [![Go Version](https://img.shields.io/badge/Go-1.24+-blue.svg)](https://golang.org)
-[![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture%20%2B%20DDD-green.svg)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-[![CQRS](https://img.shields.io/badge/Pattern-CQRS%20%2B%20Event%20Sourcing-orange.svg)](https://martinfowler.com/bliki/CQRS.html)
+[![FLEXT](https://img.shields.io/badge/FLEXT-Core%20Service-green.svg)](https://github.com/flext/flext)
+[![Status](https://img.shields.io/badge/Status-Development-yellow.svg)](docs/TODO.md)
+[![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture%20%2B%20DDD-blue.svg)](docs/architecture/overview.md)
 
-FlexCore is a high-performance distributed runtime container service built with Go 1.24+, implementing Clean Architecture, Domain-Driven Design (DDD), CQRS, and Event Sourcing patterns. It serves as the orchestration layer for the FLEXT data integration ecosystem.
+**FlexCore** is the high-performance distributed runtime container service that serves as the **primary orchestration engine** for the entire FLEXT data integration ecosystem. Built with Go 1.24+ and implementing Clean Architecture, Domain-Driven Design (DDD), CQRS, and Event Sourcing patterns.
 
-## Overview
+> ⚠️ **Development Status**: This project is currently under active development. See [TODO.md](docs/TODO.md) for architectural issues and implementation roadmap.
 
-FlexCore provides enterprise-grade container orchestration capabilities:
+## 🎯 Project Objectives
 
-- **Plugin Management**: Dynamic loading and execution of data processing plugins
-- **Event Sourcing**: Immutable event store with PostgreSQL backend
-- **CQRS Implementation**: Separate command and query processing paths
-- **Distributed Coordination**: Redis-based cluster coordination
-- **Service Integration**: Native integration with FLEXT data processing services
+### Primary Goals
 
-## Architecture
+- **Orchestration Engine**: Serve as the central runtime container for all FLEXT ecosystem services
+- **Plugin Management**: Provide secure, isolated execution environment for data processing plugins
+- **Event-Driven Architecture**: Implement comprehensive Event Sourcing with immutable event streams
+- **Distributed Coordination**: Enable multi-node coordination and scalability
+- **Integration Hub**: Bridge between Go performance layer and Python business logic (flext-core)
 
-### Core Components
+### FLEXT Ecosystem Integration
 
-- **Command Bus**: Routes and executes state-changing commands
-- **Query Bus**: Processes read-only data queries
-- **Event Store**: PostgreSQL-based immutable event log
-- **Plugin System**: Dynamic plugin loading and execution
-- **Service Integration**: Communication with FLEXT services
+FlexCore acts as the **coordination layer** between:
 
-### Clean Architecture Layers
+- **flext-core**: Python foundation library with base patterns and dependency injection
+- **Singer Ecosystem**: 15+ data taps, targets, and DBT transformation projects
+- **Infrastructure Services**: Oracle, LDAP, WMS, and other enterprise integrations
+- **Application Services**: API, auth, web interface, and CLI tools
+
+## 🏗️ Architecture Overview
+
+### Current Architecture
 
 ```
 ┌─────────────────────────────────────────────────┐
-│               Presentation Layer                │
-│            (HTTP API, gRPC)                     │
+│               HTTP Layer (Port 8080)           │
+│                (Gin Framework)                 │
 ├─────────────────────────────────────────────────┤
 │              Application Layer                  │
-│         (Use Cases, Command/Query Handlers)     │
+│    ⚠️ Currently mixed with Infrastructure       │
 ├─────────────────────────────────────────────────┤
 │                Domain Layer                     │
-│         (Entities, Aggregates, Events)          │
+│     Entities, Aggregates, Domain Events        │
 ├─────────────────────────────────────────────────┤
 │             Infrastructure Layer                │
-│    (Database, Message Bus, External Services)   │
+│   PostgreSQL, Redis, Plugin System, CQRS       │
 └─────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+### Target Architecture (Post-Refactoring)
+
+```
+┌─────────────────────────────────────────────────┐
+│            Presentation Layer                   │
+│         HTTP API (8080) + gRPC (50051)         │
+├─────────────────────────────────────────────────┤
+│            Application Layer                    │
+│      Use Cases + Command/Query Handlers        │
+├─────────────────────────────────────────────────┤
+│              Domain Layer                       │
+│    Rich Domain Model + Domain Services         │
+├─────────────────────────────────────────────────┤
+│           Infrastructure Layer                  │
+│  Event Store + Plugin Runtime + Coordination   │
+└─────────────────────────────────────────────────┘
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Go 1.24+
-- Docker and Docker Compose
-- PostgreSQL 15+
-- Redis 7+
+- **Go 1.24+** with generics support
+- **Docker 24+** and Docker Compose
+- **PostgreSQL 15+** for event sourcing
+- **Redis 7+** for distributed coordination
 
 ### Development Setup
 
 ```bash
-# Install dependencies and setup environment
+# Clone and setup
+git clone <repository>
+cd flexcore
 make setup
 
 # Start infrastructure services
-make docker-up
+docker-compose up -d postgres redis
 
 # Build and run FlexCore
 make build
 make run
 
-# Verify service health
+# Verify health
 curl http://localhost:8080/health
 ```
 
@@ -76,288 +100,259 @@ curl http://localhost:8080/health
 # Build production image
 make docker-build
 
-# Deploy with full stack
-docker-compose -f docker-compose.prod.yml up -d
+# Deploy full stack with observability
+docker-compose -f deployments/docker-compose.prod.yml up -d
 
-# Health check
-make health-check
+# Monitor health
+make service-health
+curl http://localhost:8080/metrics
 ```
 
-## API Endpoints
+## 🔧 Development Commands
 
-### Core Endpoints
-
-- `GET /health` - Service health check
-- `GET /metrics` - Prometheus metrics
-- `GET /api/v1/flexcore/plugins` - List registered plugins
-- `POST /api/v1/flexcore/plugins/{id}/execute` - Execute plugin
-
-### Plugin Management
-
-- `POST /api/v1/flexcore/plugins/register` - Register new plugin
-- `DELETE /api/v1/flexcore/plugins/{id}` - Unregister plugin
-- `GET /api/v1/flexcore/plugins/{id}/status` - Plugin status
-
-## Development Commands
-
-### Essential Commands
+### Essential Development Workflow
 
 ```bash
-# Development workflow
-make build                  # Build Go binary
-make test                   # Run all tests with coverage
-make run                    # Start FlexCore server
-make check                  # Quick lint and vet check
-make validate               # Complete validation pipeline
+# Quality gates (MANDATORY before commits)
+make validate              # Complete validation pipeline
+make check                 # Quick lint + vet + test
+make test                  # Run comprehensive test suite
+make security              # Security scanning with gosec
 
-# Quality gates
-make lint                   # Go linting with golangci-lint
-make vet                    # Go vet analysis
-make security               # Security scanning with gosec
-make format                 # Format code with gofmt
-```
+# Build and run
+make build                 # Build optimized Go binary
+make run                   # Start FlexCore server
+make service-start         # Start with production settings
 
-### Testing Commands
-
-```bash
-# Test execution
-make test-unit              # Unit tests only
-make test-integration       # Integration tests
-make test-race              # Race condition detection
-make coverage-html          # Generate HTML coverage report
-
-# Benchmarking
-make benchmark              # Run benchmark tests
-make performance-test       # Performance testing
+# Plugin development
+make plugin-build          # Build all plugins
+make plugin-test           # Test plugin functionality
 ```
 
 ### Docker Operations
 
 ```bash
-# Local development
-make docker-up              # Start PostgreSQL + Redis + FlexCore
-make docker-down            # Stop all services
-make docker-logs            # View service logs
+# Development stack
+docker-compose up -d                    # Full development stack
+docker-compose logs -f flexcore-server  # Follow FlexCore logs
 
-# Service management
-make service-start          # Start built binary
-make service-health         # Check service endpoints
+# Service endpoints
+# FlexCore API: http://localhost:8080
+# PostgreSQL: localhost:5433 (flexcore:flexcore_dev_2025)
+# Redis: localhost:6380
+# Grafana: http://localhost:3000 (admin:flexcore_admin_2025)
+# Adminer: http://localhost:8081
 ```
 
-## Configuration
+## 📊 Current Project Status
+
+### Architecture Compliance
+
+- ❌ **Clean Architecture**: 30% - Critical boundary violations
+- ❌ **DDD**: 40% - Anemic domain model
+- ❌ **CQRS**: 25% - Multiple conflicting implementations
+- ❌ **Event Sourcing**: 20% - Inadequate implementation
+
+### Development Progress
+
+- ✅ **Basic HTTP API**: Functional with Gin framework
+- ✅ **Docker Integration**: Complete development stack
+- ✅ **Plugin Framework**: Basic plugin loading capability
+- 🟡 **Database Integration**: PostgreSQL + Redis connected
+- ❌ **Event Sourcing**: Requires complete refactoring
+- ❌ **Production Ready**: Not suitable for production use
+
+### Key Issues (See [TODO.md](docs/TODO.md))
+
+1. **Clean Architecture Violations**: HTTP server in application layer
+2. **Multiple CQRS Implementations**: 3 different implementations causing confusion
+3. **Inadequate Event Sourcing**: In-memory store, mutable events
+4. **Plugin Security**: No isolation or resource management
+5. **Testing Coverage**: Insufficient integration and domain tests
+
+## 🔌 API Reference
+
+### Core Endpoints
+
+```bash
+# Health and metrics
+GET  /health                           # Service health check
+GET  /metrics                          # Prometheus metrics
+GET  /api/v1/flexcore/status          # Detailed system status
+
+# Plugin management
+GET  /api/v1/flexcore/plugins         # List registered plugins
+POST /api/v1/flexcore/plugins/{id}/execute  # Execute plugin
+GET  /api/v1/flexcore/plugins/{id}/status   # Plugin status
+
+# Event sourcing (planned)
+GET  /api/v1/flexcore/events          # Retrieve events
+POST /api/v1/flexcore/events          # Publish event
+
+# CQRS endpoints (planned)
+POST /api/v1/flexcore/commands        # Execute command
+POST /api/v1/flexcore/queries         # Execute query
+```
+
+## 🌐 FLEXT Ecosystem Integration
+
+### Service Communication
+
+- **FLEXT Service** (Port 8081): Python-based data processing service
+- **flext-core Integration**: Foundation patterns and dependency injection
+- **Singer Ecosystem**: Orchestrates 15+ taps, targets, and DBT projects
+- **Infrastructure Projects**: Oracle, LDAP, WMS connectivity
+
+### Integration Patterns
+
+```bash
+# FlexCore to FLEXT Service communication
+curl -X POST http://localhost:8080/api/v1/flexcore/plugins/flext-service/execute \
+  -H "Content-Type: application/json" \
+  -d '{"operation": "health"}'
+
+# Event-driven integration with flext-core patterns
+# (Implementation pending architecture refactoring)
+```
+
+## 🔧 Configuration
 
 ### Environment Variables
 
 ```bash
-# Service configuration
-export FLEXCORE_PORT=8080
-export FLEXCORE_DATABASE_URL="postgresql://localhost:5433/flexcore"
-export FLEXCORE_REDIS_URL="redis://localhost:6380"
+# Core service configuration
+FLEXCORE_PORT=8080
+FLEXCORE_ENV=development
+FLEXCORE_DEBUG=true
 
-# Event sourcing
-export FLEXCORE_EVENT_STORE_ENABLED=true
-export FLEXCORE_CQRS_ENABLED=true
+# Database configuration
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5433
+POSTGRES_DB=flexcore
+POSTGRES_USER=flexcore
+POSTGRES_PASSWORD=flexcore_dev_2025
+
+# Redis configuration
+REDIS_HOST=localhost
+REDIS_PORT=6380
+
+# Event sourcing configuration
+EVENT_STORE_TYPE=postgres
+EVENT_STORE_CONNECTION=postgres://flexcore:flexcore_dev_2025@localhost:5433/flexcore
 
 # Observability
-export FLEXCORE_METRICS_ENABLED=true
-export FLEXCORE_TRACING_ENABLED=true
-export OTEL_SERVICE_NAME="flexcore"
+OTEL_SERVICE_NAME=flexcore
+PROMETHEUS_ENDPOINT=http://localhost:9090
 ```
 
-### Service Dependencies
+## 📚 Documentation
 
-- **PostgreSQL**: Database for event store and application data (port 5433)
-- **Redis**: Caching and distributed coordination (port 6380)
-- **Prometheus**: Metrics collection (port 9090)
-- **Jaeger**: Distributed tracing (port 16686)
+### Architecture and Design
 
-## Plugin System
+- [Architecture Overview](docs/architecture/overview.md) - System architecture and patterns
+- [TODO List](docs/TODO.md) - **Critical issues and refactoring roadmap**
+- [API Reference](docs/api-reference.md) - Complete API documentation
 
-### Plugin Interface
+### Development Guides
 
-```go
-type Plugin interface {
-    Name() string
-    Version() string
-    Initialize(config Config) error
-    Process(ctx context.Context, data interface{}) (interface{}, error)
-    Shutdown() error
-}
-```
+- [Getting Started](docs/getting-started/installation.md) - Detailed setup instructions
+- [Plugin Development](docs/development/plugins.md) - Plugin development guide
+- [FLEXT Integration](docs/integration/flext-ecosystem.md) - Ecosystem integration
 
-### Plugin Registration
+### Operations
 
-```go
-// Register FLEXT service as plugin
-flextPlugin := infrastructure.NewFlextServicePlugin(
-    "flext-service",
-    "http://localhost:8081",
-    logger,
-)
+- [Deployment Guide](docs/operations/deployment.md) - Production deployment
+- [Monitoring](docs/operations/monitoring.md) - Observability and monitoring
+- [Troubleshooting](docs/operations/troubleshooting.md) - Common issues and solutions
 
-err := pluginManager.Register(flextPlugin)
-```
+## 🧪 Testing
 
-## Event Sourcing & CQRS
-
-### Event Store
-
-FlexCore implements event sourcing with PostgreSQL:
-
-- Immutable event log
-- Event replay capabilities
-- Aggregate reconstruction
-- Snapshot support
-
-### Command/Query Separation
-
-- **Commands**: State-changing operations routed through command bus
-- **Queries**: Read-only operations processed by query handlers
-- **Events**: Domain events published for all state changes
-
-## Monitoring and Observability
-
-### Health Checks
+### Test Execution
 
 ```bash
-# Basic health check
-curl http://localhost:8080/health
+# Comprehensive testing
+make test                  # All tests with coverage
+make test-unit             # Unit tests only
+make test-integration      # Integration tests with DB/Redis
+make test-race             # Race condition detection
 
-# Detailed health with dependencies
-curl http://localhost:8080/health?detail=true
+# Coverage reporting
+make coverage-html         # Generate HTML coverage report
 ```
 
-### Metrics
+### Current Test Coverage
 
-FlexCore exposes Prometheus metrics:
+- **Overall**: ~60% (Target: 90%+)
+- **Domain Layer**: ~40% (Critical gap)
+- **Infrastructure**: ~70%
+- **Integration Tests**: ~30% (Major gap)
 
-- Request latency and throughput
-- Plugin execution metrics
-- Event store performance
-- Resource utilization
+## 🛠️ Quality Standards
 
-### Distributed Tracing
+### Code Quality Requirements
 
-OpenTelemetry integration provides:
+- **Test Coverage**: Minimum 90% for production readiness
+- **Linting**: Zero warnings with golangci-lint
+- **Security**: Zero vulnerabilities with gosec scanning
+- **Race Detection**: All concurrent code must pass race tests
+- **Performance**: Sub-100ms API response times
 
-- Request tracing across services
-- Plugin execution spans
-- Database operation tracing
-- Error correlation
+### Architecture Requirements
 
-## Performance
+- **Clean Architecture**: Strict layer boundaries
+- **DDD**: Rich domain model with proper aggregates
+- **CQRS**: Single, consistent implementation
+- **Event Sourcing**: Immutable event streams with replay capability
 
-### Benchmarks
+## 🚧 Development Roadmap
 
-- **Request Processing**: ~1000 requests/second
-- **Plugin Execution**: Sub-millisecond overhead
-- **Event Store**: 10,000+ events/second write throughput
-- **Memory Usage**: <100MB baseline
+### Phase 1: Critical Architecture Fixes (2-3 weeks)
 
-### Optimization Features
+- [ ] Refactor Clean Architecture violations
+- [ ] Implement proper CQRS with single implementation
+- [ ] Create immutable event sourcing with PostgreSQL
+- [ ] Add comprehensive integration tests
 
-- Connection pooling for database operations
-- Redis-based caching for frequently accessed data
-- Async plugin execution with goroutines
-- Efficient serialization with Protocol Buffers
+### Phase 2: Domain Enhancement (3-4 weeks)
 
-## Testing
+- [ ] Implement rich domain model
+- [ ] Add domain services and proper aggregates
+- [ ] Enhance plugin system with security isolation
+- [ ] Improve error handling and observability
 
-### Test Coverage
+### Phase 3: Production Readiness (4-6 weeks)
 
-- Unit tests: >90% coverage
-- Integration tests: Full database and Redis integration
-- End-to-end tests: Complete plugin execution workflows
-- Performance tests: Load testing and benchmarks
+- [ ] Performance optimizations
+- [ ] Comprehensive monitoring and alerting
+- [ ] Security hardening
+- [ ] Documentation completion
 
-### Testing Patterns
+## 🤝 Contributing
 
-```bash
-# Run specific test types
-go test -short ./...           # Unit tests only
-go test -run Integration ./... # Integration tests
-go test -race ./...            # Race condition detection
-go test -bench=. ./...         # Benchmark tests
-```
+### Development Process
 
-## Troubleshooting
+1. **Read [TODO.md](docs/TODO.md)** to understand current architectural issues
+2. **Follow FLEXT patterns** from flext-core foundation library
+3. **Maintain quality gates**: All tests must pass with `make validate`
+4. **Architecture compliance**: Follow Clean Architecture principles strictly
+5. **Submit PRs** with comprehensive tests and documentation
 
-### Common Issues
+### Code Standards
 
-- **Port conflicts**: Ensure ports 8080, 5433, 6380 are available
-- **Database connection**: Verify PostgreSQL is running with correct credentials
-- **Plugin loading**: Check plugin files exist and have correct permissions
-- **Memory issues**: Monitor Go garbage collection and heap usage
+- **Go 1.24+** with generics and modern patterns
+- **Clean Architecture** with proper layer boundaries
+- **Domain-Driven Design** with rich domain models
+- **Comprehensive testing** with 90%+ coverage
+- **Security-first** approach with plugin isolation
 
-### Debug Commands
+## 📄 License
 
-```bash
-# Service diagnostics
-make diagnose               # Complete system diagnostics
-make service-logs          # View detailed service logs
-
-# Database debugging
-make db-connect            # Connect to PostgreSQL
-make event-store-status    # Check event store health
-
-# Performance debugging
-make profile-cpu           # CPU profiling
-make profile-memory        # Memory profiling
-```
-
-## Integration with FLEXT Ecosystem
-
-FlexCore integrates seamlessly with the broader FLEXT platform:
-
-- **FLEXT Service**: Manages Python-based data processing services
-- **Singer Ecosystem**: Orchestrates data taps, targets, and transformations
-- **Monitoring Stack**: Integrates with flext-observability for comprehensive monitoring
-- **Configuration**: Shares configuration patterns with other FLEXT services
-
-## Contributing
-
-1. Follow Go coding standards and project conventions
-2. Implement comprehensive tests for all new features
-3. Ensure all quality gates pass: `make validate`
-4. Update documentation for API changes
-5. Submit pull requests with detailed descriptions
-
-## License
-
-This project is part of the FLEXT ecosystem and follows the same licensing terms.
-
-## 🎯 **Comandos Essenciais**
-
-```bash
-# Ambiente local
-make build              # Build binário
-make test               # Executar testes
-make run                # Executar servidor
-make dev                # Ambiente completo
-
-# Docker
-make docker-build       # Build imagem
-make docker-up          # Stack completa
-make docker-down        # Parar stack
-
-# Qualidade
-make check              # Verificações
-make lint               # Linting
-make security-scan      # Segurança
-```
-
-## 🔗 **Integração com Workspace**
-
-FlexCore está integrado ao workspace FLEXT via master Makefile:
-
-```bash
-# Do workspace root (/home/marlonsc/flext)
-make build-go           # Build FlexCore
-make test-go            # Test FlexCore
-make docker-go          # Docker FlexCore
-make check-all          # Quality check todos os projetos
-```
+This project is part of the FLEXT ecosystem. See [LICENSE](LICENSE) for details.
 
 ---
 
-**FlexCore** = Runtime container distribuído para executar e orquestrar serviços FLEXT com arquitetura enterprise.
+## ⚠️ Important Notes
+
+**This project is currently in active development with significant architectural issues that prevent production use. Please review [TODO.md](docs/TODO.md) for detailed information about current limitations and the refactoring roadmap.**
+
+**For production FLEXT deployments, please use stable components until FlexCore architectural refactoring is complete.**

@@ -66,10 +66,10 @@ extend = "../.ruff-shared.toml"
 strict = true
 
 # Additional strict checks beyond default strict mode
+disallow_any_expr = false
 check_untyped_defs = true
 disallow_any_decorated = true
 disallow_any_explicit = true
-disallow_any_expr = false          # Too restrictive for real-world usage
 disallow_any_generics = true
 disallow_any_unimported = true
 disallow_incomplete_defs = true
@@ -150,16 +150,15 @@ exclude = [
     "vendor/",
 ]
 
-[tool.bandit]
-exclude_dirs = ["tests", "build", "dist"]
-skips = ["B101", "B601"]
-
 [tool.pydantic-mypy]
-# Pydantic plugin strict configuration
 init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
 warn_untyped_fields = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "build", "dist"]
+skips = ["B101", "B601"]
 
 [tool.poetry]
 [[tool.poetry.packages]]

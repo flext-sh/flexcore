@@ -1,591 +1,465 @@
 # FlexCore Architecture Overview
 
-FlexCore is designed as a high-performance, distributed system core engine that combines the best of Go's performance with Python's flexibility. This document provides a comprehensive overview of the architectural decisions, patterns, and principles that make FlexCore a robust foundation for enterprise applications.
+**Version**: 0.9.0 | **Status**: Under Refactoring | **Last Updated**: 2025-08-01
 
-## 🏗️ Architectural Principles
+This document provides a comprehensive overview of FlexCore's architecture, including current implementation, identified issues, and target architecture for the ongoing refactoring effort.
 
-### 1. Clean Architecture
+> ⚠️ **Critical Notice**: FlexCore is currently undergoing major architectural refactoring due to significant violations of Clean Architecture, DDD, CQRS, and Event Sourcing principles. See [TODO.md](../TODO.md) for detailed issues and remediation plan.
 
-FlexCore follows Uncle Bob's Clean Architecture, organizing code into concentric layers with dependencies pointing inward:
+## 🎯 System Overview
+
+### Purpose and Scope
+
+FlexCore serves as the **enterprise runtime container service** and **primary orchestration engine** for the entire FLEXT data integration ecosystem. It bridges high-performance Go services with Python business logic while maintaining strict architectural boundaries.
+
+### Key Responsibilities
+
+- **Plugin Orchestration**: Secure, isolated execution of data processing plugins
+- **Event Sourcing**: Immutable event streams with complete audit trails
+- **CQRS Implementation**: Separate command and query processing paths
+- **Distributed Coordination**: Multi-node coordination via Redis and PostgreSQL
+- **Service Integration**: Bridge between Go performance layer and Python business logic
+
+### FLEXT Ecosystem Position
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    External Interfaces                  │
-│              (HTTP, gRPC, Message Queues)              │
-└─────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────┐
-│                 Interface Adapters                      │
-│         (Controllers, Presenters, Gateways)            │
-└─────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────┐
-│                 Application Business Rules               │
-│          (Command Handlers, Query Handlers)            │
-└─────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────┐
-│                Enterprise Business Rules                │
-│              (Entities, Domain Services)               │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                FLEXT Ecosystem                      │
+├─────────────────────────────────────────────────────┤
+│  Singer Ecosystem (15+ projects)                   │
+│  ├─ Taps (5): Oracle, LDAP, LDIF, OIC, WMS        │
+│  ├─ Targets (5): Oracle, LDAP, LDIF, OIC, WMS     │
+│  └─ DBT (4): Transformation projects               │
+├─────────────────────────────────────────────────────┤
+│  Application Services                               │
+│  ├─ flext-api (FastAPI)                           │
+│  ├─ flext-auth (Authentication)                   │
+│  ├─ flext-web (Web Interface)                     │
+│  └─ flext-cli (Command Line Tools)                │
+├─────────────────────────────────────────────────────┤
+│  🎯 FLEXCORE (THIS PROJECT)                        │
+│     Runtime Container & Orchestration Engine       │
+├─────────────────────────────────────────────────────┤
+│  Infrastructure Services                            │
+│  ├─ flext-db-oracle (Database Connectivity)       │
+│  ├─ flext-ldap (Directory Services)               │
+│  ├─ flext-grpc (Communication Protocols)          │
+│  └─ flext-observability (Monitoring)              │
+├─────────────────────────────────────────────────────┤
+│  Foundation Libraries                               │
+│  ├─ flext-core (Python Base Patterns)             │
+│  └─ flext-observability (Monitoring Foundation)   │
+└─────────────────────────────────────────────────────┘
 ```
 
-### 2. Domain-Driven Design (DDD)
+## 🏗️ Current Architecture (Problems Identified)
 
-- **Bounded Contexts**: Clear boundaries between different business domains
-- **Aggregates**: Consistency boundaries for business transactions
-- **Domain Events**: First-class representation of business events
-- **Ubiquitous Language**: Shared vocabulary between developers and domain experts
+### Layer Structure (Current Implementation)
 
-### 3. CQRS + Event Sourcing
-
-- **Command Query Responsibility Segregation**: Separate read and write models
-- **Event Store**: Immutable log of all business events
-- **Event Replay**: Reconstruct state from events for debugging and analytics
-- **Eventual Consistency**: Asynchronous propagation of state changes
-
-### 4. Hybrid Language Architecture
-
-- **Go Core**: High-performance, concurrent processing engine
-- **Python Integration**: Flexible business logic and rapid development
-- **Seamless Interop**: Type-safe communication between Go and Python layers
-
-## 🎯 System Architecture
-
-### High-Level System View
-
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        CLI[CLI Client]
-        WEB[Web UI]
-        API[API Clients]
-    end
-
-    subgraph "Gateway Layer"
-        HTTP[HTTP Gateway<br/>Gin Framework]
-        GRPC[gRPC Gateway<br/>Protocol Buffers]
-        MSG[Message Gateway<br/>Redis/RabbitMQ]
-    end
-
-    subgraph "Application Layer"
-        CMD[Command Bus]
-        QRY[Query Bus]
-        EVENT[Event Bus]
-        PLUGIN[Plugin Manager]
-    end
-
-    subgraph "Domain Layer"
-        AGG[Aggregates]
-        ENT[Entities]
-        VO[Value Objects]
-        EVENTS[Domain Events]
-    end
-
-    subgraph "Infrastructure Layer"
-        STORE[Event Store<br/>PostgreSQL]
-        CACHE[Cache<br/>Redis]
-        QUEUE[Message Queue]
-        METRICS[Observability]
-    end
-
-    CLI --> HTTP
-    WEB --> HTTP
-    API --> GRPC
-
-    HTTP --> CMD
-    HTTP --> QRY
-    GRPC --> CMD
-    GRPC --> QRY
-    MSG --> EVENT
-
-    CMD --> AGG
-    QRY --> ENT
-    EVENT --> EVENTS
-    PLUGIN --> AGG
-
-    AGG --> STORE
-    ENT --> CACHE
-    EVENTS --> QUEUE
-    EVENT --> METRICS
+```
+┌─────────────────────────────────────────────────────┐
+│            HTTP Layer (Port 8080)                  │
+│         Gin Framework - RESTful API                │
+├─────────────────────────────────────────────────────┤
+│          Application Layer (VIOLATED)              │
+│   ⚠️ HTTP Server directly embedded here             │
+│   ⚠️ Direct config dependencies                     │
+│   ✅ Basic command/query separation                 │
+├─────────────────────────────────────────────────────┤
+│            Domain Layer (ANEMIC)                   │
+│   ✅ Entities and Aggregates defined               │
+│   ⚠️ Lacks rich domain behavior                     │
+│   ⚠️ Event sourcing poorly implemented              │
+├─────────────────────────────────────────────────────┤
+│         Infrastructure Layer (CHAOTIC)             │
+│   ❌ 3 different CQRS implementations               │
+│   ❌ In-memory event store for production           │
+│   ✅ PostgreSQL and Redis integration               │
+│   ⚠️ Plugin system lacks security isolation         │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Core Components
+### Critical Architecture Violations
 
-#### 1. Command Bus
+#### 1. Clean Architecture Boundary Violations
 
-**Purpose**: Routes and executes commands that change system state
+**Location**: `internal/app/application.go:15-20`
 
 ```go
-type CommandBus interface {
-    Send(ctx context.Context, cmd Command) error
-    RegisterHandler(cmdType string, handler CommandHandler)
-}
-
-type CommandHandler interface {
-    Handle(ctx context.Context, cmd Command) error
+type Application struct {
+    config *config.Config     // ❌ Infrastructure dependency
+    server *http.Server       // ❌ HTTP in Application layer
+    mux    *http.ServeMux     // ❌ Web framework in Application
 }
 ```
 
-**Features**:
+**Impact**:
 
-- Type-safe command routing
-- Middleware support for cross-cutting concerns
-- Async command execution
-- Command validation and authorization
+- Impossible to test application logic without HTTP server
+- Coupling between business logic and web infrastructure
+- Violation of Dependency Inversion Principle
 
-#### 2. Query Bus
+#### 2. Multiple CQRS Implementations
 
-**Purpose**: Processes queries for reading data
+**Implementations Found**:
+
+- `internal/app/commands/command_bus.go` - Generic implementation
+- `internal/infrastructure/cqrs/cqrs_bus.go` - SQLite-based implementation
+- `internal/infrastructure/command_bus.go` - Function-based implementation
+
+**Impact**:
+
+- Architectural inconsistency and confusion
+- Maintenance burden with multiple implementations
+- No clear separation of concerns
+
+#### 3. Inadequate Event Sourcing
+
+**Location**: `internal/infrastructure/event_store.go:24-36`
 
 ```go
-type QueryBus interface {
-    Ask(ctx context.Context, query Query) (interface{}, error)
-    RegisterHandler(queryType string, handler QueryHandler)
+type MemoryEventStore struct {
+    events map[string][]EventEntry  // ❌ In-memory for production
+    mu     sync.RWMutex              // ❌ Single-node only
 }
 
-type QueryHandler interface {
-    Handle(ctx context.Context, query Query) (interface{}, error)
+func (ar *AggregateRoot[T]) ClearEvents() {
+    ar.domainEvents = make([]DomainEvent, 0)  // ❌ Mutable events
 }
 ```
 
-**Features**:
+**Impact**:
 
-- Optimized read models
-- Caching support
-- Pagination and filtering
-- Multiple data source aggregation
+- Data loss on service restart
+- No replay capability
+- Events are mutable (violates Event Sourcing principles)
 
-#### 3. Event Store
+#### 4. Plugin System Security Gaps
 
-**Purpose**: Persists domain events with full audit trail
+**Issues**:
+
+- No process isolation between plugins
+- No resource limits or sandboxing
+- Shared memory space allows cross-plugin interference
+- No capability-based security model
+
+## 🎯 Target Architecture (Post-Refactoring)
+
+### Clean Architecture Implementation
+
+```
+┌─────────────────────────────────────────────────────┐
+│           Presentation Layer                        │
+│    HTTP Adapters + gRPC Adapters                   │
+│    ├─ REST API (Port 8080)                         │
+│    ├─ gRPC API (Port 50051)                        │
+│    └─ Health/Metrics Endpoints                     │
+├─────────────────────────────────────────────────────┤
+│          Application Layer                          │
+│    Use Cases + Command/Query Handlers              │
+│    ├─ Pipeline Management Use Cases                 │
+│    ├─ Plugin Execution Use Cases                   │
+│    ├─ Event Processing Use Cases                   │
+│    └─ System Monitoring Use Cases                  │
+├─────────────────────────────────────────────────────┤
+│            Domain Layer                             │
+│    Rich Domain Model + Domain Services             │
+│    ├─ Pipeline Aggregate (Rich Behavior)           │
+│    ├─ Plugin Aggregate (Lifecycle Management)      │
+│    ├─ Event Sourcing (Immutable Events)           │
+│    └─ Domain Services (Complex Orchestration)     │
+├─────────────────────────────────────────────────────┤
+│         Infrastructure Layer                        │
+│    External Integrations + Technical Concerns      │
+│    ├─ PostgreSQL Event Store                       │
+│    ├─ Redis Distributed Coordination               │
+│    ├─ Secure Plugin Runtime                        │
+│    └─ FLEXT Service Integration                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Domain-Driven Design Implementation
+
+#### Core Aggregates
+
+```
+Pipeline Aggregate
+├─ PipelineId (Value Object)
+├─ Pipeline Entity (Rich Behavior)
+├─ PipelineStep Entities
+├─ Domain Events
+│  ├─ PipelineCreated
+│  ├─ PipelineActivated
+│  ├─ PipelineStarted
+│  └─ PipelineCompleted
+└─ Domain Services
+   ├─ PipelineOrchestrationService
+   └─ PipelineValidationService
+
+Plugin Aggregate
+├─ PluginId (Value Object)
+├─ Plugin Entity (Lifecycle Management)
+├─ PluginExecution Entities
+├─ Domain Events
+│  ├─ PluginRegistered
+│  ├─ PluginExecutionStarted
+│  └─ PluginExecutionCompleted
+└─ Domain Services
+   ├─ PluginSecurityService
+   └─ PluginResourceManager
+```
+
+#### Domain Services
+
+- **Pipeline Orchestration Service**: Complex multi-pipeline coordination
+- **Plugin Security Service**: Isolation and capability management
+- **Event Coordination Service**: Cross-aggregate event handling
+- **Resource Management Service**: CPU, memory, and I/O optimization
+
+### CQRS + Event Sourcing Implementation
+
+#### Command Side (Write Model)
+
+```
+Command Bus
+├─ CreatePipelineCommand
+├─ StartPipelineCommand
+├─ ExecutePluginCommand
+└─ RegisterPluginCommand
+
+Command Handlers
+├─ CreatePipelineHandler
+├─ StartPipelineHandler
+├─ ExecutePluginHandler
+└─ RegisterPluginHandler
+
+Event Store (PostgreSQL)
+├─ Immutable Event Streams
+├─ Event Replay Capability
+├─ Snapshot Storage
+└─ Event Versioning
+```
+
+#### Query Side (Read Model)
+
+```
+Query Bus
+├─ GetPipelineStatusQuery
+├─ ListActivePluginsQuery
+├─ GetExecutionHistoryQuery
+└─ GetSystemMetricsQuery
+
+Query Handlers
+├─ PipelineStatusHandler
+├─ ActivePluginsHandler
+├─ ExecutionHistoryHandler
+└─ SystemMetricsHandler
+
+Read Models (Optimized Views)
+├─ PipelineStatusView
+├─ PluginInventoryView
+├─ ExecutionHistoryView
+└─ SystemMetricsView
+```
+
+### Plugin Architecture (Secure Runtime)
+
+#### Security Model
+
+```
+Plugin Sandbox
+├─ Process Isolation
+│  ├─ Separate OS processes
+│  ├─ Controlled system calls
+│  └─ Resource limits (CPU, Memory, I/O)
+├─ Capability-Based Security
+│  ├─ Explicit permissions
+│  ├─ API access control
+│  └─ Data access restrictions
+└─ Communication Channel
+   ├─ Secure IPC mechanisms
+   ├─ Serialized data exchange
+   └─ Audit logging
+```
+
+#### Plugin Lifecycle
+
+1. **Registration**: Validate plugin and establish security boundaries
+2. **Initialization**: Controlled startup with resource allocation
+3. **Execution**: Sandboxed execution with monitoring
+4. **Cleanup**: Resource deallocation and security cleanup
+
+## 🔧 Technology Stack
+
+### Core Technologies
+
+- **Go 1.24+**: High-performance runtime with generics support
+- **PostgreSQL 15+**: Event store and application database
+- **Redis 7+**: Distributed coordination and caching
+- **Docker 24+**: Containerization and deployment
+
+### Framework Integration
+
+- **Gin Framework**: HTTP API layer (to be moved to presentation)
+- **GORM**: Database ORM for read models
+- **go-redis**: Redis client for distributed coordination
+- **zap**: Structured logging framework
+
+### Observability Stack
+
+- **Prometheus**: Metrics collection and monitoring
+- **Grafana**: Visualization and alerting dashboards
+- **Jaeger**: Distributed tracing and performance analysis
+- **OpenTelemetry**: Observability instrumentation
+
+## 🔄 Integration Patterns
+
+### FLEXT Ecosystem Integration
+
+#### Service Communication
+
+- **HTTP/REST**: Synchronous API calls for immediate operations
+- **Event Streams**: Asynchronous coordination via PostgreSQL event store
+- **Redis Pub/Sub**: Real-time state synchronization
+- **gRPC**: High-performance service-to-service communication
+
+#### flext-core Integration
 
 ```go
-type EventStore interface {
-    AppendEvents(ctx context.Context, streamID string, events []Event) error
-    ReadEvents(ctx context.Context, streamID string, fromVersion int) ([]Event, error)
-    ReadAllEvents(ctx context.Context, fromPosition int64) ([]Event, error)
+// Pattern integration with flext-core (Python)
+type FlextCoreIntegration struct {
+    ServiceResult[T]  // Use flext-core Result pattern
+    DIContainer       // Dependency injection from flext-core
+    LoggingContext    // Structured logging integration
+    EventBus         // Cross-language event communication
 }
 ```
 
-**Features**:
+### Data Flow Architecture
 
-- Immutable event log
-- Stream-based organization
-- Snapshotting for performance
-- Event replay capabilities
-
-#### 4. Plugin System
-
-**Purpose**: Hot-swappable functionality with dynamic loading
-
-```go
-type Plugin interface {
-    Name() string
-    Version() string
-    Initialize(config Config) error
-    Process(ctx context.Context, data interface{}) (interface{}, error)
-    Shutdown() error
-}
+```
+External Request
+    ↓
+HTTP/gRPC Adapter (Presentation)
+    ↓
+Use Case Handler (Application)
+    ↓
+Domain Service (Domain)
+    ↓
+Repository/Event Store (Infrastructure)
+    ↓
+PostgreSQL/Redis
 ```
 
-**Features**:
-
-- Runtime plugin loading
-- Plugin dependency management
-- Plugin lifecycle management
-- Resource isolation
-
-### Data Flow Patterns
-
-#### Command Flow (Write Operations)
-
-1. **Client Request** → HTTP/gRPC endpoint receives command
-2. **Validation** → Command structure and business rules validated
-3. **Authorization** → User permissions checked
-4. **Domain Logic** → Aggregate processes command and generates events
-5. **Event Storage** → Events persisted to event store
-6. **Event Publishing** → Events published to message bus
-7. **Response** → Success/failure response sent to client
-
-#### Query Flow (Read Operations)
-
-1. **Client Request** → HTTP/gRPC endpoint receives query
-2. **Authorization** → Read permissions checked
-3. **Cache Check** → Check if data available in cache
-4. **Data Retrieval** → Fetch from read model or aggregate state
-5. **Response Formatting** → Transform data for client consumption
-6. **Caching** → Store result in cache for future requests
-
-#### Event Flow (Async Processing)
-
-1. **Event Generation** → Domain operations generate events
-2. **Event Storage** → Events persisted in event store
-3. **Event Publishing** → Events sent to message bus
-4. **Event Handling** → Subscribers process events asynchronously
-5. **Side Effects** → External integrations, notifications, etc.
-6. **Read Model Updates** → Query models updated with new state
-
-## 🔄 Go-Python Integration
-
-### Architecture Bridge
-
-```go
-// Go side - C bindings for Python integration
-package python
-
-/*
-#cgo pkg-config: python3-embed
-#include <Python.h>
-*/
-import "C"
-
-type PythonBridge struct {
-    interpreter *C.PyObject
-    modules     map[string]*C.PyObject
-}
-
-func (b *PythonBridge) CallHandler(module, function string, args interface{}) (interface{}, error) {
-    // Convert Go types to Python objects
-    // Call Python function
-    // Convert result back to Go types
-}
-```
-
-```python
-# Python side - Event handler registration
-from flexcore import FlexCore
-
-@FlexCore.event_handler("user.created")
-def handle_user_created(event):
-    # Process user creation event
-    send_welcome_email(event.data.email)
-    update_analytics(event.data)
-
-@FlexCore.command_handler("create_user")
-def create_user_command(cmd):
-    # Validate command
-    if not cmd.email:
-        raise ValidationError("Email required")
-
-    # Return domain event
-    return UserCreatedEvent(
-        user_id=generate_id(),
-        email=cmd.email,
-        created_at=datetime.utcnow()
-    )
-```
-
-### Integration Patterns
-
-#### 1. Event-Driven Integration
-
-- Go publishes domain events
-- Python subscribes to relevant events
-- Type-safe event marshaling/unmarshaling
-- Async processing with proper error handling
-
-#### 2. Command Delegation
-
-- HTTP endpoints in Go delegate to Python handlers
-- Python returns domain events or results
-- Go persists events and manages transactions
-- Consistent error handling across languages
-
-#### 3. Plugin Architecture
-
-- Plugins can be written in Go or Python
-- Unified plugin interface across languages
-- Hot-swappable plugin loading
-- Resource isolation and lifecycle management
-
-## 🎭 Layered Architecture Details
-
-### Domain Layer (Core Business Logic)
-
-**Location**: `internal/domain/`
-
-```go
-// Aggregate Root
-type User struct {
-    id       UserID
-    email    Email
-    profile  UserProfile
-    events   []DomainEvent
-    version  int
-}
-
-func (u *User) ChangeEmail(newEmail Email) error {
-    if u.email.Equals(newEmail) {
-        return nil // No change needed
-    }
-
-    // Business validation
-    if !newEmail.IsValid() {
-        return ErrInvalidEmail
-    }
-
-    // Generate domain event
-    event := UserEmailChangedEvent{
-        UserID:   u.id,
-        OldEmail: u.email,
-        NewEmail: newEmail,
-        OccurredAt: time.Now(),
-    }
-
-    u.recordEvent(event)
-    u.email = newEmail
-
-    return nil
-}
-```
-
-**Responsibilities**:
-
-- Core business entities and value objects
-- Business rule enforcement
-- Domain event generation
-- Aggregate boundary management
-
-### Application Layer (Use Cases)
-
-**Location**: `internal/app/`
-
-```go
-type CreateUserHandler struct {
-    userRepo UserRepository
-    eventBus EventBus
-    logger   Logger
-}
-
-func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) error {
-    // Validate command
-    if err := cmd.Validate(); err != nil {
-        return fmt.Errorf("invalid command: %w", err)
-    }
-
-    // Check business rules
-    exists, err := h.userRepo.ExistsByEmail(ctx, cmd.Email)
-    if err != nil {
-        return fmt.Errorf("checking user existence: %w", err)
-    }
-    if exists {
-        return ErrUserAlreadyExists
-    }
-
-    // Create domain object
-    user := NewUser(cmd.Email, cmd.Profile)
-
-    // Persist aggregate
-    if err := h.userRepo.Save(ctx, user); err != nil {
-        return fmt.Errorf("saving user: %w", err)
-    }
-
-    // Publish events
-    for _, event := range user.UncommittedEvents() {
-        if err := h.eventBus.Publish(ctx, event); err != nil {
-            h.logger.Error("publishing event", "error", err, "event", event)
-        }
-    }
-
-    return nil
-}
-```
-
-**Responsibilities**:
-
-- Use case orchestration
-- Transaction management
-- Event publishing
-- Cross-cutting concerns (logging, metrics)
-
-### Infrastructure Layer (External Concerns)
-
-**Location**: `internal/infrastructure/`
-
-```go
-type PostgreSQLUserRepository struct {
-    db     *sql.DB
-    logger Logger
-}
-
-func (r *PostgreSQLUserRepository) Save(ctx context.Context, user *User) error {
-    tx, err := r.db.BeginTx(ctx, nil)
-    if err != nil {
-        return fmt.Errorf("beginning transaction: %w", err)
-    }
-    defer tx.Rollback()
-
-    // Save aggregate state
-    query := `
-        INSERT INTO users (id, email, profile, version)
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (id) DO UPDATE SET
-            email = EXCLUDED.email,
-            profile = EXCLUDED.profile,
-            version = EXCLUDED.version
-        WHERE users.version = $5`
-
-    _, err = tx.ExecContext(ctx, query,
-        user.ID(), user.Email(), user.Profile(),
-        user.Version(), user.Version()-1)
-    if err != nil {
-        return fmt.Errorf("saving user: %w", err)
-    }
-
-    // Save events
-    for _, event := range user.UncommittedEvents() {
-        if err := r.saveEvent(ctx, tx, event); err != nil {
-            return fmt.Errorf("saving event: %w", err)
-        }
-    }
-
-    return tx.Commit()
-}
-```
-
-**Responsibilities**:
-
-- Database persistence
-- External API integration
-- Message queue interaction
-- File system operations
-
-## 📊 Observability Architecture
-
-### Metrics Collection
-
-```go
-type MetricsCollector struct {
-    registry *prometheus.Registry
-    counters map[string]prometheus.Counter
-    gauges   map[string]prometheus.Gauge
-}
-
-func (m *MetricsCollector) IncrementCommandCount(cmdType string) {
-    counter := m.counters[fmt.Sprintf("commands_total_%s", cmdType)]
-    counter.Inc()
-}
-```
-
-### Distributed Tracing
-
-```go
-func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) error {
-    ctx, span := trace.StartSpan(ctx, "CreateUserHandler.Handle")
-    defer span.End()
-
-    span.SetAttributes(
-        attribute.String("command.type", "CreateUser"),
-        attribute.String("user.email", cmd.Email.String()),
-    )
-
-    // Handler implementation...
-}
-```
-
-### Structured Logging
-
-```go
-type StructuredLogger struct {
-    logger *zap.Logger
-}
-
-func (l *StructuredLogger) Info(msg string, fields ...zap.Field) {
-    l.logger.Info(msg, fields...)
-}
-
-// Usage
-logger.Info("User created",
-    zap.String("user_id", user.ID().String()),
-    zap.String("email", user.Email().String()),
-    zap.Duration("duration", time.Since(start)),
-)
-```
-
-## 🔐 Security Architecture
-
-### Authentication & Authorization
-
-- JWT tokens for stateless authentication
-- RBAC (Role-Based Access Control) for authorization
-- API rate limiting and throttling
-- Input validation and sanitization
-
-### Data Protection
-
-- Encryption at rest and in transit
-- Sensitive data masking in logs
-- Audit logging for compliance
-- GDPR compliance features
-
-### Network Security
-
-- TLS/SSL for all communications
-- Network segmentation
-- Firewall rules and security groups
-- Regular security scanning
-
-## 📈 Performance Characteristics
-
-### Scalability Patterns
-
-- **Horizontal Scaling**: Multiple instances behind load balancer
-- **Database Sharding**: Partition data across multiple databases
-- **Read Replicas**: Separate read and write databases
-- **Caching Layers**: Multi-level caching strategy
-
-### Performance Optimizations
-
-- **Connection Pooling**: Reuse database connections
-- **Batch Processing**: Group operations for efficiency
-- **Async Processing**: Non-blocking event handling
-- **Resource Pooling**: Reuse expensive resources
-
-### Monitoring & Alerting
-
-- Real-time performance metrics
-- Automatic scaling based on load
-- Proactive alerting on anomalies
-- Performance trend analysis
-
-## 🎯 Design Benefits
-
-### 1. **Maintainability**
-
-- Clear separation of concerns
-- Testable architecture with dependency injection
-- Consistent patterns across all layers
-- Self-documenting code with domain language
-
-### 2. **Scalability**
-
-- Event-driven async processing
-- Stateless service design
-- Database and caching optimizations
-- Microservices-ready architecture
-
-### 3. **Flexibility**
-
-- Plugin system for extensibility
-- Multiple language support
-- Configurable infrastructure backends
-- API-first design for integration
-
-### 4. **Reliability**
-
-- Event sourcing for data consistency
-- Comprehensive error handling
-- Circuit breakers and retries
-- Health checks and monitoring
-
-### 5. **Developer Experience**
-
-- Type safety across languages
-- Rich development tooling
-- Comprehensive testing framework
-- Clear documentation and examples
+## 📊 Quality Attributes
+
+### Performance Requirements
+
+- **API Response Time**: < 100ms for 95th percentile
+- **Plugin Execution**: < 1s startup time per plugin
+- **Event Processing**: 10,000+ events/second throughput
+- **Memory Usage**: < 1GB baseline, < 4GB under load
+
+### Scalability Requirements
+
+- **Horizontal Scaling**: Support for multi-node clusters
+- **Plugin Concurrency**: 100+ concurrent plugin executions
+- **Event Store**: Handle millions of events with sub-second queries
+- **Database Connections**: Efficient connection pooling
+
+### Reliability Requirements
+
+- **Availability**: 99.9% uptime SLA
+- **Error Recovery**: Automatic retry with exponential backoff
+- **Data Consistency**: ACID transactions for critical operations
+- **Plugin Isolation**: Plugin failures cannot affect system stability
+
+### Security Requirements
+
+- **Plugin Sandboxing**: Complete process isolation
+- **Event Integrity**: Tamper-proof event streams
+- **Access Control**: Role-based API access
+- **Audit Logging**: Complete audit trail for compliance
+
+## 🚧 Migration Strategy
+
+### Phase 1: Foundation (2-3 weeks)
+
+1. **Extract HTTP Layer**: Move HTTP server to presentation layer
+2. **Unify CQRS**: Choose single CQRS implementation
+3. **Implement PostgreSQL Event Store**: Replace in-memory store
+4. **Add Integration Tests**: Comprehensive test coverage
+
+### Phase 2: Domain Enhancement (3-4 weeks)
+
+1. **Rich Domain Model**: Implement proper aggregates with behavior
+2. **Domain Services**: Add complex business logic orchestration
+3. **Plugin Security**: Implement process isolation and sandboxing
+4. **Event Sourcing**: Complete immutable event streams with replay
+
+### Phase 3: Production Readiness (4-6 weeks)
+
+1. **Performance Optimization**: Meet performance SLA requirements
+2. **Security Hardening**: Complete security audit and fixes
+3. **Observability**: Comprehensive monitoring and alerting
+4. **Documentation**: Complete technical documentation
+
+## 📚 Architecture Decision Records
+
+### ADR-001: Clean Architecture Adoption
+
+- **Status**: Approved
+- **Decision**: Implement Clean Architecture with strict layer boundaries
+- **Rationale**: Ensure testability, maintainability, and technology independence
+
+### ADR-002: Event Sourcing with PostgreSQL
+
+- **Status**: Approved
+- **Decision**: Use PostgreSQL for event store instead of specialized event databases
+- **Rationale**: Leverage existing PostgreSQL expertise and infrastructure
+
+### ADR-003: Plugin Process Isolation
+
+- **Status**: Approved
+- **Decision**: Implement plugin sandboxing with separate OS processes
+- **Rationale**: Security isolation and fault tolerance requirements
+
+### ADR-004: CQRS Implementation Strategy
+
+- **Status**: Approved
+- **Decision**: Single CQRS implementation with PostgreSQL for both read and write models
+- **Rationale**: Operational simplicity while maintaining CQRS benefits
+
+## ⚠️ Known Limitations and Risks
+
+### Current Limitations
+
+- **Not Production Ready**: Critical architectural violations prevent production use
+- **Single Node**: Current implementation doesn't support horizontal scaling
+- **Plugin Security**: No isolation between plugins creates security risks
+- **Event Sourcing**: In-memory implementation loses data on restart
+
+### Technical Debt
+
+- **Multiple CQRS Implementations**: Creates maintenance burden and confusion
+- **Anemic Domain Model**: Business logic scattered across layers
+- **Missing Integration Tests**: Limited confidence in system behavior
+- **Inconsistent Error Handling**: Mix of Result pattern and Go errors
+
+### Migration Risks
+
+- **Breaking Changes**: API contracts will change during refactoring
+- **Data Migration**: Event store migration requires careful planning
+- **Performance Impact**: Temporary performance degradation during migration
+- **Testing Gaps**: Need comprehensive testing during architectural changes
 
 ---
 
-This architecture provides a solid foundation that scales from simple applications to complex distributed systems while maintaining code quality, performance, and developer productivity.
+## 📖 Related Documentation
+
+- [TODO.md](../TODO.md) - **Critical issues and refactoring roadmap**
+- [API Reference](../api-reference.md) - Current API documentation
+- [Plugin Development](../development/plugins.md) - Plugin development guide
+- [FLEXT Integration](../integration/flext-ecosystem.md) - Ecosystem integration
+
+For the most current architectural status and critical issues, always refer to [TODO.md](../TODO.md).

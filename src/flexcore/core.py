@@ -1,7 +1,5 @@
 """FlexCore main class - Event-driven architecture core."""
 
-from typing import Any
-
 
 class FlexCore:
     """Main FlexCore class for event-driven architecture."""
