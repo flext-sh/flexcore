@@ -1,194 +1,177 @@
 # FlexCore Documentation
 
-Welcome to the comprehensive FlexCore documentation. This distributed system core engine combines Go's performance with Python's flexibility, built on enterprise-grade architectural patterns.
+**Version**: 0.9.0 | **Status**: Development | **Last Updated**: 2025-08-01
 
-## �"� Table of Contents
+This directory contains comprehensive documentation for FlexCore, the enterprise runtime container service that serves as the primary orchestration engine for the FLEXT data integration ecosystem.
 
-### Getting Started
+> ⚠️ **Important**: FlexCore is currently under active development with critical architectural issues. Please review [TODO.md](TODO.md) before contributing or deploying.
 
-- [Installation Guide](getting-started/installation.md)
-- [Quick Start Tutorial](getting-started/quickstart.md)
-- [Configuration Guide](getting-started/configuration.md)
-- [Development Environment](getting-started/development.md)
+## 📚 Documentation Structure
 
-### Architecture
+### 🏗️ Architecture & Design
 
-- [System Overview](architecture/overview.md)
-- [Clean Architecture](architecture/clean-architecture.md)
-- [Domain-Driven Design](architecture/ddd.md)
-- [CQRS + Event Sourcing](architecture/cqrs-event-sourcing.md)
-- [Plugin System](architecture/plugins.md)
+- [**Architecture Overview**](architecture/overview.md) - System architecture, patterns, and design decisions
+- [**TODO List**](TODO.md) - **Critical architectural issues and refactoring roadmap**
+- [**Design Patterns**](architecture/patterns.md) - Clean Architecture, DDD, CQRS, Event Sourcing
+- [**Plugin Architecture**](architecture/plugins.md) - Plugin system design and security model
 
-### Go Development
+### 🚀 Development
 
-- [Go API Reference](go/api-reference.md)
-- [Domain Layer](go/domain.md)
-- [Application Layer](go/application.md)
-- [Infrastructure Layer](go/infrastructure.md)
-- [Testing in Go](go/testing.md)
+- [**Getting Started**](getting-started/installation.md) - Complete setup and installation guide
+- [**Development Workflow**](development/workflow.md) - Development process and quality gates
+- [**Plugin Development**](development/plugins.md) - Creating and testing plugins
+- [**Testing Guide**](development/testing.md) - Testing strategies and coverage requirements
 
-### Python Integration
+### 🔌 API & Integration
 
-- [Python API Reference](python/api-reference.md)
-- [FlexCore Python Client](python/client.md)
-- [Event Handlers](python/event-handlers.md)
-- [Plugin Development](python/plugins.md)
+- [**API Reference**](api-reference.md) - Complete REST API documentation
+- [**FLEXT Integration**](integration/flext-ecosystem.md) - Integration with FLEXT ecosystem
+- [**Event Sourcing API**](integration/event-sourcing.md) - Event store and CQRS endpoints
+- [**Plugin API**](integration/plugin-api.md) - Plugin development interfaces
 
-### Observability
+### 🚀 Operations
 
-- [Monitoring Setup](observability/monitoring.md)
-- [Metrics with Prometheus](observability/metrics.md)
-- [Distributed Tracing](observability/tracing.md)
-- [Logging Best Practices](observability/logging.md)
-- [Health Checks](observability/health.md)
+- [**Deployment Guide**](operations/deployment.md) - Production deployment strategies
+- [**Monitoring & Observability**](operations/monitoring.md) - Metrics, logging, and tracing
+- [**Configuration**](operations/configuration.md) - Environment variables and settings
+- [**Troubleshooting**](operations/troubleshooting.md) - Common issues and solutions
 
-### Deployment
+### 📊 Quality & Standards
 
-- [Docker Deployment](deployment/docker.md)
-- [Kubernetes Deployment](deployment/kubernetes.md)
-- [Production Checklist](deployment/production.md)
-- [Scaling Strategies](deployment/scaling.md)
-- [Security Configuration](deployment/security.md)
+- [**Code Quality Standards**](standards/code-quality.md) - Quality gates and requirements
+- [**Architecture Standards**](standards/architecture.md) - Clean Architecture compliance
+- [**Security Guidelines**](standards/security.md) - Security best practices
+- [**Performance Requirements**](standards/performance.md) - Performance benchmarks and SLA
 
-### Development
+## 🎯 Quick Navigation
 
-- [Contributing Guide](development/contributing.md)
-- [Code Standards](development/standards.md)
-- [Testing Strategy](development/testing.md)
-- [CI/CD Pipeline](development/cicd.md)
-- [Release Process](development/releases.md)
+### For New Developers
 
-### Advanced Topics
+1. **Start Here**: [Getting Started](getting-started/installation.md)
+2. **Understand Issues**: [TODO.md](TODO.md) - **Critical architectural problems**
+3. **Architecture**: [Architecture Overview](architecture/overview.md)
+4. **Development**: [Development Workflow](development/workflow.md)
 
-- [Event Store Implementation](advanced/event-store.md)
-- [Performance Optimization](advanced/performance.md)
-- [Custom Adapters](advanced/adapters.md)
-- [Microservices Patterns](advanced/microservices.md)
-- [Integration Patterns](advanced/integration.md)
+### For Contributors
 
-### Operations
+1. **Current State**: [TODO.md](TODO.md) - **Must read before contributing**
+2. **Architecture Compliance**: [Architecture Standards](standards/architecture.md)
+3. **Quality Gates**: [Code Quality Standards](standards/code-quality.md)
+4. **Testing**: [Testing Guide](development/testing.md)
 
-- [Monitoring Runbook](operations/monitoring.md)
-- [Troubleshooting Guide](operations/troubleshooting.md)
-- [Performance Tuning](operations/performance.md)
-- [Disaster Recovery](operations/disaster-recovery.md)
-- [Maintenance Tasks](operations/maintenance.md)
+### For Operators
 
-## 🚀 Quick Navigation
+1. **Deployment**: [Deployment Guide](operations/deployment.md)
+2. **Configuration**: [Configuration](operations/configuration.md)
+3. **Monitoring**: [Monitoring & Observability](operations/monitoring.md)
+4. **Troubleshooting**: [Troubleshooting](operations/troubleshooting.md)
 
-### For Developers
+### For Integrators
 
-- **New to FlexCore?** Start with [Installation](getting-started/installation.md) �' [Quick Start](getting-started/quickstart.md)
-- **Go Developer?** Check [Go API Reference](go/api-reference.md) and [Domain Layer](go/domain.md)
-- **Python Developer?** See [Python Client](python/client.md) and [Event Handlers](python/event-handlers.md)
-- **Building Plugins?** Read [Plugin System](architecture/plugins.md) and [Plugin Development](python/plugins.md)
+1. **API Documentation**: [API Reference](api-reference.md)
+2. **FLEXT Integration**: [FLEXT Ecosystem](integration/flext-ecosystem.md)
+3. **Plugin Development**: [Plugin API](integration/plugin-api.md)
+4. **Event Sourcing**: [Event Sourcing API](integration/event-sourcing.md)
 
-### For DevOps
+## 📊 Current Project Status
 
-- **Deploying FlexCore?** Start with [Docker Deployment](deployment/docker.md) or [Kubernetes](deployment/kubernetes.md)
-- **Setting up Monitoring?** Follow [Monitoring Setup](observability/monitoring.md)
-- **Production Deployment?** Use the [Production Checklist](deployment/production.md)
-- **Need to Scale?** Read [Scaling Strategies](deployment/scaling.md)
+### Architecture Compliance
 
-### For Architects
+- ❌ **Clean Architecture**: 30% - Critical boundary violations
+- ❌ **DDD**: 40% - Anemic domain model
+- ❌ **CQRS**: 25% - Multiple conflicting implementations
+- ❌ **Event Sourcing**: 20% - Inadequate implementation
 
-- **Understanding the System?** Read [System Overview](architecture/overview.md)
-- **Architecture Patterns?** Check [Clean Architecture](architecture/clean-architecture.md) and [DDD](architecture/ddd.md)
-- **Event-Driven Design?** See [CQRS + Event Sourcing](architecture/cqrs-event-sourcing.md)
-- **Integration Patterns?** Read [Integration Patterns](advanced/integration.md)
+### Documentation Coverage
 
-## �"� Key Features Covered
+- ✅ **README**: Complete and up-to-date
+- ✅ **TODO**: Comprehensive issue tracking
+- 🟡 **Architecture**: Partially documented
+- 🟡 **API Reference**: Basic coverage
+- ❌ **Operations**: Minimal documentation
+- ❌ **Development Guides**: Incomplete
 
-### Performance & Scalability
+## 🚨 Critical Issues
 
-- High-performance Go core engine
-- Asynchronous event processing
-- Horizontal scaling with Kubernetes
-- Connection pooling and caching strategies
+### Immediate Attention Required
 
-### Developer Experience
+1. **Clean Architecture Violations** - HTTP server in application layer
+2. **CQRS Implementation Chaos** - 3 different implementations
+3. **Inadequate Event Sourcing** - In-memory store, mutable events
+4. **Plugin Security Gaps** - No isolation or resource management
+5. **Missing Integration Tests** - Critical testing gaps
 
-- Type-safe APIs in both Go and Python
-- Hot-swappable plugin system
-- Comprehensive testing frameworks
-- Rich development tooling
+See [TODO.md](TODO.md) for detailed analysis and refactoring roadmap.
 
-### Enterprise Features
+## 🛠️ Development Phases
 
-- Built-in observability stack
-- Security best practices
-- High availability patterns
-- Audit logging and compliance
+### Phase 1: Critical Fixes (2-3 weeks)
 
-### Integration Capabilities
+- Fix Clean Architecture boundary violations
+- Unify CQRS implementation
+- Implement proper Event Sourcing with PostgreSQL
+- Add comprehensive integration tests
 
-- RESTful and gRPC APIs
-- Message queue integration
-- Database connectivity
-- External service adapters
+### Phase 2: Domain Enhancement (3-4 weeks)
 
-## �"� Documentation Standards
+- Implement rich domain model
+- Add domain services and proper aggregates
+- Enhance plugin system security
+- Improve error handling and observability
 
-All documentation follows these principles:
+### Phase 3: Production Readiness (4-6 weeks)
 
-- **Clarity**: Written for developers of all experience levels
-- **Completeness**: Covers all important aspects with examples
-- **Accuracy**: All code examples are tested and working
-- **Maintenance**: Kept up-to-date with each release
+- Performance optimizations
+- Security hardening
+- Complete documentation
+- Comprehensive monitoring
 
-## 🆘 Getting Help
+## 🔗 External References
 
-### Community Resources
+### FLEXT Ecosystem
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/flext-sh/flext/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/flext-sh/flext/discussions)
-- **Examples**: [Real-world usage examples](https://github.com/flext-sh/flext-examples)
+- [flext-core](https://github.com/flext/flext-core) - Python foundation library
+- [FLEXT Service](../cmd/flext/) - Python data processing service
+- [Singer Ecosystem](https://github.com/flext/) - Data taps, targets, and transformations
 
-### Enterprise Support
+### Architecture Resources
 
-- **Support Portal**: [support.flext.sh](https://support.flext.sh)
-- **Professional Services**: Architecture consulting and custom development
-- **Training**: On-site and remote training programs
+- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin
+- [Domain-Driven Design](https://martinfowler.com/tags/domain%20driven%20design.html) - Martin Fowler
+- [CQRS](https://martinfowler.com/bliki/CQRS.html) - Command Query Responsibility Segregation
+- [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) - Event-driven architecture
 
-## �"� Documentation Updates
+## 📝 Contributing to Documentation
 
-This documentation is actively maintained and updated with each release:
+### Documentation Standards
 
-- **Version**: Aligned with FlexCore v0.7.0
-- **Last Updated**: Latest changes reflected in real-time
-- **Contributing**: Help improve docs via [Contributing Guide](development/contributing.md)
+- **Language**: English only
+- **Format**: Markdown with consistent structure
+- **Code Examples**: Functional and tested
+- **Updates**: Keep synchronized with code changes
 
-## �"� Prerequisites Knowledge
+### Update Process
 
-To get the most out of FlexCore documentation:
+1. Review current documentation state
+2. Identify gaps or outdated content
+3. Update following FLEXT documentation standards
+4. Test all code examples
+5. Submit PR with documentation updates
 
-### Recommended Background
+## ⚠️ Important Disclaimers
 
-- **Go Programming**: Understanding of Go syntax and concurrency
-- **Python Development**: Python 3.13+ experience
-- **Distributed Systems**: Basic understanding of microservices
-- **Docker/Kubernetes**: Container orchestration knowledge
-- **Database Systems**: SQL and NoSQL database experience
+### Production Readiness
 
-### Architecture Patterns
+**FlexCore is NOT production-ready** due to critical architectural issues identified in [TODO.md](TODO.md). Use only for development and testing until architectural refactoring is complete.
 
-- **Clean Architecture**: Hexagonal architecture concepts
-- **Domain-Driven Design**: Domain modeling principles
-- **Event Sourcing**: Event-driven state management
-- **CQRS**: Command-Query Responsibility Segregation
+### API Stability
 
-## 🎯 Documentation Roadmap
+API endpoints may change significantly during the refactoring process. Do not rely on current API contracts for production integrations.
 
-Upcoming documentation improvements:
+### Architecture Evolution
 
-- **Video Tutorials**: Step-by-step video guides
-- **Interactive Examples**: Runnable code samples
-- **Architecture Decision Records**: Detailed design decisions
-- **Case Studies**: Real-world implementation stories
-- **API Playground**: Interactive API exploration
+The architecture is undergoing significant refactoring to properly implement Clean Architecture, DDD, CQRS, and Event Sourcing patterns. Expect breaking changes.
 
 ---
 
-**Ready to dive in?** Start with our [Installation Guide](getting-started/installation.md) or explore the [System Overview](architecture/overview.md) to understand FlexCore's capabilities.
-
-For questions or suggestions about this documentation, please [open an issue](https://github.com/flext-sh/flext/issues) or contribute via [pull request](https://github.com/flext-sh/flext/pulls).
+**For the most current information about FlexCore's status and critical issues, always refer to [TODO.md](TODO.md).**

@@ -1,5 +1,7 @@
 """FLEXT FlexCore - Event-driven architecture system."""
 
+from __future__ import annotations
+
 from flexcore.core import FlexCore
 
 __version__ = "0.9.0"
