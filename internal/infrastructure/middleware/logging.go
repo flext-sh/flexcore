@@ -4,7 +4,7 @@ package middleware
 import (
 	"time"
 
-	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/logging"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

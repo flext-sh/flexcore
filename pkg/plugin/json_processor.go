@@ -191,11 +191,11 @@ func (jp *BaseJSONProcessor) TransformString(data string) string {
 	if jp.config["trim_strings"] == true {
 		data = strings.TrimSpace(data)
 	}
-	
+
 	if jp.config["lowercase_strings"] == true {
 		data = strings.ToLower(data)
 	}
-	
+
 	if jp.config["uppercase_strings"] == true {
 		data = strings.ToUpper(data)
 	}
@@ -215,10 +215,10 @@ func (jp *BaseJSONProcessor) ToSnakeCase(str string) string {
 // GetProcessingInfo returns processing information
 func (jp *BaseJSONProcessor) GetProcessingInfo() map[string]interface{} {
 	return map[string]interface{}{
-		"processor":     "json-processor",
-		"operations":    []string{"prettify", "minify", "validate", "transform"},
-		"features":      []string{"snake_case_keys", "trim_strings", "metadata_injection"},
-		"processed_at":  time.Now().Unix(),
-		"stats":         jp.stats,
+		"processor":    "json-processor",
+		"operations":   []string{"prettify", "minify", "validate", "transform"},
+		"features":     []string{"snake_case_keys", "trim_strings", "metadata_injection"},
+		"processed_at": time.Now().Unix(),
+		"stats":        jp.stats,
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/cqrs"
+	"github.com/flext-sh/flexcore/pkg/cqrs"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -487,13 +487,13 @@ func (bus *CQRSBus) GetQueryMetrics() map[string]*QueryMetrics {
 func (bus *CQRSBus) GetCQRSStats() (map[string]interface{}, error) {
 	// Create specialized statistics collector
 	collector := bus.getStatsCollector()
-	
+
 	// Get handler counts safely
 	bus.mu.RLock()
 	commandHandlersCount := len(bus.commandHandlers)
 	queryHandlersCount := len(bus.queryHandlers)
 	bus.mu.RUnlock()
-	
+
 	// Collect all statistics with centralized error handling
 	result, err := collector.CollectAllStatistics(commandHandlersCount, queryHandlersCount)
 	if err != nil {

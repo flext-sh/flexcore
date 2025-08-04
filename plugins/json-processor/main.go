@@ -12,7 +12,7 @@ import (
 
 	hashicorpPlugin "github.com/hashicorp/go-plugin"
 
-	"github.com/flext/flexcore/pkg/plugin"
+	"github.com/flext-sh/flexcore/pkg/plugin"
 )
 
 // init registers types for gob encoding/decoding
@@ -51,7 +51,7 @@ func (jp *JSONProcessor) Initialize(ctx context.Context, config map[string]inter
 		return ctx.Err()
 	default:
 	}
-	
+
 	log.Printf("[JSONProcessor] Initializing with config: %+v", config)
 	// Delegate to base implementation
 	return jp.BaseJSONProcessor.Initialize(config)
@@ -124,7 +124,7 @@ func (jp *JSONProcessor) processInputData(input, result map[string]interface{}) 
 // DRY PRINCIPLE: Removed 140+ lines of duplicated transformation functions
 // Now using BaseJSONProcessor shared implementation:
 // - TransformData (19 lines eliminated)
-// - PrettifyJSON, MinifyJSON, ValidateJSON (90+ lines eliminated) 
+// - PrettifyJSON, MinifyJSON, ValidateJSON (90+ lines eliminated)
 // - ApplyTransformations, TransformMap, TransformArray, TransformString (50+ lines eliminated)
 
 // parseJSONString parses a JSON string

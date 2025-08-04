@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/flext/flexcore/pkg/config"
-	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/config"
+	"github.com/flext-sh/flexcore/pkg/logging"
 	"go.uber.org/zap"
 )
 

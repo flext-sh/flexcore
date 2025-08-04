@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/flext/flexcore/internal/application/services"
-	"github.com/flext/flexcore/internal/infrastructure/middleware"
-	"github.com/flext/flexcore/pkg/logging"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/internal/application/services"
+	"github.com/flext-sh/flexcore/internal/infrastructure/middleware"
+	"github.com/flext-sh/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -34,7 +34,7 @@ func NewFlexcoreServer(workflowService *services.WorkflowService) *FlexcoreServe
 func (fs *FlexcoreServer) Start(address string) error {
 	starter := fs.createServerStarter(address)
 	startResult := starter.ConfigureAndStart("FLEXCORE container server", fs.setupRouterWithMiddleware)
-	
+
 	if startResult.IsFailure() {
 		return startResult.Error()
 	}

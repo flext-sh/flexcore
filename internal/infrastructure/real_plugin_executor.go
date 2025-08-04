@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/logging"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"go.uber.org/zap"
 )
 
@@ -76,7 +76,7 @@ func (rfsp *RealFlextServicePlugin) Execute(ctx context.Context, params map[stri
 	// Use orchestrator for centralized error handling
 	orchestrator := rfsp.createExecutionOrchestrator(ctx, params)
 	executionResult := orchestrator.ExecuteService()
-	
+
 	if executionResult.IsFailure() {
 		return nil, executionResult.Error()
 	}

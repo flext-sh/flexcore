@@ -12,11 +12,12 @@
 //   - Domain Events: Complete event model for pipeline lifecycle tracking
 //
 // Architecture:
-//   Entities are built on the domain.AggregateRoot foundation, providing:
-//   - Automatic domain event generation and management
-//   - Consistent entity lifecycle tracking with timestamps
-//   - Result pattern integration for comprehensive error handling
-//   - Type-safe entity identification with strongly-typed IDs
+//
+//	Entities are built on the domain.AggregateRoot foundation, providing:
+//	- Automatic domain event generation and management
+//	- Consistent entity lifecycle tracking with timestamps
+//	- Result pattern integration for comprehensive error handling
+//	- Type-safe entity identification with strongly-typed IDs
 //
 // Integration:
 //   - Built on FlexCore's domain foundation (internal/domain)
@@ -26,28 +27,30 @@
 //   - Uses FlexCore's custom error types (pkg/errors)
 //
 // Example:
-//   Creating and managing a pipeline:
 //
-//     pipeline := entities.NewPipeline("Data Processing", "ETL pipeline", "user123")
-//     if pipeline.IsFailure() {
-//         return pipeline.Error()
-//     }
-//     
-//     p := pipeline.Value()
-//     step := entities.NewPipelineStep("extract", "data-extraction")
-//     
-//     if err := p.AddStep(step); err.IsFailure() {
-//         return err.Error()
-//     }
-//     
-//     if err := p.Activate(); err.IsFailure() {
-//         return err.Error()
-//     }
+//	Creating and managing a pipeline:
+//
+//	  pipeline := entities.NewPipeline("Data Processing", "ETL pipeline", "user123")
+//	  if pipeline.IsFailure() {
+//	      return pipeline.Error()
+//	  }
+//
+//	  p := pipeline.Value()
+//	  step := entities.NewPipelineStep("extract", "data-extraction")
+//
+//	  if err := p.AddStep(step); err.IsFailure() {
+//	      return err.Error()
+//	  }
+//
+//	  if err := p.Activate(); err.IsFailure() {
+//	      return err.Error()
+//	  }
 //
 // Thread Safety:
-//   Domain entities are designed for single-threaded access within aggregate boundaries.
-//   Concurrent access should be managed at the application layer through proper
-//   locking mechanisms or message-based coordination.
+//
+//	Domain entities are designed for single-threaded access within aggregate boundaries.
+//	Concurrent access should be managed at the application layer through proper
+//	locking mechanisms or message-based coordination.
 //
 // Author: FLEXT Development Team
 // Version: 0.9.0
@@ -57,9 +60,9 @@ package entities
 import (
 	"time"
 
-	"github.com/flext/flexcore/internal/domain"
-	"github.com/flext/flexcore/pkg/errors"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/internal/domain"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/google/uuid"
 )
 
@@ -74,13 +77,14 @@ import (
 // storage while maintaining type safety at the application level.
 //
 // Example:
-//   Working with pipeline identifiers:
 //
-//     id := entities.NewPipelineID()
-//     fmt.Println("Generated ID:", id.String())
-//     
-//     // Type safety prevents mixing different ID types
-//     pipeline := findPipeline(id) // Compiler enforces correct ID type
+//	Working with pipeline identifiers:
+//
+//	  id := entities.NewPipelineID()
+//	  fmt.Println("Generated ID:", id.String())
+//
+//	  // Type safety prevents mixing different ID types
+//	  pipeline := findPipeline(id) // Compiler enforces correct ID type
 //
 // Integration:
 //   - Used as aggregate identifier in domain events
@@ -96,23 +100,27 @@ type PipelineID string
 // database storage and provide sufficient entropy for collision avoidance.
 //
 // Returns:
-//   PipelineID: A new unique identifier for pipeline entities
+//
+//	PipelineID: A new unique identifier for pipeline entities
 //
 // Example:
-//   Creating pipelines with unique identifiers:
 //
-//     id1 := entities.NewPipelineID()
-//     id2 := entities.NewPipelineID()
-//     
-//     // IDs are guaranteed to be different
-//     fmt.Printf("ID1: %s\nID2: %s\n", id1.String(), id2.String())
+//	Creating pipelines with unique identifiers:
+//
+//	  id1 := entities.NewPipelineID()
+//	  id2 := entities.NewPipelineID()
+//
+//	  // IDs are guaranteed to be different
+//	  fmt.Printf("ID1: %s\nID2: %s\n", id1.String(), id2.String())
 //
 // Performance:
-//   Single UUID generation call with minimal allocation overhead.
-//   Suitable for high-frequency pipeline creation scenarios.
+//
+//	Single UUID generation call with minimal allocation overhead.
+//	Suitable for high-frequency pipeline creation scenarios.
 //
 // Thread Safety:
-//   Safe for concurrent use as UUID generation is thread-safe.
+//
+//	Safe for concurrent use as UUID generation is thread-safe.
 func NewPipelineID() PipelineID {
 	return PipelineID(uuid.New().String())
 }
@@ -124,19 +132,21 @@ func NewPipelineID() PipelineID {
 // serialization scenarios.
 //
 // Returns:
-//   string: The underlying UUID string value
+//
+//	string: The underlying UUID string value
 //
 // Example:
-//   String conversion and formatting:
 //
-//     id := entities.NewPipelineID()
-//     
-//     // Implicit string conversion
-//     fmt.Printf("Pipeline ID: %s\n", id)
-//     
-//     // Explicit string conversion
-//     idString := id.String()
-//     log.Info("Processing pipeline", "id", idString)
+//	String conversion and formatting:
+//
+//	  id := entities.NewPipelineID()
+//
+//	  // Implicit string conversion
+//	  fmt.Printf("Pipeline ID: %s\n", id)
+//
+//	  // Explicit string conversion
+//	  idString := id.String()
+//	  log.Info("Processing pipeline", "id", idString)
 //
 // Integration:
 //   - Compatible with logging frameworks expecting string values
@@ -154,12 +164,14 @@ func (id PipelineID) String() string {
 // a pipeline and determines the business rules that apply to state transitions.
 //
 // The status follows a well-defined state machine:
-//   Draft -> Active -> Running -> (Completed|Failed|Paused) -> [Active|Archived]
+//
+//	Draft -> Active -> Running -> (Completed|Failed|Paused) -> [Active|Archived]
 //
 // Thread Safety:
-//   Status values are immutable and safe for concurrent access.
-//   Status transitions should be managed through Pipeline entity methods
-//   which provide proper validation and event generation.
+//
+//	Status values are immutable and safe for concurrent access.
+//	Status transitions should be managed through Pipeline entity methods
+//	which provide proper validation and event generation.
 //
 // Integration:
 //   - Used in business rule validation throughout Pipeline methods
@@ -226,7 +238,8 @@ const (
 //   - Minimal memory overhead with efficient map storage
 //
 // Thread Safety:
-//   Safe for concurrent access as the internal map is read-only after initialization.
+//
+//	Safe for concurrent access as the internal map is read-only after initialization.
 type PipelineStatusMapper struct {
 	statusMap map[PipelineStatus]string
 }
@@ -238,27 +251,31 @@ type PipelineStatusMapper struct {
 // performance for status string conversion.
 //
 // Returns:
-//   *PipelineStatusMapper: A new mapper instance with complete status mappings
+//
+//	*PipelineStatusMapper: A new mapper instance with complete status mappings
 //
 // Example:
-//   Using the status mapper for consistent string conversion:
 //
-//     mapper := entities.NewPipelineStatusMapper()
-//     
-//     status := entities.PipelineStatusRunning
-//     statusStr := mapper.ToString(status) // "running"
-//     
-//     allStatuses := mapper.GetAllStatuses()
-//     for status, str := range allStatuses {
-//         fmt.Printf("%d -> %s\n", status, str)
-//     }
+//	Using the status mapper for consistent string conversion:
+//
+//	  mapper := entities.NewPipelineStatusMapper()
+//
+//	  status := entities.PipelineStatusRunning
+//	  statusStr := mapper.ToString(status) // "running"
+//
+//	  allStatuses := mapper.GetAllStatuses()
+//	  for status, str := range allStatuses {
+//	      fmt.Printf("%d -> %s\n", status, str)
+//	  }
 //
 // Performance:
-//   Single allocation for mapper struct and internal map.
-//   Map initialization occurs once during construction.
+//
+//	Single allocation for mapper struct and internal map.
+//	Map initialization occurs once during construction.
 //
 // Thread Safety:
-//   The returned mapper is safe for concurrent use as the internal map is immutable.
+//
+//	The returned mapper is safe for concurrent use as the internal map is immutable.
 func NewPipelineStatusMapper() *PipelineStatusMapper {
 	return &PipelineStatusMapper{
 		statusMap: map[PipelineStatus]string{
@@ -281,26 +298,31 @@ func NewPipelineStatusMapper() *PipelineStatusMapper {
 // unknown status values gracefully.
 //
 // Parameters:
-//   status PipelineStatus: The pipeline status enum to convert
+//
+//	status PipelineStatus: The pipeline status enum to convert
 //
 // Returns:
-//   string: The string representation of the status, or "unknown" for invalid values
+//
+//	string: The string representation of the status, or "unknown" for invalid values
 //
 // Example:
-//   Converting status values for API responses:
 //
-//     mapper := entities.NewPipelineStatusMapper()
-//     
-//     running := mapper.ToString(entities.PipelineStatusRunning)   // "running"
-//     completed := mapper.ToString(entities.PipelineStatusCompleted) // "completed"
-//     invalid := mapper.ToString(PipelineStatus(999))                // "unknown"
+//	Converting status values for API responses:
+//
+//	  mapper := entities.NewPipelineStatusMapper()
+//
+//	  running := mapper.ToString(entities.PipelineStatusRunning)   // "running"
+//	  completed := mapper.ToString(entities.PipelineStatusCompleted) // "completed"
+//	  invalid := mapper.ToString(PipelineStatus(999))                // "unknown"
 //
 // Performance:
-//   O(1) map lookup with no runtime switch evaluation.
-//   Efficient handling of both valid and invalid status values.
+//
+//	O(1) map lookup with no runtime switch evaluation.
+//	Efficient handling of both valid and invalid status values.
 //
 // Thread Safety:
-//   Safe for concurrent access as it only reads from the immutable internal map.
+//
+//	Safe for concurrent access as it only reads from the immutable internal map.
 func (mapper *PipelineStatusMapper) ToString(status PipelineStatus) string {
 	if statusStr, exists := mapper.statusMap[status]; exists {
 		return statusStr
@@ -316,32 +338,36 @@ func (mapper *PipelineStatusMapper) ToString(status PipelineStatus) string {
 // status mappings.
 //
 // Returns:
-//   map[PipelineStatus]string: A copy of all status-to-string mappings
+//
+//	map[PipelineStatus]string: A copy of all status-to-string mappings
 //
 // Example:
-//   Enumerating all valid pipeline statuses:
 //
-//     mapper := entities.NewPipelineStatusMapper()
-//     allStatuses := mapper.GetAllStatuses()
-//     
-//     fmt.Println("Valid pipeline statuses:")
-//     for status, str := range allStatuses {
-//         fmt.Printf("  %d: %s\n", int(status), str)
-//     }
+//	Enumerating all valid pipeline statuses:
 //
-//   Building validation logic:
+//	  mapper := entities.NewPipelineStatusMapper()
+//	  allStatuses := mapper.GetAllStatuses()
 //
-//     validStatuses := mapper.GetAllStatuses()
-//     if _, isValid := validStatuses[userProvidedStatus]; !isValid {
-//         return errors.New("invalid pipeline status")
-//     }
+//	  fmt.Println("Valid pipeline statuses:")
+//	  for status, str := range allStatuses {
+//	      fmt.Printf("  %d: %s\n", int(status), str)
+//	  }
+//
+//	Building validation logic:
+//
+//	  validStatuses := mapper.GetAllStatuses()
+//	  if _, isValid := validStatuses[userProvidedStatus]; !isValid {
+//	      return errors.New("invalid pipeline status")
+//	  }
 //
 // Performance:
-//   Creates a new map with all entries copied from internal map.
-//   O(n) time complexity where n is the number of valid statuses.
+//
+//	Creates a new map with all entries copied from internal map.
+//	O(n) time complexity where n is the number of valid statuses.
 //
 // Thread Safety:
-//   Safe for concurrent access. Returns independent copy that can be modified safely.
+//
+//	Safe for concurrent access. Returns independent copy that can be modified safely.
 func (mapper *PipelineStatusMapper) GetAllStatuses() map[PipelineStatus]string {
 	result := make(map[PipelineStatus]string)
 	for status, str := range mapper.statusMap {
@@ -358,26 +384,30 @@ func (mapper *PipelineStatusMapper) GetAllStatuses() map[PipelineStatus]string {
 // string representation across the system.
 //
 // Returns:
-//   string: The string representation of the pipeline status
+//
+//	string: The string representation of the pipeline status
 //
 // Example:
-//   Automatic string conversion in formatting:
 //
-//     status := entities.PipelineStatusRunning
-//     
-//     // Implicit string conversion
-//     fmt.Printf("Pipeline status: %s\n", status) // "Pipeline status: running"
-//     
-//     // Explicit string conversion
-//     statusStr := status.String() // "running"
-//     log.Info("Pipeline state changed", "status", statusStr)
+//	Automatic string conversion in formatting:
+//
+//	  status := entities.PipelineStatusRunning
+//
+//	  // Implicit string conversion
+//	  fmt.Printf("Pipeline status: %s\n", status) // "Pipeline status: running"
+//
+//	  // Explicit string conversion
+//	  statusStr := status.String() // "running"
+//	  log.Info("Pipeline state changed", "status", statusStr)
 //
 // Performance:
-//   Creates a new mapper instance on each call.
-//   Consider caching mapper instance for high-frequency usage.
+//
+//	Creates a new mapper instance on each call.
+//	Consider caching mapper instance for high-frequency usage.
 //
 // Thread Safety:
-//   Safe for concurrent use as each call creates an independent mapper instance.
+//
+//	Safe for concurrent use as each call creates an independent mapper instance.
 func (s PipelineStatus) String() string {
 	mapper := NewPipelineStatusMapper()
 	return mapper.ToString(s)
@@ -396,25 +426,27 @@ func (s PipelineStatus) String() string {
 //   - Dependency Graph: DependsOn field enables complex workflow orchestration
 //
 // Fields:
-//   ID string: Unique identifier for the step within the pipeline
-//   Name string: Human-readable name for the step (must be unique within pipeline)
-//   Type string: Processing type/plugin identifier (e.g., "data-extraction", "transformation")
-//   Config map[string]interface{}: Flexible configuration parameters for the processing operation
-//   DependsOn []string: List of step names that must complete before this step can run
-//   RetryCount int: Current number of retry attempts (managed by execution engine)
-//   MaxRetries int: Maximum allowed retry attempts for this step
-//   Timeout time.Duration: Maximum execution time allowed for this step
-//   IsEnabled bool: Whether this step is active in the pipeline execution
-//   CreatedAt time.Time: Timestamp when the step was added to the pipeline
+//
+//	ID string: Unique identifier for the step within the pipeline
+//	Name string: Human-readable name for the step (must be unique within pipeline)
+//	Type string: Processing type/plugin identifier (e.g., "data-extraction", "transformation")
+//	Config map[string]interface{}: Flexible configuration parameters for the processing operation
+//	DependsOn []string: List of step names that must complete before this step can run
+//	RetryCount int: Current number of retry attempts (managed by execution engine)
+//	MaxRetries int: Maximum allowed retry attempts for this step
+//	Timeout time.Duration: Maximum execution time allowed for this step
+//	IsEnabled bool: Whether this step is active in the pipeline execution
+//	CreatedAt time.Time: Timestamp when the step was added to the pipeline
 //
 // Example:
-//   Creating a data extraction step:
 //
-//     step := entities.NewPipelineStep("extract-users", "oracle-extraction")
-//     step.Config["connection"] = "oracle://prod-db:1521/ORCL"
-//     step.Config["query"] = "SELECT * FROM users WHERE active = 1"
-//     step.MaxRetries = 5
-//     step.Timeout = 10 * time.Minute
+//	Creating a data extraction step:
+//
+//	  step := entities.NewPipelineStep("extract-users", "oracle-extraction")
+//	  step.Config["connection"] = "oracle://prod-db:1521/ORCL"
+//	  step.Config["query"] = "SELECT * FROM users WHERE active = 1"
+//	  step.MaxRetries = 5
+//	  step.Timeout = 10 * time.Minute
 //
 // Integration:
 //   - Used within Pipeline aggregate for step management
@@ -423,8 +455,9 @@ func (s PipelineStatus) String() string {
 //   - Retry and timeout settings integrated with execution monitoring
 //
 // Thread Safety:
-//   Individual step instances should be treated as immutable after creation.
-//   Modifications should only occur through Pipeline aggregate methods.
+//
+//	Individual step instances should be treated as immutable after creation.
+//	Modifications should only occur through Pipeline aggregate methods.
 type PipelineStep struct {
 	ID         string                 // Unique step identifier
 	Name       string                 // Human-readable step name (unique within pipeline)
@@ -445,29 +478,32 @@ type PipelineStep struct {
 // with empty configuration and dependency lists that can be populated after creation.
 //
 // Parameters:
-//   name string: Human-readable name for the step (must be unique within the pipeline)
-//   stepType string: Processing type identifier that determines which plugin/processor to use
+//
+//	name string: Human-readable name for the step (must be unique within the pipeline)
+//	stepType string: Processing type identifier that determines which plugin/processor to use
 //
 // Returns:
-//   PipelineStep: A new step instance with default configuration
+//
+//	PipelineStep: A new step instance with default configuration
 //
 // Example:
-//   Creating different types of pipeline steps:
 //
-//     // Data extraction step
-//     extractStep := entities.NewPipelineStep("extract-customers", "oracle-tap")
-//     extractStep.Config["table"] = "customers"
-//     extractStep.Config["incremental_key"] = "updated_at"
-//     
-//     // Data transformation step
-//     transformStep := entities.NewPipelineStep("clean-data", "dbt-transform")
-//     transformStep.DependsOn = []string{"extract-customers"}
-//     transformStep.Config["model"] = "staging.customer_clean"
-//     
-//     // Data loading step
-//     loadStep := entities.NewPipelineStep("load-warehouse", "postgres-target")
-//     loadStep.DependsOn = []string{"clean-data"}
-//     loadStep.MaxRetries = 5 // Critical step, more retries
+//	Creating different types of pipeline steps:
+//
+//	  // Data extraction step
+//	  extractStep := entities.NewPipelineStep("extract-customers", "oracle-tap")
+//	  extractStep.Config["table"] = "customers"
+//	  extractStep.Config["incremental_key"] = "updated_at"
+//
+//	  // Data transformation step
+//	  transformStep := entities.NewPipelineStep("clean-data", "dbt-transform")
+//	  transformStep.DependsOn = []string{"extract-customers"}
+//	  transformStep.Config["model"] = "staging.customer_clean"
+//
+//	  // Data loading step
+//	  loadStep := entities.NewPipelineStep("load-warehouse", "postgres-target")
+//	  loadStep.DependsOn = []string{"clean-data"}
+//	  loadStep.MaxRetries = 5 // Critical step, more retries
 //
 // Default Values:
 //   - ID: Generated UUID v4
@@ -480,7 +516,8 @@ type PipelineStep struct {
 //   - CreatedAt: Current timestamp
 //
 // Thread Safety:
-//   Safe for concurrent use as each call creates an independent step instance.
+//
+//	Safe for concurrent use as each call creates an independent step instance.
 func NewPipelineStep(name, stepType string) PipelineStep {
 	return PipelineStep{
 		ID:         uuid.New().String(),
@@ -519,45 +556,47 @@ func NewPipelineStep(name, stepType string) PipelineStep {
 //   - Running pipelines cannot be modified
 //
 // Fields:
-//   domain.AggregateRoot[PipelineID]: Base aggregate with event management and metadata
-//   Name string: Human-readable pipeline name (required, must be unique per owner)
-//   Description string: Detailed description of pipeline purpose and functionality
-//   Status PipelineStatus: Current pipeline state following defined state machine
-//   Steps []PipelineStep: Ordered collection of processing steps with dependencies
-//   Tags []string: Flexible labeling system for categorization and filtering
-//   Owner string: Pipeline owner identifier for access control and organization
-//   Schedule *PipelineSchedule: Optional scheduling configuration for automated execution
-//   LastRunAt *time.Time: Timestamp of most recent execution attempt
-//   NextRunAt *time.Time: Calculated timestamp for next scheduled execution
+//
+//	domain.AggregateRoot[PipelineID]: Base aggregate with event management and metadata
+//	Name string: Human-readable pipeline name (required, must be unique per owner)
+//	Description string: Detailed description of pipeline purpose and functionality
+//	Status PipelineStatus: Current pipeline state following defined state machine
+//	Steps []PipelineStep: Ordered collection of processing steps with dependencies
+//	Tags []string: Flexible labeling system for categorization and filtering
+//	Owner string: Pipeline owner identifier for access control and organization
+//	Schedule *PipelineSchedule: Optional scheduling configuration for automated execution
+//	LastRunAt *time.Time: Timestamp of most recent execution attempt
+//	NextRunAt *time.Time: Calculated timestamp for next scheduled execution
 //
 // Example:
-//   Creating and configuring a complete pipeline:
 //
-//     pipelineResult := entities.NewPipeline(
-//         "Customer Data ETL",
-//         "Extract customer data from Oracle, transform, and load to warehouse",
-//         "data-team",
-//     )
-//     
-//     if pipelineResult.IsFailure() {
-//         return pipelineResult.Error()
-//     }
-//     
-//     pipeline := pipelineResult.Value()
-//     
-//     // Add processing steps
-//     extractStep := entities.NewPipelineStep("extract-customers", "oracle-tap")
-//     pipeline.AddStep(extractStep)
-//     
-//     transformStep := entities.NewPipelineStep("transform-customers", "dbt-transform")
-//     transformStep.DependsOn = []string{"extract-customers"}
-//     pipeline.AddStep(transformStep)
-//     
-//     // Configure scheduling
-//     pipeline.SetSchedule("0 2 * * *", "UTC") // Daily at 2 AM UTC
-//     
-//     // Activate for execution
-//     pipeline.Activate()
+//	Creating and configuring a complete pipeline:
+//
+//	  pipelineResult := entities.NewPipeline(
+//	      "Customer Data ETL",
+//	      "Extract customer data from Oracle, transform, and load to warehouse",
+//	      "data-team",
+//	  )
+//
+//	  if pipelineResult.IsFailure() {
+//	      return pipelineResult.Error()
+//	  }
+//
+//	  pipeline := pipelineResult.Value()
+//
+//	  // Add processing steps
+//	  extractStep := entities.NewPipelineStep("extract-customers", "oracle-tap")
+//	  pipeline.AddStep(extractStep)
+//
+//	  transformStep := entities.NewPipelineStep("transform-customers", "dbt-transform")
+//	  transformStep.DependsOn = []string{"extract-customers"}
+//	  pipeline.AddStep(transformStep)
+//
+//	  // Configure scheduling
+//	  pipeline.SetSchedule("0 2 * * *", "UTC") // Daily at 2 AM UTC
+//
+//	  // Activate for execution
+//	  pipeline.Activate()
 //
 // Integration:
 //   - Command Handlers: Process pipeline management commands
@@ -567,20 +606,21 @@ func NewPipelineStep(name, stepType string) PipelineStep {
 //   - Scheduler: Manage automated pipeline execution
 //
 // Thread Safety:
-//   Pipeline instances should be accessed by single threads within aggregate boundaries.
-//   Concurrent access should be managed through proper locking at the application layer
-//   or through message-based coordination patterns.
+//
+//	Pipeline instances should be accessed by single threads within aggregate boundaries.
+//	Concurrent access should be managed through proper locking at the application layer
+//	or through message-based coordination patterns.
 type Pipeline struct {
-	domain.AggregateRoot[PipelineID] // Base aggregate root with event management
-	Name        string               // Pipeline name (required, unique per owner)
-	Description string               // Detailed pipeline description
-	Status      PipelineStatus       // Current pipeline state
-	Steps       []PipelineStep       // Processing steps with dependencies
-	Tags        []string             // Flexible labeling for categorization
-	Owner       string               // Pipeline owner identifier
-	Schedule    *PipelineSchedule    // Optional scheduling configuration
-	LastRunAt   *time.Time           // Most recent execution timestamp
-	NextRunAt   *time.Time           // Next scheduled execution timestamp
+	domain.AggregateRoot[PipelineID]                   // Base aggregate root with event management
+	Name                             string            // Pipeline name (required, unique per owner)
+	Description                      string            // Detailed pipeline description
+	Status                           PipelineStatus    // Current pipeline state
+	Steps                            []PipelineStep    // Processing steps with dependencies
+	Tags                             []string          // Flexible labeling for categorization
+	Owner                            string            // Pipeline owner identifier
+	Schedule                         *PipelineSchedule // Optional scheduling configuration
+	LastRunAt                        *time.Time        // Most recent execution timestamp
+	NextRunAt                        *time.Time        // Next scheduled execution timestamp
 }
 
 // PipelineSchedule represents automated scheduling configuration for pipeline execution.
@@ -591,29 +631,31 @@ type Pipeline struct {
 // management.
 //
 // Fields:
-//   CronExpression string: Standard cron expression defining execution timing
-//   Timezone string: IANA timezone identifier for schedule interpretation
-//   IsEnabled bool: Whether the schedule is currently active
-//   CreatedAt time.Time: When the schedule was originally configured
+//
+//	CronExpression string: Standard cron expression defining execution timing
+//	Timezone string: IANA timezone identifier for schedule interpretation
+//	IsEnabled bool: Whether the schedule is currently active
+//	CreatedAt time.Time: When the schedule was originally configured
 //
 // Example:
-//   Common scheduling patterns:
 //
-//     // Daily at 2 AM UTC
-//     schedule := PipelineSchedule{
-//         CronExpression: "0 2 * * *",
-//         Timezone:       "UTC",
-//         IsEnabled:      true,
-//         CreatedAt:      time.Now(),
-//     }
-//     
-//     // Business hours on weekdays (9 AM EST)
-//     schedule := PipelineSchedule{
-//         CronExpression: "0 9 * * 1-5",
-//         Timezone:       "America/New_York",
-//         IsEnabled:      true,
-//         CreatedAt:      time.Now(),
-//     }
+//	Common scheduling patterns:
+//
+//	  // Daily at 2 AM UTC
+//	  schedule := PipelineSchedule{
+//	      CronExpression: "0 2 * * *",
+//	      Timezone:       "UTC",
+//	      IsEnabled:      true,
+//	      CreatedAt:      time.Now(),
+//	  }
+//
+//	  // Business hours on weekdays (9 AM EST)
+//	  schedule := PipelineSchedule{
+//	      CronExpression: "0 9 * * 1-5",
+//	      Timezone:       "America/New_York",
+//	      IsEnabled:      true,
+//	      CreatedAt:      time.Now(),
+//	  }
 //
 // Integration:
 //   - Scheduler Service: Interprets cron expressions for execution timing
@@ -622,8 +664,9 @@ type Pipeline struct {
 //   - Monitoring: Track scheduled vs actual execution times
 //
 // Thread Safety:
-//   Schedule instances should be treated as immutable after creation.
-//   Modifications should occur through Pipeline aggregate methods.
+//
+//	Schedule instances should be treated as immutable after creation.
+//	Modifications should occur through Pipeline aggregate methods.
 type PipelineSchedule struct {
 	CronExpression string    // Cron expression for execution timing
 	Timezone       string    // IANA timezone identifier
@@ -645,37 +688,40 @@ type PipelineSchedule struct {
 //   - Unique ID is generated for aggregate identification
 //
 // Parameters:
-//   name string: Human-readable pipeline name (required, will be validated for uniqueness by application layer)
-//   description string: Detailed description of pipeline purpose (optional, can be empty)
-//   owner string: Owner identifier for access control and organization (required)
+//
+//	name string: Human-readable pipeline name (required, will be validated for uniqueness by application layer)
+//	description string: Detailed description of pipeline purpose (optional, can be empty)
+//	owner string: Owner identifier for access control and organization (required)
 //
 // Returns:
-//   result.Result[*Pipeline]: Success containing the new pipeline, or Failure with validation error
+//
+//	result.Result[*Pipeline]: Success containing the new pipeline, or Failure with validation error
 //
 // Example:
-//   Creating pipelines with proper error handling:
 //
-//     pipelineResult := entities.NewPipeline(
-//         "Customer Data Processing",
-//         "Daily ETL pipeline for customer data synchronization",
-//         "data-engineering-team",
-//     )
-//     
-//     if pipelineResult.IsFailure() {
-//         log.Error("Pipeline creation failed", "error", pipelineResult.Error())
-//         return pipelineResult.Error()
-//     }
-//     
-//     pipeline := pipelineResult.Value()
-//     log.Info("Pipeline created", "id", pipeline.ID, "name", pipeline.Name)
+//	Creating pipelines with proper error handling:
 //
-//   Validation error handling:
+//	  pipelineResult := entities.NewPipeline(
+//	      "Customer Data Processing",
+//	      "Daily ETL pipeline for customer data synchronization",
+//	      "data-engineering-team",
+//	  )
 //
-//     invalidResult := entities.NewPipeline("", "description", "owner")
-//     if invalidResult.IsFailure() {
-//         // Will contain ValidationError: "pipeline name cannot be empty"
-//         return invalidResult.Error()
-//     }
+//	  if pipelineResult.IsFailure() {
+//	      log.Error("Pipeline creation failed", "error", pipelineResult.Error())
+//	      return pipelineResult.Error()
+//	  }
+//
+//	  pipeline := pipelineResult.Value()
+//	  log.Info("Pipeline created", "id", pipeline.ID, "name", pipeline.Name)
+//
+//	Validation error handling:
+//
+//	  invalidResult := entities.NewPipeline("", "description", "owner")
+//	  if invalidResult.IsFailure() {
+//	      // Will contain ValidationError: "pipeline name cannot be empty"
+//	      return invalidResult.Error()
+//	  }
 //
 // Events Generated:
 //   - PipelineCreatedEvent: Contains pipeline ID, name, and owner for downstream processing
@@ -687,7 +733,8 @@ type PipelineSchedule struct {
 //   - Access Control: Uses owner field for permission validation
 //
 // Thread Safety:
-//   Safe for concurrent use as each call creates an independent pipeline instance.
+//
+//	Safe for concurrent use as each call creates an independent pipeline instance.
 func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
 	if name == "" {
 		return result.Failure[*Pipeline](errors.ValidationError("pipeline name cannot be empty"))
@@ -730,34 +777,37 @@ func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
 //   - Pipeline state must allow modifications (not running)
 //
 // Parameters:
-//   step PipelineStep: The processing step to add with complete configuration
+//
+//	step PipelineStep: The processing step to add with complete configuration
 //
 // Returns:
-//   result.Result[bool]: Success(true) if step added successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if step added successfully, or Failure with validation error
 //
 // Example:
-//   Adding steps with dependencies:
 //
-//     pipeline := entities.NewPipeline("ETL Pipeline", "Data processing", "data-team").Value()
-//     
-//     // Add extraction step (no dependencies)
-//     extractStep := entities.NewPipelineStep("extract-users", "oracle-tap")
-//     extractStep.Config["table"] = "users"
-//     
-//     result := pipeline.AddStep(extractStep)
-//     if result.IsFailure() {
-//         return result.Error() // Handle validation error
-//     }
-//     
-//     // Add transformation step (depends on extraction)
-//     transformStep := entities.NewPipelineStep("transform-users", "dbt-transform")
-//     transformStep.DependsOn = []string{"extract-users"}
-//     transformStep.Config["model"] = "staging.users_clean"
-//     
-//     result = pipeline.AddStep(transformStep)
-//     if result.IsFailure() {
-//         return result.Error() // Handle dependency validation error
-//     }
+//	Adding steps with dependencies:
+//
+//	  pipeline := entities.NewPipeline("ETL Pipeline", "Data processing", "data-team").Value()
+//
+//	  // Add extraction step (no dependencies)
+//	  extractStep := entities.NewPipelineStep("extract-users", "oracle-tap")
+//	  extractStep.Config["table"] = "users"
+//
+//	  result := pipeline.AddStep(extractStep)
+//	  if result.IsFailure() {
+//	      return result.Error() // Handle validation error
+//	  }
+//
+//	  // Add transformation step (depends on extraction)
+//	  transformStep := entities.NewPipelineStep("transform-users", "dbt-transform")
+//	  transformStep.DependsOn = []string{"extract-users"}
+//	  transformStep.Config["model"] = "staging.users_clean"
+//
+//	  result = pipeline.AddStep(transformStep)
+//	  if result.IsFailure() {
+//	      return result.Error() // Handle dependency validation error
+//	  }
 //
 // Validation Errors:
 //   - ValidationError: "step name cannot be empty" - when step.Name is empty
@@ -774,8 +824,9 @@ func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
 //   - Dependency Analyzer: Validate execution order and detect cycles
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
-//   Concurrent step additions should be coordinated at the application layer.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
+//	Concurrent step additions should be coordinated at the application layer.
 func (p *Pipeline) AddStep(step PipelineStep) result.Result[bool] {
 	if step.Name == "" {
 		return result.Failure[bool](errors.ValidationError("step name cannot be empty"))
@@ -818,26 +869,29 @@ func (p *Pipeline) AddStep(step PipelineStep) result.Result[bool] {
 //   - Removal generates audit events for change tracking
 //
 // Parameters:
-//   stepName string: Name of the step to remove (must match existing step)
+//
+//	stepName string: Name of the step to remove (must match existing step)
 //
 // Returns:
-//   result.Result[bool]: Success(true) if step removed successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if step removed successfully, or Failure with validation error
 //
 // Example:
-//   Safe step removal with dependency checking:
 //
-//     pipeline := loadExistingPipeline()
-//     
-//     // This will fail if other steps depend on "extract-users"
-//     result := pipeline.RemoveStep("extract-users")
-//     if result.IsFailure() {
-//         // Handle dependency violation: "cannot remove step: other steps depend on it"
-//         return result.Error()
-//     }
-//     
-//     // Remove dependent steps first, then dependencies
-//     pipeline.RemoveStep("transform-users") // Remove dependent step first
-//     pipeline.RemoveStep("extract-users")   // Now safe to remove
+//	Safe step removal with dependency checking:
+//
+//	  pipeline := loadExistingPipeline()
+//
+//	  // This will fail if other steps depend on "extract-users"
+//	  result := pipeline.RemoveStep("extract-users")
+//	  if result.IsFailure() {
+//	      // Handle dependency violation: "cannot remove step: other steps depend on it"
+//	      return result.Error()
+//	  }
+//
+//	  // Remove dependent steps first, then dependencies
+//	  pipeline.RemoveStep("transform-users") // Remove dependent step first
+//	  pipeline.RemoveStep("extract-users")   // Now safe to remove
 //
 // Validation Errors:
 //   - NotFoundError: "step X" - when step name doesn't exist in pipeline
@@ -847,11 +901,12 @@ func (p *Pipeline) AddStep(step PipelineStep) result.Result[bool] {
 //   - PipelineStepRemovedEvent: Contains pipeline ID and removed step name
 //
 // Dependency Analysis:
-//   The method performs comprehensive dependency scanning:
-//   1. Locates the step to remove by name
-//   2. Scans all remaining steps for dependencies on the target step
-//   3. Prevents removal if any dependencies are found
-//   4. Only removes if no other steps reference the target step
+//
+//	The method performs comprehensive dependency scanning:
+//	1. Locates the step to remove by name
+//	2. Scans all remaining steps for dependencies on the target step
+//	3. Prevents removal if any dependencies are found
+//	4. Only removes if no other steps reference the target step
 //
 // Integration:
 //   - Workflow Engine: Updates execution plans after step removal
@@ -860,7 +915,8 @@ func (p *Pipeline) AddStep(step PipelineStep) result.Result[bool] {
 //   - Dependency Graph: Recalculates execution order after removal
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) RemoveStep(stepName string) result.Result[bool] {
 	stepIndex := -1
 	for i, step := range p.Steps {
@@ -908,37 +964,41 @@ func (p *Pipeline) RemoveStep(stepName string) result.Result[bool] {
 //   - Pipeline dependencies must form a valid execution graph
 //
 // Parameters:
-//   None - operates on the current pipeline state
+//
+//	None - operates on the current pipeline state
 //
 // Returns:
-//   result.Result[bool]: Success(true) if activated successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if activated successfully, or Failure with validation error
 //
 // Example:
-//   Complete pipeline setup and activation:
 //
-//     pipelineResult := entities.NewPipeline("Data ETL", "Customer data processing", "data-team")
-//     pipeline := pipelineResult.Value()
-//     
-//     // Configure pipeline steps
-//     extractStep := entities.NewPipelineStep("extract", "oracle-tap")
-//     pipeline.AddStep(extractStep)
-//     
-//     transformStep := entities.NewPipelineStep("transform", "dbt-transform")
-//     transformStep.DependsOn = []string{"extract"}
-//     pipeline.AddStep(transformStep)
-//     
-//     // Activate for execution
-//     result := pipeline.Activate()
-//     if result.IsFailure() {
-//         return result.Error() // Handle validation failure
-//     }
-//     
-//     // Pipeline is now ready for execution
-//     log.Info("Pipeline activated", "id", pipeline.ID, "steps", len(pipeline.Steps))
+//	Complete pipeline setup and activation:
+//
+//	  pipelineResult := entities.NewPipeline("Data ETL", "Customer data processing", "data-team")
+//	  pipeline := pipelineResult.Value()
+//
+//	  // Configure pipeline steps
+//	  extractStep := entities.NewPipelineStep("extract", "oracle-tap")
+//	  pipeline.AddStep(extractStep)
+//
+//	  transformStep := entities.NewPipelineStep("transform", "dbt-transform")
+//	  transformStep.DependsOn = []string{"extract"}
+//	  pipeline.AddStep(transformStep)
+//
+//	  // Activate for execution
+//	  result := pipeline.Activate()
+//	  if result.IsFailure() {
+//	      return result.Error() // Handle validation failure
+//	  }
+//
+//	  // Pipeline is now ready for execution
+//	  log.Info("Pipeline activated", "id", pipeline.ID, "steps", len(pipeline.Steps))
 //
 // State Transitions:
-//   Draft → Active: Normal activation flow
-//   Other states → Active: Not allowed, will return validation error
+//
+//	Draft → Active: Normal activation flow
+//	Other states → Active: Not allowed, will return validation error
 //
 // Validation Errors:
 //   - ValidationError: "pipeline is already active" - attempting to activate active pipeline
@@ -954,7 +1014,8 @@ func (p *Pipeline) RemoveStep(stepName string) result.Result[bool] {
 //   - Access Control: Execution permissions validated for pipeline owner
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) Activate() result.Result[bool] {
 	if p.Status == PipelineStatusActive {
 		return result.Failure[bool](errors.ValidationError("pipeline is already active"))
@@ -987,36 +1048,40 @@ func (p *Pipeline) Activate() result.Result[bool] {
 //   - Generates appropriate events for downstream system coordination
 //
 // Parameters:
-//   None - operates on the current pipeline state
+//
+//	None - operates on the current pipeline state
 //
 // Returns:
-//   result.Result[bool]: Success(true) if deactivated successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if deactivated successfully, or Failure with validation error
 //
 // Example:
-//   Safe pipeline deactivation for maintenance:
 //
-//     pipeline := loadActivePipeline()
-//     
-//     // Check if pipeline can be safely deactivated
-//     if pipeline.Status == entities.PipelineStatusRunning {
-//         log.Warn("Cannot deactivate running pipeline", "id", pipeline.ID)
-//         return errors.New("wait for pipeline completion")
-//     }
-//     
-//     // Deactivate for modifications
-//     result := pipeline.Deactivate()
-//     if result.IsFailure() {
-//         return result.Error()
-//     }
-//     
-//     // Pipeline can now be modified safely
-//     pipeline.AddStep(newMaintenanceStep)
-//     pipeline.Activate() // Reactivate after modifications
+//	Safe pipeline deactivation for maintenance:
+//
+//	  pipeline := loadActivePipeline()
+//
+//	  // Check if pipeline can be safely deactivated
+//	  if pipeline.Status == entities.PipelineStatusRunning {
+//	      log.Warn("Cannot deactivate running pipeline", "id", pipeline.ID)
+//	      return errors.New("wait for pipeline completion")
+//	  }
+//
+//	  // Deactivate for modifications
+//	  result := pipeline.Deactivate()
+//	  if result.IsFailure() {
+//	      return result.Error()
+//	  }
+//
+//	  // Pipeline can now be modified safely
+//	  pipeline.AddStep(newMaintenanceStep)
+//	  pipeline.Activate() // Reactivate after modifications
 //
 // State Transitions:
-//   Active → Draft: Normal deactivation flow
-//   Running → Draft: Not allowed, will return validation error
-//   Other states → Draft: Allowed (idempotent for Draft status)
+//
+//	Active → Draft: Normal deactivation flow
+//	Running → Draft: Not allowed, will return validation error
+//	Other states → Draft: Allowed (idempotent for Draft status)
 //
 // Validation Errors:
 //   - ValidationError: "cannot deactivate running pipeline" - attempting to deactivate during execution
@@ -1037,7 +1102,8 @@ func (p *Pipeline) Activate() result.Result[bool] {
 //   - Testing and development workflow management
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) Deactivate() result.Result[bool] {
 	if p.Status == PipelineStatusRunning {
 		return result.Failure[bool](errors.ValidationError("cannot deactivate running pipeline"))
@@ -1066,37 +1132,41 @@ func (p *Pipeline) Deactivate() result.Result[bool] {
 //   - Execution metadata is properly recorded for audit and monitoring
 //
 // Parameters:
-//   None - operates on the current pipeline state
+//
+//	None - operates on the current pipeline state
 //
 // Returns:
-//   result.Result[bool]: Success(true) if started successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if started successfully, or Failure with validation error
 //
 // Example:
-//   Complete pipeline execution initiation:
 //
-//     pipeline := loadActivePipeline()
-//     
-//     // Validate pipeline is ready for execution
-//     if !pipeline.CanExecute() {
-//         return errors.New("pipeline not ready for execution")
-//     }
-//     
-//     // Start execution
-//     result := pipeline.Start()
-//     if result.IsFailure() {
-//         log.Error("Failed to start pipeline", "error", result.Error(), "id", pipeline.ID)
-//         return result.Error()
-//     }
-//     
-//     // Pipeline is now running
-//     log.Info("Pipeline execution started", "id", pipeline.ID, "started_at", pipeline.LastRunAt)
-//     
-//     // Trigger execution engine
-//     return executionEngine.ProcessPipeline(pipeline)
+//	Complete pipeline execution initiation:
+//
+//	  pipeline := loadActivePipeline()
+//
+//	  // Validate pipeline is ready for execution
+//	  if !pipeline.CanExecute() {
+//	      return errors.New("pipeline not ready for execution")
+//	  }
+//
+//	  // Start execution
+//	  result := pipeline.Start()
+//	  if result.IsFailure() {
+//	      log.Error("Failed to start pipeline", "error", result.Error(), "id", pipeline.ID)
+//	      return result.Error()
+//	  }
+//
+//	  // Pipeline is now running
+//	  log.Info("Pipeline execution started", "id", pipeline.ID, "started_at", pipeline.LastRunAt)
+//
+//	  // Trigger execution engine
+//	  return executionEngine.ProcessPipeline(pipeline)
 //
 // State Transitions:
-//   Active → Running: Normal execution start
-//   Other states → Running: Not allowed, will return validation error
+//
+//	Active → Running: Normal execution start
+//	Other states → Running: Not allowed, will return validation error
 //
 // Validation Errors:
 //   - ValidationError: "can only start active pipelines" - attempting to start non-active pipeline
@@ -1118,8 +1188,9 @@ func (p *Pipeline) Deactivate() result.Result[bool] {
 //   - Notification Service: Sends execution start notifications
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
-//   Concurrent start attempts should be handled by application layer coordination.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
+//	Concurrent start attempts should be handled by application layer coordination.
 func (p *Pipeline) Start() result.Result[bool] {
 	if p.Status != PipelineStatusActive {
 		return result.Failure[bool](errors.ValidationError("can only start active pipelines"))
@@ -1154,34 +1225,38 @@ func (p *Pipeline) Start() result.Result[bool] {
 //   - Updates pipeline metadata for monitoring and reporting
 //
 // Parameters:
-//   None - operates on the current pipeline state
+//
+//	None - operates on the current pipeline state
 //
 // Returns:
-//   result.Result[bool]: Success(true) if completed successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if completed successfully, or Failure with validation error
 //
 // Example:
-//   Pipeline completion in execution engine:
 //
-//     // After all steps have been processed successfully
-//     pipeline := loadRunningPipeline()
-//     
-//     // Validate all steps completed successfully
-//     if !allStepsCompleted(pipeline) {
-//         return pipeline.Fail("not all steps completed successfully")
-//     }
-//     
-//     // Mark pipeline as completed
-//     result := pipeline.Complete()
-//     if result.IsFailure() {
-//         log.Error("Failed to complete pipeline", "error", result.Error())
-//         return result.Error()
-//     }
-//     
-//     log.Info("Pipeline completed successfully", "id", pipeline.ID, "duration", calculateDuration())
+//	Pipeline completion in execution engine:
+//
+//	  // After all steps have been processed successfully
+//	  pipeline := loadRunningPipeline()
+//
+//	  // Validate all steps completed successfully
+//	  if !allStepsCompleted(pipeline) {
+//	      return pipeline.Fail("not all steps completed successfully")
+//	  }
+//
+//	  // Mark pipeline as completed
+//	  result := pipeline.Complete()
+//	  if result.IsFailure() {
+//	      log.Error("Failed to complete pipeline", "error", result.Error())
+//	      return result.Error()
+//	  }
+//
+//	  log.Info("Pipeline completed successfully", "id", pipeline.ID, "duration", calculateDuration())
 //
 // State Transitions:
-//   Running → Completed: Normal successful completion
-//   Other states → Completed: Not allowed, will return validation error
+//
+//	Running → Completed: Normal successful completion
+//	Other states → Completed: Not allowed, will return validation error
 //
 // Validation Errors:
 //   - ValidationError: "can only complete running pipelines" - attempting to complete non-running pipeline
@@ -1203,14 +1278,16 @@ func (p *Pipeline) Start() result.Result[bool] {
 //   - Downstream Systems: Triggers dependent processes and workflows
 //
 // Performance Metrics:
-//   Completion events enable tracking of:
-//   - Execution duration and throughput
-//   - Success rates and reliability metrics
-//   - Resource utilization and efficiency
-//   - Business process completion times
+//
+//	Completion events enable tracking of:
+//	- Execution duration and throughput
+//	- Success rates and reliability metrics
+//	- Resource utilization and efficiency
+//	- Business process completion times
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) Complete() result.Result[bool] {
 	if p.Status != PipelineStatusRunning {
 		return result.Failure[bool](errors.ValidationError("can only complete running pipelines"))
@@ -1239,35 +1316,39 @@ func (p *Pipeline) Complete() result.Result[bool] {
 //   - Failed pipelines can be reactivated after addressing failure causes
 //
 // Parameters:
-//   reason string: Detailed description of the failure cause (required for debugging)
+//
+//	reason string: Detailed description of the failure cause (required for debugging)
 //
 // Returns:
-//   result.Result[bool]: Success(true) if marked as failed successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if marked as failed successfully, or Failure with validation error
 //
 // Example:
-//   Pipeline failure handling in execution engine:
 //
-//     pipeline := loadRunningPipeline()
-//     
-//     // Execute pipeline steps with error handling
-//     for _, step := range pipeline.Steps {
-//         if err := executeStep(step); err != nil {
-//             // Mark pipeline as failed with detailed reason
-//             failureReason := fmt.Sprintf("Step '%s' failed: %v", step.Name, err)
-//             result := pipeline.Fail(failureReason)
-//             
-//             if result.IsFailure() {
-//                 log.Error("Failed to mark pipeline as failed", "error", result.Error())
-//             }
-//             
-//             // Trigger failure recovery procedures
-//             return triggerFailureRecovery(pipeline, err)
-//         }
-//     }
+//	Pipeline failure handling in execution engine:
+//
+//	  pipeline := loadRunningPipeline()
+//
+//	  // Execute pipeline steps with error handling
+//	  for _, step := range pipeline.Steps {
+//	      if err := executeStep(step); err != nil {
+//	          // Mark pipeline as failed with detailed reason
+//	          failureReason := fmt.Sprintf("Step '%s' failed: %v", step.Name, err)
+//	          result := pipeline.Fail(failureReason)
+//
+//	          if result.IsFailure() {
+//	              log.Error("Failed to mark pipeline as failed", "error", result.Error())
+//	          }
+//
+//	          // Trigger failure recovery procedures
+//	          return triggerFailureRecovery(pipeline, err)
+//	      }
+//	  }
 //
 // State Transitions:
-//   Running → Failed: Normal failure handling
-//   Other states → Failed: Not allowed, will return validation error
+//
+//	Running → Failed: Normal failure handling
+//	Other states → Failed: Not allowed, will return validation error
 //
 // Validation Errors:
 //   - ValidationError: "can only fail running pipelines" - attempting to fail non-running pipeline
@@ -1282,11 +1363,12 @@ func (p *Pipeline) Complete() result.Result[bool] {
 //   - PipelineFailedEvent: Contains pipeline ID, name, failure reason, and timestamp
 //
 // Failure Analysis:
-//   Generated events enable comprehensive failure analysis:
-//   - Root cause identification and categorization
-//   - Failure pattern detection and prevention
-//   - Step-specific error tracking and optimization
-//   - Resource constraint and performance issue identification
+//
+//	Generated events enable comprehensive failure analysis:
+//	- Root cause identification and categorization
+//	- Failure pattern detection and prevention
+//	- Step-specific error tracking and optimization
+//	- Resource constraint and performance issue identification
 //
 // Integration:
 //   - Error Tracking: Records detailed failure information for analysis
@@ -1303,7 +1385,8 @@ func (p *Pipeline) Complete() result.Result[bool] {
 //   - Compensation transactions for data consistency
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) Fail(reason string) result.Result[bool] {
 	if p.Status != PipelineStatusRunning {
 		return result.Failure[bool](errors.ValidationError("can only fail running pipelines"))
@@ -1333,31 +1416,34 @@ func (p *Pipeline) Fail(reason string) result.Result[bool] {
 //   - Generates events for schedule management and monitoring
 //
 // Parameters:
-//   cronExpression string: Standard cron expression defining execution timing (required)
-//   timezone string: IANA timezone identifier for schedule interpretation (optional, defaults to UTC)
+//
+//	cronExpression string: Standard cron expression defining execution timing (required)
+//	timezone string: IANA timezone identifier for schedule interpretation (optional, defaults to UTC)
 //
 // Returns:
-//   result.Result[bool]: Success(true) if schedule set successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if schedule set successfully, or Failure with validation error
 //
 // Example:
-//   Common scheduling patterns:
 //
-//     pipeline := loadPipeline()
-//     
-//     // Daily execution at 2 AM UTC
-//     result := pipeline.SetSchedule("0 2 * * *", "UTC")
-//     if result.IsFailure() {
-//         return result.Error()
-//     }
-//     
-//     // Business hours on weekdays (9 AM Eastern Time)
-//     result = pipeline.SetSchedule("0 9 * * 1-5", "America/New_York")
-//     
-//     // Hourly execution during business hours
-//     result = pipeline.SetSchedule("0 9-17 * * 1-5", "America/Chicago")
-//     
-//     // Monthly execution on first day at midnight
-//     result = pipeline.SetSchedule("0 0 1 * *", "UTC")
+//	Common scheduling patterns:
+//
+//	  pipeline := loadPipeline()
+//
+//	  // Daily execution at 2 AM UTC
+//	  result := pipeline.SetSchedule("0 2 * * *", "UTC")
+//	  if result.IsFailure() {
+//	      return result.Error()
+//	  }
+//
+//	  // Business hours on weekdays (9 AM Eastern Time)
+//	  result = pipeline.SetSchedule("0 9 * * 1-5", "America/New_York")
+//
+//	  // Hourly execution during business hours
+//	  result = pipeline.SetSchedule("0 9-17 * * 1-5", "America/Chicago")
+//
+//	  // Monthly execution on first day at midnight
+//	  result = pipeline.SetSchedule("0 0 1 * *", "UTC")
 //
 // Cron Expression Examples:
 //   - "0 2 * * *" - Daily at 2:00 AM
@@ -1370,11 +1456,12 @@ func (p *Pipeline) Fail(reason string) result.Result[bool] {
 //   - ValidationError: "cron expression cannot be empty" - when cronExpression is empty
 //
 // Schedule Configuration:
-//   Creates PipelineSchedule with:
-//   - CronExpression: The provided cron timing specification
-//   - Timezone: Timezone for expression interpretation
-//   - IsEnabled: Set to true (schedule is active)
-//   - CreatedAt: Current timestamp for audit tracking
+//
+//	Creates PipelineSchedule with:
+//	- CronExpression: The provided cron timing specification
+//	- Timezone: Timezone for expression interpretation
+//	- IsEnabled: Set to true (schedule is active)
+//	- CreatedAt: Current timestamp for audit tracking
 //
 // Events Generated:
 //   - PipelineScheduleSetEvent: Contains pipeline ID, cron expression, and timezone
@@ -1386,7 +1473,8 @@ func (p *Pipeline) Fail(reason string) result.Result[bool] {
 //   - Calendar Integration: Shows pipeline execution schedule in business calendars
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bool] {
 	if cronExpression == "" {
 		return result.Failure[bool](errors.ValidationError("cron expression cannot be empty"))
@@ -1415,26 +1503,29 @@ func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bo
 // to manual execution workflows.
 //
 // Parameters:
-//   None - operates on the current pipeline state
+//
+//	None - operates on the current pipeline state
 //
 // Returns:
-//   None - always succeeds as clearing non-existent schedule is idempotent
+//
+//	None - always succeeds as clearing non-existent schedule is idempotent
 //
 // Example:
-//   Temporary schedule removal for maintenance:
 //
-//     pipeline := loadScheduledPipeline()
-//     
-//     // Temporarily disable automated execution
-//     pipeline.ClearSchedule()
-//     log.Info("Pipeline schedule cleared for maintenance", "id", pipeline.ID)
-//     
-//     // Perform maintenance operations
-//     performMaintenanceOperations(pipeline)
-//     
-//     // Re-enable scheduling after maintenance
-//     pipeline.SetSchedule("0 2 * * *", "UTC")
-//     log.Info("Pipeline schedule restored", "id", pipeline.ID)
+//	Temporary schedule removal for maintenance:
+//
+//	  pipeline := loadScheduledPipeline()
+//
+//	  // Temporarily disable automated execution
+//	  pipeline.ClearSchedule()
+//	  log.Info("Pipeline schedule cleared for maintenance", "id", pipeline.ID)
+//
+//	  // Perform maintenance operations
+//	  performMaintenanceOperations(pipeline)
+//
+//	  // Re-enable scheduling after maintenance
+//	  pipeline.SetSchedule("0 2 * * *", "UTC")
+//	  log.Info("Pipeline schedule restored", "id", pipeline.ID)
 //
 // State Changes:
 //   - Schedule field set to nil (completely removed)
@@ -1458,11 +1549,13 @@ func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bo
 //   - Compliance requirements for manual approval workflows
 //
 // Idempotency:
-//   Safe to call multiple times - clearing an already cleared schedule has no effect.
-//   No validation errors are generated for missing schedules.
+//
+//	Safe to call multiple times - clearing an already cleared schedule has no effect.
+//	No validation errors are generated for missing schedules.
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) ClearSchedule() {
 	p.Schedule = nil
 	p.Touch()
@@ -1480,29 +1573,32 @@ func (p *Pipeline) ClearSchedule() {
 // automatically prevented to maintain tag uniqueness.
 //
 // Parameters:
-//   tag string: Label to add to the pipeline (case-sensitive, no validation)
+//
+//	tag string: Label to add to the pipeline (case-sensitive, no validation)
 //
 // Returns:
-//   None - always succeeds, duplicate tags are silently ignored
+//
+//	None - always succeeds, duplicate tags are silently ignored
 //
 // Example:
-//   Pipeline categorization and labeling:
 //
-//     pipeline := loadPipeline()
-//     
-//     // Add business process tags
-//     pipeline.AddTag("customer-data")
-//     pipeline.AddTag("daily-etl")
-//     pipeline.AddTag("production")
-//     
-//     // Add environment and team tags
-//     pipeline.AddTag("data-engineering")
-//     pipeline.AddTag("high-priority")
-//     
-//     // Duplicate tag is ignored (idempotent)
-//     pipeline.AddTag("customer-data") // No effect
-//     
-//     log.Info("Pipeline tagged", "id", pipeline.ID, "tags", pipeline.Tags)
+//	Pipeline categorization and labeling:
+//
+//	  pipeline := loadPipeline()
+//
+//	  // Add business process tags
+//	  pipeline.AddTag("customer-data")
+//	  pipeline.AddTag("daily-etl")
+//	  pipeline.AddTag("production")
+//
+//	  // Add environment and team tags
+//	  pipeline.AddTag("data-engineering")
+//	  pipeline.AddTag("high-priority")
+//
+//	  // Duplicate tag is ignored (idempotent)
+//	  pipeline.AddTag("customer-data") // No effect
+//
+//	  log.Info("Pipeline tagged", "id", pipeline.ID, "tags", pipeline.Tags)
 //
 // Tag Usage Patterns:
 //   - **Environment**: "production", "staging", "development"
@@ -1530,7 +1626,8 @@ func (p *Pipeline) ClearSchedule() {
 //   - Tags are stored in memory with the aggregate
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) AddTag(tag string) {
 	for _, existingTag := range p.Tags {
 		if existingTag == tag {
@@ -1548,28 +1645,31 @@ func (p *Pipeline) AddTag(tag string) {
 // idempotent - removing non-existent tags has no effect and generates no errors.
 //
 // Parameters:
-//   tag string: Label to remove from the pipeline (case-sensitive exact match)
+//
+//	tag string: Label to remove from the pipeline (case-sensitive exact match)
 //
 // Returns:
-//   None - always succeeds, non-existent tags are silently ignored
+//
+//	None - always succeeds, non-existent tags are silently ignored
 //
 // Example:
-//   Tag lifecycle management:
 //
-//     pipeline := loadPipeline()
-//     
-//     // Remove environment tag during promotion
-//     pipeline.RemoveTag("staging")
-//     pipeline.AddTag("production")
-//     
-//     // Remove temporary tags after processing
-//     pipeline.RemoveTag("migration-pending")
-//     pipeline.RemoveTag("manual-review")
-//     
-//     // Remove non-existent tag (no effect)
-//     pipeline.RemoveTag("non-existent-tag") // Silently ignored
-//     
-//     log.Info("Pipeline tags updated", "id", pipeline.ID, "remaining_tags", pipeline.Tags)
+//	Tag lifecycle management:
+//
+//	  pipeline := loadPipeline()
+//
+//	  // Remove environment tag during promotion
+//	  pipeline.RemoveTag("staging")
+//	  pipeline.AddTag("production")
+//
+//	  // Remove temporary tags after processing
+//	  pipeline.RemoveTag("migration-pending")
+//	  pipeline.RemoveTag("manual-review")
+//
+//	  // Remove non-existent tag (no effect)
+//	  pipeline.RemoveTag("non-existent-tag") // Silently ignored
+//
+//	  log.Info("Pipeline tags updated", "id", pipeline.ID, "remaining_tags", pipeline.Tags)
 //
 // Use Cases:
 //   - **Environment Promotion**: Remove "staging", add "production"
@@ -1601,7 +1701,8 @@ func (p *Pipeline) AddTag(tag string) {
 //   - Consider tag indexing for high-frequency tag operations
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Pipeline) RemoveTag(tag string) {
 	for i, existingTag := range p.Tags {
 		if existingTag == tag {
@@ -1619,23 +1720,28 @@ func (p *Pipeline) RemoveTag(tag string) {
 // steps to determine if a step with the given name is present.
 //
 // Parameters:
-//   stepName string: Name of the step to search for (case-sensitive exact match)
+//
+//	stepName string: Name of the step to search for (case-sensitive exact match)
 //
 // Returns:
-//   bool: true if a step with the given name exists, false otherwise
+//
+//	bool: true if a step with the given name exists, false otherwise
 //
 // Usage:
-//   Internal method used by:
-//   - AddStep() for dependency validation
-//   - RemoveStep() for existence checking
-//   - Other step management operations
+//
+//	Internal method used by:
+//	- AddStep() for dependency validation
+//	- RemoveStep() for existence checking
+//	- Other step management operations
 //
 // Performance:
-//   O(n) linear search where n is the number of pipeline steps.
-//   Consider step indexing for pipelines with large numbers of steps.
+//
+//	O(n) linear search where n is the number of pipeline steps.
+//	Consider step indexing for pipelines with large numbers of steps.
 //
 // Thread Safety:
-//   Read-only operation, safe for concurrent access to immutable step data.
+//
+//	Read-only operation, safe for concurrent access to immutable step data.
 func (p *Pipeline) hasStep(stepName string) bool {
 	for _, step := range p.Steps {
 		if step.Name == stepName {
@@ -1653,27 +1759,30 @@ func (p *Pipeline) hasStep(stepName string) bool {
 // existence checking.
 //
 // Parameters:
-//   stepName string: Name of the step to retrieve (case-sensitive exact match)
+//
+//	stepName string: Name of the step to retrieve (case-sensitive exact match)
 //
 // Returns:
-//   PipelineStep: The step if found, or zero value if not found
-//   bool: true if the step was found, false otherwise
+//
+//	PipelineStep: The step if found, or zero value if not found
+//	bool: true if the step was found, false otherwise
 //
 // Example:
-//   Safe step retrieval and validation:
 //
-//     step, exists := pipeline.GetStep("extract-users")
-//     if !exists {
-//         return errors.New("step 'extract-users' not found")
-//     }
-//     
-//     // Safe to use step
-//     log.Info("Found step", "name", step.Name, "type", step.Type, "enabled", step.IsEnabled)
-//     
-//     // Check step configuration
-//     if config, hasConfig := step.Config["table"]; hasConfig {
-//         log.Info("Step configured for table", "table", config)
-//     }
+//	Safe step retrieval and validation:
+//
+//	  step, exists := pipeline.GetStep("extract-users")
+//	  if !exists {
+//	      return errors.New("step 'extract-users' not found")
+//	  }
+//
+//	  // Safe to use step
+//	  log.Info("Found step", "name", step.Name, "type", step.Type, "enabled", step.IsEnabled)
+//
+//	  // Check step configuration
+//	  if config, hasConfig := step.Config["table"]; hasConfig {
+//	      log.Info("Step configured for table", "table", config)
+//	  }
 //
 // Use Cases:
 //   - Configuration validation and step inspection
@@ -1683,16 +1792,19 @@ func (p *Pipeline) hasStep(stepName string) bool {
 //   - Debug and troubleshooting operations
 //
 // Performance:
-//   O(n) linear search where n is the number of pipeline steps.
-//   Returns copy of step data to prevent external modification.
+//
+//	O(n) linear search where n is the number of pipeline steps.
+//	Returns copy of step data to prevent external modification.
 //
 // Error Handling:
-//   Uses Go's comma-ok idiom instead of error returns.
-//   Zero value PipelineStep returned when step not found.
-//   Always check the boolean return value before using the step.
+//
+//	Uses Go's comma-ok idiom instead of error returns.
+//	Zero value PipelineStep returned when step not found.
+//	Always check the boolean return value before using the step.
 //
 // Thread Safety:
-//   Read-only operation returning copied step data, safe for concurrent access.
+//
+//	Read-only operation returning copied step data, safe for concurrent access.
 func (p *Pipeline) GetStep(stepName string) (PipelineStep, bool) {
 	for _, step := range p.Steps {
 		if step.Name == stepName {
@@ -1709,32 +1821,35 @@ func (p *Pipeline) GetStep(stepName string) (PipelineStep, bool) {
 // schedule configuration and whether that schedule is currently enabled.
 //
 // Returns:
-//   bool: true if pipeline has an active schedule, false otherwise
+//
+//	bool: true if pipeline has an active schedule, false otherwise
 //
 // Example:
-//   Schedule-based execution logic:
 //
-//     pipeline := loadPipeline()
-//     
-//     if pipeline.IsScheduled() {
-//         log.Info("Pipeline has automated scheduling", 
-//             "id", pipeline.ID,
-//             "cron", pipeline.Schedule.CronExpression,
-//             "timezone", pipeline.Schedule.Timezone)
-//         
-//         // Register with scheduler service
-//         schedulerService.RegisterPipeline(pipeline)
-//     } else {
-//         log.Info("Pipeline requires manual execution", "id", pipeline.ID)
-//         
-//         // Set up manual execution workflows
-//         manualExecutionService.RegisterPipeline(pipeline)
-//     }
+//	Schedule-based execution logic:
+//
+//	  pipeline := loadPipeline()
+//
+//	  if pipeline.IsScheduled() {
+//	      log.Info("Pipeline has automated scheduling",
+//	          "id", pipeline.ID,
+//	          "cron", pipeline.Schedule.CronExpression,
+//	          "timezone", pipeline.Schedule.Timezone)
+//
+//	      // Register with scheduler service
+//	      schedulerService.RegisterPipeline(pipeline)
+//	  } else {
+//	      log.Info("Pipeline requires manual execution", "id", pipeline.ID)
+//
+//	      // Set up manual execution workflows
+//	      manualExecutionService.RegisterPipeline(pipeline)
+//	  }
 //
 // Schedule Validation:
-//   Returns true only when:
-//   - Schedule is not nil (schedule configuration exists)
-//   - Schedule.IsEnabled is true (schedule is active)
+//
+//	Returns true only when:
+//	- Schedule is not nil (schedule configuration exists)
+//	- Schedule.IsEnabled is true (schedule is active)
 //
 // Integration:
 //   - Scheduler Service: Determines if pipeline should be registered for automated execution
@@ -1743,7 +1858,8 @@ func (p *Pipeline) GetStep(stepName string) (PipelineStep, bool) {
 //   - Reporting: Differentiates between manual and automated pipeline execution
 //
 // Thread Safety:
-//   Read-only operation, safe for concurrent access.
+//
+//	Read-only operation, safe for concurrent access.
 func (p *Pipeline) IsScheduled() bool {
 	return p.Schedule != nil && p.Schedule.IsEnabled
 }
@@ -1756,31 +1872,34 @@ func (p *Pipeline) IsScheduled() bool {
 // pipeline execution.
 //
 // Returns:
-//   bool: true if pipeline can be executed, false otherwise
+//
+//	bool: true if pipeline can be executed, false otherwise
 //
 // Example:
-//   Pre-execution validation:
 //
-//     pipeline := loadPipeline()
-//     
-//     if !pipeline.CanExecute() {
-//         log.Warn("Pipeline not ready for execution", 
-//             "id", pipeline.ID,
-//             "status", pipeline.Status.String(),
-//             "step_count", len(pipeline.Steps))
-//         return errors.New("pipeline not ready")
-//     }
-//     
-//     // Safe to start execution
-//     result := pipeline.Start()
-//     if result.IsFailure() {
-//         return result.Error()
-//     }
+//	Pre-execution validation:
+//
+//	  pipeline := loadPipeline()
+//
+//	  if !pipeline.CanExecute() {
+//	      log.Warn("Pipeline not ready for execution",
+//	          "id", pipeline.ID,
+//	          "status", pipeline.Status.String(),
+//	          "step_count", len(pipeline.Steps))
+//	      return errors.New("pipeline not ready")
+//	  }
+//
+//	  // Safe to start execution
+//	  result := pipeline.Start()
+//	  if result.IsFailure() {
+//	      return result.Error()
+//	  }
 //
 // Execution Requirements:
-//   Returns true only when:
-//   - Status is PipelineStatusActive (pipeline is activated and ready)
-//   - Steps collection is not empty (has at least one processing step)
+//
+//	Returns true only when:
+//	- Status is PipelineStatusActive (pipeline is activated and ready)
+//	- Steps collection is not empty (has at least one processing step)
 //
 // Validation Logic:
 //   - Active Status: Ensures pipeline has been properly configured and activated
@@ -1794,11 +1913,13 @@ func (p *Pipeline) IsScheduled() bool {
 //   - API Layer: Request validation for execution endpoints
 //
 // Performance:
-//   Constant time operation - checks single status field and slice length.
-//   No expensive validation or external dependencies.
+//
+//	Constant time operation - checks single status field and slice length.
+//	No expensive validation or external dependencies.
 //
 // Thread Safety:
-//   Read-only operation, safe for concurrent access.
+//
+//	Read-only operation, safe for concurrent access.
 func (p *Pipeline) CanExecute() bool {
 	return p.Status == PipelineStatusActive && len(p.Steps) > 0
 }
@@ -1811,28 +1932,30 @@ func (p *Pipeline) CanExecute() bool {
 // for validation failures.
 //
 // Returns:
-//   result.Result[bool]: Success(true) if validation passes, or Failure with validation details
+//
+//	result.Result[bool]: Success(true) if validation passes, or Failure with validation details
 //
 // Example:
-//   Pipeline validation before activation:
 //
-//     pipeline := buildPipeline()
-//     
-//     result := pipeline.Validate()
-//     if result.IsFailure() {
-//         log.Error("Pipeline validation failed", "error", result.Error(), "id", pipeline.ID)
-//         return result.Error()
-//     }
-//     
-//     // Pipeline is valid, safe to activate
-//     activationResult := pipeline.Activate()
-//     if activationResult.IsFailure() {
-//         return activationResult.Error()
-//     }
+//	Pipeline validation before activation:
+//
+//	  pipeline := buildPipeline()
+//
+//	  result := pipeline.Validate()
+//	  if result.IsFailure() {
+//	      log.Error("Pipeline validation failed", "error", result.Error(), "id", pipeline.ID)
+//	      return result.Error()
+//	  }
+//
+//	  // Pipeline is valid, safe to activate
+//	  activationResult := pipeline.Activate()
+//	  if activationResult.IsFailure() {
+//	      return activationResult.Error()
+//	  }
 //
 // Validation Rules:
 //   - **Name Required**: Pipeline name cannot be empty
-//   - **Owner Required**: Pipeline owner cannot be empty  
+//   - **Owner Required**: Pipeline owner cannot be empty
 //   - **Steps Required**: Pipeline must have at least one processing step
 //   - Additional validations may include step configuration and dependency checks
 //
@@ -1855,11 +1978,13 @@ func (p *Pipeline) CanExecute() bool {
 //   - Testing Framework: Automated validation in test suites
 //
 // Performance:
-//   Fast validation with early termination on first error.
-//   No expensive operations or external dependencies.
+//
+//	Fast validation with early termination on first error.
+//	No expensive operations or external dependencies.
 //
 // Thread Safety:
-//   Read-only validation operation, safe for concurrent access.
+//
+//	Read-only validation operation, safe for concurrent access.
 func (p *Pipeline) Validate() result.Result[bool] {
 	if p.Name == "" {
 		return result.Failure[bool](errors.ValidationError("name is required"))
@@ -1883,33 +2008,36 @@ func (p *Pipeline) Validate() result.Result[bool] {
 // case-sensitive exact matching for tag identification.
 //
 // Parameters:
-//   tag string: Tag to search for (case-sensitive exact match)
+//
+//	tag string: Tag to search for (case-sensitive exact match)
 //
 // Returns:
-//   bool: true if the tag is present in the pipeline's tag collection, false otherwise
+//
+//	bool: true if the tag is present in the pipeline's tag collection, false otherwise
 //
 // Example:
-//   Tag-based pipeline filtering and processing:
 //
-//     pipeline := loadPipeline()
-//     
-//     // Environment-based processing
-//     if pipeline.HasTag("production") {
-//         log.Info("Processing production pipeline with strict validation", "id", pipeline.ID)
-//         enableStrictValidation()
-//     } else if pipeline.HasTag("staging") {
-//         log.Info("Processing staging pipeline", "id", pipeline.ID)
-//     }
-//     
-//     // Priority-based resource allocation
-//     if pipeline.HasTag("high-priority") {
-//         allocateHighPriorityResources(pipeline)
-//     }
-//     
-//     // Compliance checking
-//     if pipeline.HasTag("gdpr") {
-//         enforceGDPRCompliance(pipeline)
-//     }
+//	Tag-based pipeline filtering and processing:
+//
+//	  pipeline := loadPipeline()
+//
+//	  // Environment-based processing
+//	  if pipeline.HasTag("production") {
+//	      log.Info("Processing production pipeline with strict validation", "id", pipeline.ID)
+//	      enableStrictValidation()
+//	  } else if pipeline.HasTag("staging") {
+//	      log.Info("Processing staging pipeline", "id", pipeline.ID)
+//	  }
+//
+//	  // Priority-based resource allocation
+//	  if pipeline.HasTag("high-priority") {
+//	      allocateHighPriorityResources(pipeline)
+//	  }
+//
+//	  // Compliance checking
+//	  if pipeline.HasTag("gdpr") {
+//	      enforceGDPRCompliance(pipeline)
+//	  }
 //
 // Use Cases:
 //   - **Environment Filtering**: "production", "staging", "development"
@@ -1926,12 +2054,14 @@ func (p *Pipeline) Validate() result.Result[bool] {
 //   - Workflow Engine: Tag-based process routing and handling
 //
 // Performance:
-//   O(n) linear search where n is the number of tags.
-//   Efficient for typical tag collection sizes (usually < 20 tags).
-//   Consider tag indexing for high-frequency operations.
+//
+//	O(n) linear search where n is the number of tags.
+//	Efficient for typical tag collection sizes (usually < 20 tags).
+//	Consider tag indexing for high-frequency operations.
 //
 // Thread Safety:
-//   Read-only operation, safe for concurrent access.
+//
+//	Read-only operation, safe for concurrent access.
 func (p *Pipeline) HasTag(tag string) bool {
 	for _, t := range p.Tags {
 		if t == tag {

@@ -2,8 +2,8 @@ package infrastructure
 
 import (
 	"net/http"
+
 	"github.com/gin-gonic/gin"
-	"github.com/flext/flexcore/internal/application/services"
 )
 
 // CommonEndpointProcessor implements SOLID DRY pattern to eliminate code duplication
@@ -32,7 +32,7 @@ func (cep *CommonEndpointProcessor) ProcessPluginListRequest(
 			// Log error but continue with other plugins
 			continue
 		}
-		
+
 		// Create consistent plugin representation
 		pluginInfo := map[string]interface{}{
 			"name":        name,
@@ -41,13 +41,13 @@ func (cep *CommonEndpointProcessor) ProcessPluginListRequest(
 			"version":     "1.0.0", // Could be extracted from plugin metadata
 			"description": "FlexCore managed plugin",
 		}
-		
+
 		if plugin != nil {
 			pluginInfo["active"] = true
 		} else {
 			pluginInfo["active"] = false
 		}
-		
+
 		plugins = append(plugins, pluginInfo)
 	}
 
@@ -64,7 +64,7 @@ func (cep *CommonEndpointProcessor) SendSuccessResponse(c *gin.Context, data int
 	c.JSON(http.StatusOK, data)
 }
 
-// SendErrorResponse provides DRY pattern for error responses  
+// SendErrorResponse provides DRY pattern for error responses
 // SOLID Extract Method: Eliminates error formatting duplication
 func (cep *CommonEndpointProcessor) SendErrorResponse(c *gin.Context, err error) {
 	c.JSON(http.StatusInternalServerError, gin.H{
@@ -73,7 +73,7 @@ func (cep *CommonEndpointProcessor) SendErrorResponse(c *gin.Context, err error)
 }
 
 // SendBadRequestResponse provides DRY pattern for bad request responses
-// SOLID Extract Method: Eliminates validation error formatting duplication  
+// SOLID Extract Method: Eliminates validation error formatting duplication
 func (cep *CommonEndpointProcessor) SendBadRequestResponse(c *gin.Context, message string) {
 	c.JSON(http.StatusBadRequest, gin.H{
 		"error": message,

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel"

@@ -62,7 +62,7 @@ func (sc *StatsCollector) CollectCommandStatistics() (*CommandStatistics, error)
 			COUNT(CASE WHEN status = ? THEN 1 END) as failed
 		FROM commands
 	`, StatusSuccess, StatusFailed)
-	
+
 	if err != nil {
 		return nil, err
 	}

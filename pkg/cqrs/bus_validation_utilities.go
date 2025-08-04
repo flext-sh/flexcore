@@ -6,8 +6,8 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // BusValidationUtilities provides shared validation logic for CQRS buses
@@ -25,7 +25,7 @@ func (utils *BusValidationUtilities) IsValidCommandHandler(handlerType reflect.T
 	return utils.isValidHandler(handlerType, "Command")
 }
 
-// IsValidQueryHandler checks if a type implements the QueryHandler interface  
+// IsValidQueryHandler checks if a type implements the QueryHandler interface
 // DRY PRINCIPLE: Eliminates 27-line duplication from query_bus.go:95-121
 func (utils *BusValidationUtilities) IsValidQueryHandler(handlerType reflect.Type) bool {
 	return utils.isValidHandler(handlerType, "Query")
@@ -37,7 +37,7 @@ func (utils *BusValidationUtilities) IsValidQueryHandler(handlerType reflect.Typ
 func (utils *BusValidationUtilities) isValidHandler(handlerType reflect.Type, interfaceType string) bool {
 	orchestrator := utils.createValidationOrchestrator(handlerType, interfaceType)
 	validationResult := orchestrator.ValidateHandlerInterface()
-	
+
 	if validationResult.IsFailure() {
 		return false
 	}
@@ -158,8 +158,8 @@ func (orchestrator *HandlerValidationOrchestrator) getTargetInterface() result.R
 // ValidateHandlerRegistration performs shared validation for handler registration
 // DRY PRINCIPLE: Eliminates duplicate validation logic in RegisterHandler methods
 func (utils *BusValidationUtilities) ValidateHandlerRegistration(
-	entity interface{}, 
-	handler interface{}, 
+	entity interface{},
+	handler interface{},
 	entityTypeName string,
 ) error {
 	if entity == nil {
@@ -203,7 +203,7 @@ func (utils *BusValidationUtilities) GetEntityType(entity interface{}) (string, 
 	}
 
 	entityValue := reflect.ValueOf(entity)
-	
+
 	// Try CommandType() method first
 	if method := entityValue.MethodByName("CommandType"); method.IsValid() {
 		results := method.Call(nil)
@@ -230,7 +230,7 @@ func (utils *BusValidationUtilities) GetEntityType(entity interface{}) (string, 
 // ValidateEntityForExecution validates entity before execution
 // DRY PRINCIPLE: Eliminates duplicate validation in Execute methods
 func (utils *BusValidationUtilities) ValidateEntityForExecution(
-	entity interface{}, 
+	entity interface{},
 	entityTypeName string,
 ) error {
 	if entity == nil {

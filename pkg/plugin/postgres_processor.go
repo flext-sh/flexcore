@@ -116,9 +116,9 @@ func (bpp *BasePostgresProcessor) ProcessArray(data []interface{}) []interface{}
 		} else {
 			// Wrap non-map items
 			wrapped := map[string]interface{}{
-				"value":              item,
+				"value":               item,
 				"_postgres_processed": true,
-				"_processed_by":      "postgres-processor",
+				"_processed_by":       "postgres-processor",
 			}
 			processed = append(processed, wrapped)
 		}
@@ -132,7 +132,7 @@ func (bpp *BasePostgresProcessor) ValidateConnection(ctx context.Context) error 
 	if bpp.db == nil {
 		return fmt.Errorf("database connection is nil")
 	}
-	
+
 	return bpp.db.PingContext(ctx)
 }
 

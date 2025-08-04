@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // AdapterBuilder provides a fluent interface for building adapters
@@ -261,12 +261,12 @@ func executeOperationPipeline[TReq, TResp any](
 	// Create operation executor for centralized processing
 	executor := &AdapterOperationExecutor[TReq, TResp]{
 		adapter:       a,
-		ctx:          ctx,
-		req:          req,
+		ctx:           ctx,
+		req:           req,
 		operationType: operationType,
-		operationFn:  operationFn,
+		operationFn:   operationFn,
 	}
-	
+
 	// Execute entire pipeline with single return point
 	return executor.ExecutePipeline()
 }
@@ -275,10 +275,10 @@ func executeOperationPipeline[TReq, TResp any](
 // SOLID SRP: Single responsibility for operation execution flow
 type AdapterOperationExecutor[TReq, TResp any] struct {
 	adapter       *builtAdapter
-	ctx          context.Context
-	req          TReq
+	ctx           context.Context
+	req           TReq
 	operationType string
-	operationFn  func(context.Context, TReq) result.Result[*TResp]
+	operationFn   func(context.Context, TReq) result.Result[*TResp]
 }
 
 // ExecutePipeline executes the complete operation pipeline with single return
@@ -288,19 +288,19 @@ func (e *AdapterOperationExecutor[TReq, TResp]) ExecutePipeline() *AdapterOperat
 	if validationResult := e.validateOperation(); validationResult != nil {
 		return validationResult
 	}
-	
+
 	// Step 2: Execute operation with template
 	executionResult := e.executeWithTemplate()
 	if executionResult.err != nil {
 		return NewAdapterOperationError[*TResp](executionResult.err)
 	}
-	
+
 	// Step 3: Perform type assertion
 	response := e.performTypeAssertion(executionResult.result)
 	if response.err != nil {
 		return NewAdapterOperationError[*TResp](response.err)
 	}
-	
+
 	// Single success return point
 	return NewAdapterOperationResult(response.value)
 }
@@ -329,11 +329,11 @@ func (e *AdapterOperationExecutor[TReq, TResp]) executeWithTemplate() ExecutionR
 		}
 		return result.Success[interface{}](operationResult.Value())
 	})
-	
+
 	return ExecutionResult{result: result, err: err}
 }
 
-// TypeAssertionResult encapsulates type assertion result  
+// TypeAssertionResult encapsulates type assertion result
 type TypeAssertionResult[T any] struct {
 	value *T
 	err   error
@@ -347,7 +347,7 @@ func (e *AdapterOperationExecutor[TReq, TResp]) performTypeAssertion(result inte
 			err: fmt.Errorf("invalid %s response type", e.operationType),
 		}
 	}
-	
+
 	return TypeAssertionResult[TResp]{value: response}
 }
 
@@ -366,9 +366,9 @@ func (a *builtAdapter) Transform(ctx context.Context, req TransformRequest) (*Tr
 // OperationExecutor handles centralized operation execution with hooks
 // SOLID SRP: Single responsibility for operation execution with hooks
 type OperationExecutor struct {
-	adapter     *builtAdapter
+	adapter       *builtAdapter
 	operationType string
-	ctx         context.Context
+	ctx           context.Context
 }
 
 // createOperationExecutor creates specialized operation executor
@@ -391,7 +391,7 @@ func (executor *OperationExecutor) ExecuteWithHooks(req interface{}, operation f
 
 	// Phase 2: Execute operation with timing
 	operationResult := executor.executeOperationWithTiming(operation)
-	
+
 	// Phase 3: Handle result and execute after hooks
 	return executor.handleResultWithAfterHooks(req, operationResult)
 }
@@ -447,7 +447,7 @@ func (executor *OperationExecutor) handleResultWithAfterHooks(req interface{}, o
 	if err != nil {
 		return result.Failure[interface{}](err)
 	}
-	
+
 	return result.Success(resp)
 }
 
@@ -465,17 +465,17 @@ func (s *ExtractAfterHookStrategy) Execute(ctx context.Context, hooks AdapterHoo
 	if hooks.OnAfterExtract == nil {
 		return
 	}
-	
+
 	extractReq, ok := req.(ExtractRequest)
 	if !ok {
 		return
 	}
-	
+
 	extractResp, ok := resp.(*ExtractResponse)
 	if !ok && resp != nil {
 		return
 	}
-	
+
 	hooks.OnAfterExtract(ctx, extractReq, extractResp, err)
 }
 
@@ -487,17 +487,17 @@ func (s *LoadAfterHookStrategy) Execute(ctx context.Context, hooks AdapterHooks,
 	if hooks.OnAfterLoad == nil {
 		return
 	}
-	
+
 	loadReq, ok := req.(LoadRequest)
 	if !ok {
 		return
 	}
-	
+
 	loadResp, ok := resp.(*LoadResponse)
 	if !ok && resp != nil {
 		return
 	}
-	
+
 	hooks.OnAfterLoad(ctx, loadReq, loadResp, err)
 }
 

@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-
 // StatisticsManager handles all statistics operations
 // SOLID SRP: Single responsibility for statistics management
 type StatisticsManager struct {
@@ -50,13 +49,13 @@ func (sm *StatisticsManager) SaveStatsToFile(filename string) error {
 	if sm.stats == nil {
 		return &HealthCheckError{Message: "no statistics to save"}
 	}
-	
+
 	// Create stats data for JSON marshaling
 	statsData, err := json.Marshal(sm.stats)
 	if err != nil {
 		return err
 	}
-	
+
 	return os.WriteFile(filename, statsData, 0644)
 }
 
@@ -72,4 +71,3 @@ func (sm *StatisticsManager) CalculateFinalStatistics() {
 		}
 	}
 }
-

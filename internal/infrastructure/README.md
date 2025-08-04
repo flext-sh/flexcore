@@ -1,6 +1,6 @@
 # Infrastructure Layer
 
-**Package**: `github.com/flext/flexcore/internal/infrastructure`  
+**Package**: `github.com/flext-sh/flexcore/internal/infrastructure`  
 **Version**: 0.9.0  
 **Status**: In Development - Major Refactoring Required
 

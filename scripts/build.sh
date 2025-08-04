@@ -49,8 +49,8 @@ build_plugin() {
 	# Initialize go module if go.mod doesn't exist
 	if [ ! -f "go.mod" ]; then
 		echo "📦 Initializing go module for $plugin_name"
-		go mod init "github.com/flext/flexcore/plugins/$plugin_name"
-		go mod edit -replace github.com/flext/flexcore=../..
+		go mod init "github.com/flext-sh/flexcore/plugins/$plugin_name"
+		go mod edit -replace github.com/flext-sh/flexcore=../..
 	fi
 
 	# Download dependencies

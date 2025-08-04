@@ -1,8 +1,7 @@
 // Package patterns provides advanced functional patterns for FlexCore
 package patterns
 
-import (
-)
+import ()
 
 // Option represents a functional option pattern
 type Option[T any] func(*T) error
@@ -104,7 +103,6 @@ func (m Maybe[T]) IfPresentOrElse(consumer func(T), emptyAction func()) {
 		emptyAction()
 	}
 }
-
 
 // Lazy represents a lazy-evaluated value
 type Lazy[T any] struct {

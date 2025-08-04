@@ -13,8 +13,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/flext/flexcore/pkg/config"
-	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/config"
+	"github.com/flext-sh/flexcore/pkg/logging"
 )
 
 // Version information (set by build flags)
@@ -102,7 +102,10 @@ func main() {
 			logging.Logger.Fatal("Failed to initialize application", zap.Error(err))
 		} else {
 			// Use os.Stderr for critical error output
-			os.Stderr.WriteString("Failed to initialize application: " + err.Error() + "\n")
+			if _, writeErr := os.Stderr.WriteString("Failed to initialize application: " + err.Error() + "\n"); writeErr != nil {
+				// If we can't even write to stderr, there's nothing more we can do
+				panic("Failed to write error to stderr: " + writeErr.Error())
+			}
 			cancel()
 			return
 		}
@@ -129,8 +132,9 @@ func main() {
 	})
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", config.Current.App.Port),
-		Handler: mux,
+		Addr:              fmt.Sprintf(":%d", config.Current.App.Port),
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second, // Prevent Slowloris attacks
 	}
 
 	// Start server in goroutine

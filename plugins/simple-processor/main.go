@@ -7,7 +7,7 @@ import (
 
 	hashicorpPlugin "github.com/hashicorp/go-plugin"
 
-	"github.com/flext/flexcore/pkg/plugin"
+	"github.com/flext-sh/flexcore/pkg/plugin"
 )
 
 const (

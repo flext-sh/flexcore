@@ -3,8 +3,8 @@ package infrastructure
 import (
 	"fmt"
 
-	"github.com/flext/flexcore/pkg/config"
-	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/config"
+	"github.com/flext-sh/flexcore/pkg/logging"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/flext/flexcore/pkg/errors"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // Container represents a dependency injection container

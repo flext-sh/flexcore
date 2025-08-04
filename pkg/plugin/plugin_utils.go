@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-
 // PluginUtilities provides common utility functions for plugins
 // SOLID SRP: Single responsibility for utility operations
 type PluginUtilities struct{}
@@ -48,11 +47,11 @@ func (pu *PluginUtilities) CreatePluginInfo(id, name, version, description strin
 		Author:      "FLEXT Team",
 		Tags:        []string{"data", "processing", "transformation", "enrichment"},
 		Config: map[string]string{
-			"mode":           "production",
-			"batch_size":     "1000",
-			"timeout":        "30s",
-			"enable_cache":   "true",
-			"max_memory":     "512MB",
+			"mode":         "production",
+			"batch_size":   "1000",
+			"timeout":      "30s",
+			"enable_cache": "true",
+			"max_memory":   "512MB",
 		},
 		Status:   "active",
 		LoadedAt: startTime,

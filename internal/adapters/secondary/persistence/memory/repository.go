@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/internal/domain/entities"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/internal/domain/entities"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // PipelineRepository provides in-memory storage for pipelines

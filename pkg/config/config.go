@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flext-sh/flexcore/pkg/logging"
 	"github.com/spf13/viper"
-	"github.com/flext/flexcore/pkg/logging"
 )
 
 const (
@@ -232,6 +232,6 @@ func initializeLogging(environment, logLevel string) error {
 
 	// Enable config hot reloading
 	Watch()
-	
+
 	return nil
 }

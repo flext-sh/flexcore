@@ -43,7 +43,7 @@ func RegisterAllPluginTypes() {
 // SOLID OCP: Open for extension by allowing additional type registration
 func RegisterPluginTypesForRPC() {
 	RegisterAllPluginTypes()
-	
+
 	// Additional RPC-specific registrations can be added here in the future
 	// without modifying existing plugin init() functions
 }

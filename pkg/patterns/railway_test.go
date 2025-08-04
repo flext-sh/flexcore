@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -11,12 +11,12 @@ import (
 
 // PluginMainConfig represents configuration for plugin main function
 type PluginMainConfig struct {
-	PluginName      string
-	LogPrefix       string
-	StartMsg        string
-	StopMsg         string
-	Version         string  // Plugin version for --version flag
-	HandshakeValue  string  // Custom handshake value (optional)
+	PluginName     string
+	LogPrefix      string
+	StartMsg       string
+	StopMsg        string
+	Version        string // Plugin version for --version flag
+	HandshakeValue string // Custom handshake value (optional)
 }
 
 // SetupPluginLogging configures logging for a plugin with consistent format

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flext/flexcore/internal/domain"
+	"github.com/flext-sh/flexcore/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -18,8 +18,8 @@ package entities
 import (
 	"time"
 
-	"github.com/flext/flexcore/pkg/errors"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/google/uuid"
 )
 
@@ -52,13 +52,14 @@ func CreatePluginEvent(eventType, aggregateID string, data map[string]interface{
 // storage while maintaining type safety at the application level.
 //
 // Example:
-//   Working with plugin identifiers:
 //
-//     id := entities.NewPluginID()
-//     fmt.Println("Generated ID:", id.String())
-//     
-//     // Type safety prevents mixing different ID types
-//     plugin := findPlugin(id) // Compiler enforces correct ID type
+//	Working with plugin identifiers:
+//
+//	  id := entities.NewPluginID()
+//	  fmt.Println("Generated ID:", id.String())
+//
+//	  // Type safety prevents mixing different ID types
+//	  plugin := findPlugin(id) // Compiler enforces correct ID type
 //
 // Integration:
 //   - Used as aggregate identifier in domain events
@@ -74,23 +75,27 @@ type PluginID string
 // database storage and provide sufficient entropy for collision avoidance.
 //
 // Returns:
-//   PluginID: A new unique identifier for plugin entities
+//
+//	PluginID: A new unique identifier for plugin entities
 //
 // Example:
-//   Creating plugins with unique identifiers:
 //
-//     id1 := entities.NewPluginID()
-//     id2 := entities.NewPluginID()
-//     
-//     // IDs are guaranteed to be different
-//     fmt.Printf("ID1: %s\nID2: %s\n", id1.String(), id2.String())
+//	Creating plugins with unique identifiers:
+//
+//	  id1 := entities.NewPluginID()
+//	  id2 := entities.NewPluginID()
+//
+//	  // IDs are guaranteed to be different
+//	  fmt.Printf("ID1: %s\nID2: %s\n", id1.String(), id2.String())
 //
 // Performance:
-//   Single UUID generation call with minimal allocation overhead.
-//   Suitable for high-frequency plugin creation scenarios.
+//
+//	Single UUID generation call with minimal allocation overhead.
+//	Suitable for high-frequency plugin creation scenarios.
 //
 // Thread Safety:
-//   Safe for concurrent use as UUID generation is thread-safe.
+//
+//	Safe for concurrent use as UUID generation is thread-safe.
 func NewPluginID() PluginID {
 	return PluginID(uuid.New().String())
 }
@@ -102,19 +107,21 @@ func NewPluginID() PluginID {
 // serialization scenarios.
 //
 // Returns:
-//   string: The underlying UUID string value
+//
+//	string: The underlying UUID string value
 //
 // Example:
-//   String conversion and formatting:
 //
-//     id := entities.NewPluginID()
-//     
-//     // Implicit string conversion
-//     fmt.Printf("Plugin ID: %s\n", id)
-//     
-//     // Explicit string conversion
-//     idString := id.String()
-//     log.Info("Loading plugin", "id", idString)
+//	String conversion and formatting:
+//
+//	  id := entities.NewPluginID()
+//
+//	  // Implicit string conversion
+//	  fmt.Printf("Plugin ID: %s\n", id)
+//
+//	  // Explicit string conversion
+//	  idString := id.String()
+//	  log.Info("Loading plugin", "id", idString)
 //
 // Integration:
 //   - Compatible with logging frameworks expecting string values
@@ -142,7 +149,8 @@ func (id PluginID) String() string {
 //   - Monitoring: Type-based metrics and performance tracking
 //
 // Thread Safety:
-//   Plugin types are immutable constants, safe for concurrent access.
+//
+//	Plugin types are immutable constants, safe for concurrent access.
 type PluginType int
 
 const (
@@ -174,15 +182,17 @@ const (
 // consistent string representations across the system.
 //
 // Returns:
-//   string: Lowercase string representation of the plugin type, or "unknown" for invalid values
+//
+//	string: Lowercase string representation of the plugin type, or "unknown" for invalid values
 //
 // Example:
-//   Plugin type display and logging:
 //
-//     pluginType := entities.PluginTypeExtractor
-//     fmt.Printf("Plugin type: %s\n", pluginType) // "Plugin type: extractor"
-//     
-//     log.Info("Loading plugin", "type", pluginType.String(), "id", pluginID)
+//	Plugin type display and logging:
+//
+//	  pluginType := entities.PluginTypeExtractor
+//	  fmt.Printf("Plugin type: %s\n", pluginType) // "Plugin type: extractor"
+//
+//	  log.Info("Loading plugin", "type", pluginType.String(), "id", pluginID)
 //
 // String Mappings:
 //   - PluginTypeExtractor → "extractor"
@@ -199,7 +209,8 @@ const (
 //   - Logging and monitoring systems
 //
 // Thread Safety:
-//   Safe for concurrent use as it only reads immutable constant values.
+//
+//	Safe for concurrent use as it only reads immutable constant values.
 func (t PluginType) String() string {
 	switch t {
 	case PluginTypeExtractor:
@@ -223,7 +234,8 @@ func (t PluginType) String() string {
 // its availability for pipeline execution.
 //
 // Status transitions follow a defined lifecycle:
-//   Registered → Active → (Inactive|Error) → Active
+//
+//	Registered → Active → (Inactive|Error) → Active
 //
 // Integration:
 //   - Plugin Management: Controls plugin availability and operations
@@ -233,8 +245,9 @@ func (t PluginType) String() string {
 //   - Load Balancing: Only active plugins participate in execution
 //
 // Thread Safety:
-//   Status values are immutable and safe for concurrent access.
-//   Status transitions should be managed through Plugin entity methods.
+//
+//	Status values are immutable and safe for concurrent access.
+//	Status transitions should be managed through Plugin entity methods.
 type PluginStatus int
 
 const (
@@ -262,20 +275,22 @@ const (
 // display. It provides consistent status representations across the system.
 //
 // Returns:
-//   string: Lowercase string representation of the plugin status, or "unknown" for invalid values
+//
+//	string: Lowercase string representation of the plugin status, or "unknown" for invalid values
 //
 // Example:
-//   Plugin status monitoring and logging:
 //
-//     plugin := loadPlugin()
-//     fmt.Printf("Plugin status: %s\n", plugin.Status) // "Plugin status: active"
-//     
-//     log.Info("Plugin state changed", "status", plugin.Status.String(), "id", plugin.ID)
-//     
-//     // Conditional logic based on status
-//     if plugin.Status.String() == "error" {
-//         triggerErrorRecovery(plugin)
-//     }
+//	Plugin status monitoring and logging:
+//
+//	  plugin := loadPlugin()
+//	  fmt.Printf("Plugin status: %s\n", plugin.Status) // "Plugin status: active"
+//
+//	  log.Info("Plugin state changed", "status", plugin.Status.String(), "id", plugin.ID)
+//
+//	  // Conditional logic based on status
+//	  if plugin.Status.String() == "error" {
+//	      triggerErrorRecovery(plugin)
+//	  }
 //
 // Status String Mappings:
 //   - PluginStatusRegistered → "registered"
@@ -293,7 +308,8 @@ const (
 //   - Alerting and notification systems
 //
 // Thread Safety:
-//   Safe for concurrent use as it only reads immutable constant values.
+//
+//	Safe for concurrent use as it only reads immutable constant values.
 func (s PluginStatus) String() string {
 	switch s {
 	case PluginStatusRegistered:
@@ -317,63 +333,66 @@ func (s PluginStatus) String() string {
 // data processing capabilities within pipeline workflows.
 //
 // Architecture:
-//   The Plugin aggregate follows Domain-Driven Design principles with:
-//   - Rich domain model with business logic encapsulation
-//   - Domain event generation for state changes
-//   - Result pattern integration for explicit error handling
-//   - Configuration management with flexible parameter support
-//   - Capability declaration for plugin discovery and selection
+//
+//	The Plugin aggregate follows Domain-Driven Design principles with:
+//	- Rich domain model with business logic encapsulation
+//	- Domain event generation for state changes
+//	- Result pattern integration for explicit error handling
+//	- Configuration management with flexible parameter support
+//	- Capability declaration for plugin discovery and selection
 //
 // Fields:
-//   id PluginID: Unique identifier for the plugin aggregate
-//   name string: Human-readable plugin name (required, used for identification)
-//   version string: Plugin version following semantic versioning (required)
-//   description string: Detailed description of plugin functionality
-//   pluginType PluginType: Functional category (extractor, transformer, loader, processor)
-//   status PluginStatus: Current operational state (registered, active, inactive, error)
-//   config map[string]interface{}: Flexible configuration parameters
-//   capabilities []string: List of plugin capabilities and supported operations
-//   createdAt time.Time: Plugin registration timestamp
-//   updatedAt time.Time: Last modification timestamp
-//   events []DomainEvent: Uncommitted domain events for event sourcing
+//
+//	id PluginID: Unique identifier for the plugin aggregate
+//	name string: Human-readable plugin name (required, used for identification)
+//	version string: Plugin version following semantic versioning (required)
+//	description string: Detailed description of plugin functionality
+//	pluginType PluginType: Functional category (extractor, transformer, loader, processor)
+//	status PluginStatus: Current operational state (registered, active, inactive, error)
+//	config map[string]interface{}: Flexible configuration parameters
+//	capabilities []string: List of plugin capabilities and supported operations
+//	createdAt time.Time: Plugin registration timestamp
+//	updatedAt time.Time: Last modification timestamp
+//	events []DomainEvent: Uncommitted domain events for event sourcing
 //
 // Plugin Lifecycle:
-//   1. **Registration**: Plugin discovered and registered with basic metadata
-//   2. **Activation**: Plugin validated and made available for execution
-//   3. **Execution**: Plugin used in pipeline processing workflows
-//   4. **Deactivation**: Plugin temporarily disabled for maintenance
-//   5. **Error Handling**: Plugin marked as error state when issues occur
+//  1. **Registration**: Plugin discovered and registered with basic metadata
+//  2. **Activation**: Plugin validated and made available for execution
+//  3. **Execution**: Plugin used in pipeline processing workflows
+//  4. **Deactivation**: Plugin temporarily disabled for maintenance
+//  5. **Error Handling**: Plugin marked as error state when issues occur
 //
 // Example:
-//   Complete plugin creation and management:
 //
-//     pluginResult := entities.NewPlugin(
-//         "oracle-extractor",
-//         "1.2.3",
-//         "Oracle database data extraction plugin",
-//         entities.PluginTypeExtractor,
-//     )
-//     
-//     if pluginResult.IsFailure() {
-//         return pluginResult.Error()
-//     }
-//     
-//     plugin := pluginResult.Value()
-//     
-//     // Configure plugin
-//     plugin.SetConfig(map[string]interface{}{
-//         "host":     "oracle.prod.company.com",
-//         "port":     1521,
-//         "database": "PROD",
-//         "timeout":  30,
-//     })
-//     
-//     // Add capabilities
-//     plugin.AddCapability("incremental-extraction")
-//     plugin.AddCapability("bulk-extraction")
-//     
-//     // Activate for use
-//     plugin.Activate()
+//	Complete plugin creation and management:
+//
+//	  pluginResult := entities.NewPlugin(
+//	      "oracle-extractor",
+//	      "1.2.3",
+//	      "Oracle database data extraction plugin",
+//	      entities.PluginTypeExtractor,
+//	  )
+//
+//	  if pluginResult.IsFailure() {
+//	      return pluginResult.Error()
+//	  }
+//
+//	  plugin := pluginResult.Value()
+//
+//	  // Configure plugin
+//	  plugin.SetConfig(map[string]interface{}{
+//	      "host":     "oracle.prod.company.com",
+//	      "port":     1521,
+//	      "database": "PROD",
+//	      "timeout":  30,
+//	  })
+//
+//	  // Add capabilities
+//	  plugin.AddCapability("incremental-extraction")
+//	  plugin.AddCapability("bulk-extraction")
+//
+//	  // Activate for use
+//	  plugin.Activate()
 //
 // Integration:
 //   - Pipeline Execution: Plugins are executed as part of pipeline steps
@@ -383,21 +402,22 @@ func (s PluginStatus) String() string {
 //   - Monitoring System: Plugin performance tracking and health monitoring
 //
 // Thread Safety:
-//   Plugin instances should be accessed by single threads within aggregate boundaries.
-//   Concurrent access should be managed at the application layer through proper
-//   synchronization mechanisms or message-based coordination.
+//
+//	Plugin instances should be accessed by single threads within aggregate boundaries.
+//	Concurrent access should be managed at the application layer through proper
+//	synchronization mechanisms or message-based coordination.
 type Plugin struct {
-	id           PluginID                 // Unique plugin identifier
-	name         string                   // Human-readable plugin name
-	version      string                   // Plugin version (semantic versioning)
-	description  string                   // Detailed plugin description
-	pluginType   PluginType               // Functional category of the plugin
-	status       PluginStatus             // Current operational state
-	config       map[string]interface{}   // Flexible configuration parameters
-	capabilities []string                 // List of supported capabilities
-	createdAt    time.Time                // Registration timestamp
-	updatedAt    time.Time                // Last modification timestamp
-	events       []DomainEvent            // Uncommitted domain events
+	id           PluginID               // Unique plugin identifier
+	name         string                 // Human-readable plugin name
+	version      string                 // Plugin version (semantic versioning)
+	description  string                 // Detailed plugin description
+	pluginType   PluginType             // Functional category of the plugin
+	status       PluginStatus           // Current operational state
+	config       map[string]interface{} // Flexible configuration parameters
+	capabilities []string               // List of supported capabilities
+	createdAt    time.Time              // Registration timestamp
+	updatedAt    time.Time              // Last modification timestamp
+	events       []DomainEvent          // Uncommitted domain events
 }
 
 // NewPlugin creates a new plugin aggregate with comprehensive validation and event generation.
@@ -414,41 +434,44 @@ type Plugin struct {
 //   - Unique ID is generated for aggregate identification
 //
 // Parameters:
-//   name string: Human-readable plugin name (required, used for identification)
-//   version string: Plugin version following semantic versioning (required)
-//   description string: Detailed description of plugin functionality (optional)
-//   pluginType PluginType: Functional category of the plugin (extractor, transformer, loader, processor)
+//
+//	name string: Human-readable plugin name (required, used for identification)
+//	version string: Plugin version following semantic versioning (required)
+//	description string: Detailed description of plugin functionality (optional)
+//	pluginType PluginType: Functional category of the plugin (extractor, transformer, loader, processor)
 //
 // Returns:
-//   result.Result[*Plugin]: Success containing the new plugin, or Failure with validation error
+//
+//	result.Result[*Plugin]: Success containing the new plugin, or Failure with validation error
 //
 // Example:
-//   Creating different types of plugins:
 //
-//     // Data extraction plugin
-//     extractorResult := entities.NewPlugin(
-//         "postgres-extractor",
-//         "2.1.0",
-//         "PostgreSQL database data extraction with incremental support",
-//         entities.PluginTypeExtractor,
-//     )
-//     
-//     // Data transformation plugin
-//     transformerResult := entities.NewPlugin(
-//         "json-transformer",
-//         "1.5.2",
-//         "JSON data transformation and validation",
-//         entities.PluginTypeTransformer,
-//     )
-//     
-//     // Handle validation errors
-//     if extractorResult.IsFailure() {
-//         log.Error("Plugin creation failed", "error", extractorResult.Error())
-//         return extractorResult.Error()
-//     }
-//     
-//     plugin := extractorResult.Value()
-//     log.Info("Plugin created", "id", plugin.ID(), "name", plugin.Name())
+//	Creating different types of plugins:
+//
+//	  // Data extraction plugin
+//	  extractorResult := entities.NewPlugin(
+//	      "postgres-extractor",
+//	      "2.1.0",
+//	      "PostgreSQL database data extraction with incremental support",
+//	      entities.PluginTypeExtractor,
+//	  )
+//
+//	  // Data transformation plugin
+//	  transformerResult := entities.NewPlugin(
+//	      "json-transformer",
+//	      "1.5.2",
+//	      "JSON data transformation and validation",
+//	      entities.PluginTypeTransformer,
+//	  )
+//
+//	  // Handle validation errors
+//	  if extractorResult.IsFailure() {
+//	      log.Error("Plugin creation failed", "error", extractorResult.Error())
+//	      return extractorResult.Error()
+//	  }
+//
+//	  plugin := extractorResult.Value()
+//	  log.Info("Plugin created", "id", plugin.ID(), "name", plugin.Name())
 //
 // Validation Errors:
 //   - ValidationError: "plugin name is required" - when name parameter is empty
@@ -471,7 +494,8 @@ type Plugin struct {
 //   - Plugin Loader: Plugin available for dynamic loading
 //
 // Thread Safety:
-//   Safe for concurrent use as each call creates an independent plugin instance.
+//
+//	Safe for concurrent use as each call creates an independent plugin instance.
 func NewPlugin(name, version, description string, pluginType PluginType) result.Result[*Plugin] {
 	if name == "" {
 		return result.Failure[*Plugin](errors.ValidationError("plugin name is required"))
@@ -516,20 +540,22 @@ func NewPlugin(name, version, description string, pluginType PluginType) result.
 // The ID is generated during plugin creation and never changes.
 //
 // Returns:
-//   PluginID: The unique identifier for this plugin aggregate
+//
+//	PluginID: The unique identifier for this plugin aggregate
 //
 // Example:
-//   Using plugin ID for operations:
 //
-//     plugin := loadPlugin()
-//     pluginID := plugin.ID()
-//     
-//     log.Info("Processing plugin", "id", pluginID.String())
-//     
-//     // Use ID for persistence operations
-//     if err := repository.Save(pluginID, plugin); err != nil {
-//         return err
-//     }
+//	Using plugin ID for operations:
+//
+//	  plugin := loadPlugin()
+//	  pluginID := plugin.ID()
+//
+//	  log.Info("Processing plugin", "id", pluginID.String())
+//
+//	  // Use ID for persistence operations
+//	  if err := repository.Save(pluginID, plugin); err != nil {
+//	      return err
+//	  }
 //
 // Integration:
 //   - Repository operations for persistence
@@ -538,7 +564,8 @@ func NewPlugin(name, version, description string, pluginType PluginType) result.
 //   - API responses and client identification
 //
 // Thread Safety:
-//   Safe for concurrent access as ID is immutable after creation.
+//
+//	Safe for concurrent access as ID is immutable after creation.
 func (p *Plugin) ID() PluginID {
 	return p.id
 }
@@ -550,19 +577,21 @@ func (p *Plugin) ID() PluginID {
 // The name is set during plugin creation and is immutable.
 //
 // Returns:
-//   string: The human-readable name of the plugin
+//
+//	string: The human-readable name of the plugin
 //
 // Example:
-//   Using plugin name for display and identification:
 //
-//     plugin := loadPlugin()
-//     name := plugin.Name()
-//     
-//     fmt.Printf("Loading plugin: %s\n", name)
-//     log.Info("Plugin operation completed", "name", name, "duration", duration)
-//     
-//     // Use name for configuration lookups
-//     config := configService.GetPluginConfig(name)
+//	Using plugin name for display and identification:
+//
+//	  plugin := loadPlugin()
+//	  name := plugin.Name()
+//
+//	  fmt.Printf("Loading plugin: %s\n", name)
+//	  log.Info("Plugin operation completed", "name", name, "duration", duration)
+//
+//	  // Use name for configuration lookups
+//	  config := configService.GetPluginConfig(name)
 //
 // Integration:
 //   - User interface display and plugin management
@@ -572,7 +601,8 @@ func (p *Plugin) ID() PluginID {
 //   - Plugin discovery and selection workflows
 //
 // Thread Safety:
-//   Safe for concurrent access as name is immutable after creation.
+//
+//	Safe for concurrent access as name is immutable after creation.
 func (p *Plugin) Name() string {
 	return p.name
 }
@@ -580,10 +610,12 @@ func (p *Plugin) Name() string {
 // Version returns the semantic version of the plugin.
 //
 // Returns:
-//   string: Plugin version following semantic versioning (e.g., "1.2.3")
+//
+//	string: Plugin version following semantic versioning (e.g., "1.2.3")
 //
 // Thread Safety:
-//   Safe for concurrent access as version is immutable after creation.
+//
+//	Safe for concurrent access as version is immutable after creation.
 func (p *Plugin) Version() string {
 	return p.version
 }
@@ -591,10 +623,12 @@ func (p *Plugin) Version() string {
 // Description returns the detailed description of the plugin's functionality.
 //
 // Returns:
-//   string: Detailed description of what the plugin does and its capabilities
+//
+//	string: Detailed description of what the plugin does and its capabilities
 //
 // Thread Safety:
-//   Safe for concurrent access as description is immutable after creation.
+//
+//	Safe for concurrent access as description is immutable after creation.
 func (p *Plugin) Description() string {
 	return p.description
 }
@@ -602,10 +636,12 @@ func (p *Plugin) Description() string {
 // Type returns the functional category of the plugin.
 //
 // Returns:
-//   PluginType: The plugin's functional category (extractor, transformer, loader, processor)
+//
+//	PluginType: The plugin's functional category (extractor, transformer, loader, processor)
 //
 // Thread Safety:
-//   Safe for concurrent access as type is immutable after creation.
+//
+//	Safe for concurrent access as type is immutable after creation.
 func (p *Plugin) Type() PluginType {
 	return p.pluginType
 }
@@ -613,10 +649,12 @@ func (p *Plugin) Type() PluginType {
 // Status returns the current operational state of the plugin.
 //
 // Returns:
-//   PluginStatus: Current plugin status (registered, active, inactive, error)
+//
+//	PluginStatus: Current plugin status (registered, active, inactive, error)
 //
 // Thread Safety:
-//   Safe for concurrent read access. Status changes managed through business methods.
+//
+//	Safe for concurrent read access. Status changes managed through business methods.
 func (p *Plugin) Status() PluginStatus {
 	return p.status
 }
@@ -628,20 +666,23 @@ func (p *Plugin) Status() PluginStatus {
 // changes should be made through the UpdateConfig method.
 //
 // Returns:
-//   map[string]interface{}: Copy of plugin configuration parameters
+//
+//	map[string]interface{}: Copy of plugin configuration parameters
 //
 // Example:
-//   Reading plugin configuration:
 //
-//     config := plugin.Config()
-//     host := config["host"].(string)
-//     port := config["port"].(int)
-//     
-//     // Safe to modify returned copy
-//     config["new_param"] = "value" // Does not affect plugin's internal config
+//	Reading plugin configuration:
+//
+//	  config := plugin.Config()
+//	  host := config["host"].(string)
+//	  port := config["port"].(int)
+//
+//	  // Safe to modify returned copy
+//	  config["new_param"] = "value" // Does not affect plugin's internal config
 //
 // Thread Safety:
-//   Safe for concurrent access as it returns a copy of the configuration.
+//
+//	Safe for concurrent access as it returns a copy of the configuration.
 func (p *Plugin) Config() map[string]interface{} {
 	// Return a copy to prevent modification
 	config := make(map[string]interface{})
@@ -658,28 +699,30 @@ func (p *Plugin) Config() map[string]interface{} {
 // specific features, operations, or integrations that the plugin supports.
 //
 // Returns:
-//   []string: Copy of plugin capabilities list
+//
+//	[]string: Copy of plugin capabilities list
 //
 // Example:
-//   Reading plugin capabilities:
 //
-//     plugin := loadPlugin("oracle-extractor")
-//     capabilities := plugin.Capabilities()
-//     
-//     // Check for specific capabilities
-//     for _, capability := range capabilities {
-//         switch capability {
-//         case "incremental-extraction":
-//             fmt.Println("Plugin supports incremental data extraction")
-//         case "bulk-extraction":
-//             fmt.Println("Plugin supports bulk data extraction")
-//         case "schema-discovery":
-//             fmt.Println("Plugin can discover source schema automatically")
-//         }
-//     }
-//     
-//     // Safe to modify returned copy
-//     capabilities = append(capabilities, "new-capability") // Does not affect plugin
+//	Reading plugin capabilities:
+//
+//	  plugin := loadPlugin("oracle-extractor")
+//	  capabilities := plugin.Capabilities()
+//
+//	  // Check for specific capabilities
+//	  for _, capability := range capabilities {
+//	      switch capability {
+//	      case "incremental-extraction":
+//	          fmt.Println("Plugin supports incremental data extraction")
+//	      case "bulk-extraction":
+//	          fmt.Println("Plugin supports bulk data extraction")
+//	      case "schema-discovery":
+//	          fmt.Println("Plugin can discover source schema automatically")
+//	      }
+//	  }
+//
+//	  // Safe to modify returned copy
+//	  capabilities = append(capabilities, "new-capability") // Does not affect plugin
 //
 // Common Capabilities:
 //   - "incremental-extraction": Supports delta/incremental data extraction
@@ -698,7 +741,8 @@ func (p *Plugin) Config() map[string]interface{} {
 //   - Feature Detection: Runtime capability checking
 //
 // Thread Safety:
-//   Safe for concurrent access as it returns a defensive copy.
+//
+//	Safe for concurrent access as it returns a defensive copy.
 func (p *Plugin) Capabilities() []string {
 	// Return a copy to prevent modification
 	capabilities := make([]string, len(p.capabilities))
@@ -712,21 +756,23 @@ func (p *Plugin) Capabilities() []string {
 // system, useful for auditing, lifecycle management, and analytics.
 //
 // Returns:
-//   time.Time: Plugin creation timestamp in UTC
+//
+//	time.Time: Plugin creation timestamp in UTC
 //
 // Example:
-//   Using creation timestamp for analytics:
 //
-//     plugin := loadPlugin()
-//     createdAt := plugin.CreatedAt()
-//     
-//     age := time.Since(createdAt)
-//     fmt.Printf("Plugin age: %s\n", age)
-//     
-//     // Check if plugin is newly created
-//     if age < 24*time.Hour {
-//         log.Info("New plugin detected", "name", plugin.Name(), "age", age)
-//     }
+//	Using creation timestamp for analytics:
+//
+//	  plugin := loadPlugin()
+//	  createdAt := plugin.CreatedAt()
+//
+//	  age := time.Since(createdAt)
+//	  fmt.Printf("Plugin age: %s\n", age)
+//
+//	  // Check if plugin is newly created
+//	  if age < 24*time.Hour {
+//	      log.Info("New plugin detected", "name", plugin.Name(), "age", age)
+//	  }
 //
 // Integration:
 //   - Auditing: Track plugin registration and lifecycle
@@ -735,7 +781,8 @@ func (p *Plugin) Capabilities() []string {
 //   - Reporting: Plugin inventory and age distribution
 //
 // Thread Safety:
-//   Safe for concurrent access as creation timestamp is immutable.
+//
+//	Safe for concurrent access as creation timestamp is immutable.
 func (p *Plugin) CreatedAt() time.Time {
 	return p.createdAt
 }
@@ -747,26 +794,28 @@ func (p *Plugin) CreatedAt() time.Time {
 // state changes. Useful for tracking plugin activity and change management.
 //
 // Returns:
-//   time.Time: Last modification timestamp in UTC
+//
+//	time.Time: Last modification timestamp in UTC
 //
 // Example:
-//   Tracking plugin modifications:
 //
-//     plugin := loadPlugin()
-//     updatedAt := plugin.UpdatedAt()
-//     
-//     timeSinceUpdate := time.Since(updatedAt)
-//     fmt.Printf("Last updated: %s ago\n", timeSinceUpdate)
-//     
-//     // Check for recent changes
-//     if timeSinceUpdate < time.Hour {
-//         log.Info("Recently modified plugin", "name", plugin.Name())
-//     }
-//     
-//     // Compare with creation time for change tracking
-//     if !updatedAt.Equal(plugin.CreatedAt()) {
-//         fmt.Println("Plugin has been modified since creation")
-//     }
+//	Tracking plugin modifications:
+//
+//	  plugin := loadPlugin()
+//	  updatedAt := plugin.UpdatedAt()
+//
+//	  timeSinceUpdate := time.Since(updatedAt)
+//	  fmt.Printf("Last updated: %s ago\n", timeSinceUpdate)
+//
+//	  // Check for recent changes
+//	  if timeSinceUpdate < time.Hour {
+//	      log.Info("Recently modified plugin", "name", plugin.Name())
+//	  }
+//
+//	  // Compare with creation time for change tracking
+//	  if !updatedAt.Equal(plugin.CreatedAt()) {
+//	      fmt.Println("Plugin has been modified since creation")
+//	  }
 //
 // Integration:
 //   - Change Tracking: Monitor plugin modifications and activity
@@ -775,7 +824,8 @@ func (p *Plugin) CreatedAt() time.Time {
 //   - Analytics: Plugin modification patterns and frequency analysis
 //
 // Thread Safety:
-//   Safe for concurrent read access. Modifications managed through business methods.
+//
+//	Safe for concurrent read access. Modifications managed through business methods.
 func (p *Plugin) UpdatedAt() time.Time {
 	return p.updatedAt
 }
@@ -794,32 +844,35 @@ func (p *Plugin) UpdatedAt() time.Time {
 //   - Activation generates audit events for tracking
 //
 // Returns:
-//   result.Result[bool]: Success(true) if activated successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if activated successfully, or Failure with validation error
 //
 // Example:
-//   Plugin activation workflow:
 //
-//     plugin := loadRegisteredPlugin()
-//     
-//     // Validate plugin is ready for activation
-//     if plugin.Status() == entities.PluginStatusError {
-//         log.Warn("Cannot activate plugin in error state", "id", plugin.ID())
-//         return errors.New("resolve plugin errors before activation")
-//     }
-//     
-//     // Activate plugin
-//     result := plugin.Activate()
-//     if result.IsFailure() {
-//         return result.Error()
-//     }
-//     
-//     log.Info("Plugin activated", "id", plugin.ID(), "name", plugin.Name())
+//	Plugin activation workflow:
+//
+//	  plugin := loadRegisteredPlugin()
+//
+//	  // Validate plugin is ready for activation
+//	  if plugin.Status() == entities.PluginStatusError {
+//	      log.Warn("Cannot activate plugin in error state", "id", plugin.ID())
+//	      return errors.New("resolve plugin errors before activation")
+//	  }
+//
+//	  // Activate plugin
+//	  result := plugin.Activate()
+//	  if result.IsFailure() {
+//	      return result.Error()
+//	  }
+//
+//	  log.Info("Plugin activated", "id", plugin.ID(), "name", plugin.Name())
 //
 // State Transitions:
-//   Registered → Active: Normal activation after registration
-//   Inactive → Active: Reactivation after temporary deactivation
-//   Error → Active: Not allowed, will return validation error
-//   Active → Active: Idempotent, will return validation error
+//
+//	Registered → Active: Normal activation after registration
+//	Inactive → Active: Reactivation after temporary deactivation
+//	Error → Active: Not allowed, will return validation error
+//	Active → Active: Idempotent, will return validation error
 //
 // Events Generated:
 //   - PluginActivated: Contains plugin ID, name, and activation timestamp
@@ -831,7 +884,8 @@ func (p *Plugin) UpdatedAt() time.Time {
 //   - Monitoring: Plugin activation tracked for availability metrics
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Plugin) Activate() result.Result[bool] {
 	if p.status == PluginStatusActive {
 		return result.Failure[bool](errors.ValidationError("plugin is already active"))
@@ -868,32 +922,35 @@ func (p *Plugin) Activate() result.Result[bool] {
 //   - Plugin configuration and capabilities are preserved
 //
 // Returns:
-//   result.Result[bool]: Success(true) if deactivated successfully, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if deactivated successfully, or Failure with validation error
 //
 // Example:
-//   Plugin maintenance workflow:
 //
-//     plugin := loadActivePlugin()
-//     
-//     // Deactivate for maintenance
-//     result := plugin.Deactivate()
-//     if result.IsFailure() {
-//         return result.Error()
-//     }
-//     
-//     log.Info("Plugin deactivated for maintenance", "id", plugin.ID())
-//     
-//     // Perform maintenance operations
-//     performMaintenanceOperations(plugin)
-//     
-//     // Reactivate after maintenance
-//     plugin.Activate()
+//	Plugin maintenance workflow:
+//
+//	  plugin := loadActivePlugin()
+//
+//	  // Deactivate for maintenance
+//	  result := plugin.Deactivate()
+//	  if result.IsFailure() {
+//	      return result.Error()
+//	  }
+//
+//	  log.Info("Plugin deactivated for maintenance", "id", plugin.ID())
+//
+//	  // Perform maintenance operations
+//	  performMaintenanceOperations(plugin)
+//
+//	  // Reactivate after maintenance
+//	  plugin.Activate()
 //
 // State Transitions:
-//   Active → Inactive: Normal deactivation for maintenance
-//   Error → Inactive: Deactivation during error recovery
-//   Registered → Inactive: Deactivation before first activation
-//   Inactive → Inactive: Idempotent, will return validation error
+//
+//	Active → Inactive: Normal deactivation for maintenance
+//	Error → Inactive: Deactivation during error recovery
+//	Registered → Inactive: Deactivation before first activation
+//	Inactive → Inactive: Idempotent, will return validation error
 //
 // Events Generated:
 //   - PluginDeactivated: Contains plugin ID, name, and deactivation timestamp
@@ -905,7 +962,8 @@ func (p *Plugin) Activate() result.Result[bool] {
 //   - Monitoring: Plugin deactivation tracked for availability metrics
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Plugin) Deactivate() result.Result[bool] {
 	if p.status == PluginStatusInactive {
 		return result.Failure[bool](errors.ValidationError("plugin is already inactive"))
@@ -939,35 +997,38 @@ func (p *Plugin) Deactivate() result.Result[bool] {
 //   - Error transitions generate audit events for monitoring
 //
 // Parameters:
-//   errorMessage string: Detailed error description for diagnostic purposes
+//
+//	errorMessage string: Detailed error description for diagnostic purposes
 //
 // Example:
-//   Error handling during plugin execution:
 //
-//     plugin := loadActivePlugin()
-//     
-//     // Simulate plugin execution failure
-//     err := executePluginOperation(plugin)
-//     if err != nil {
-//         plugin.SetError(err.Error())
-//         
-//         log.Error("Plugin execution failed", 
-//             "plugin", plugin.Name(),
-//             "error", err.Error(),
-//             "status", plugin.Status().String())
-//         
-//         // Trigger error recovery workflow
-//         notifyPluginError(plugin.ID(), err.Error())
-//     }
-//     
-//     // Check if plugin is in error state
-//     if plugin.Status() == entities.PluginStatusError {
-//         fmt.Println("Plugin requires manual intervention")
-//     }
+//	Error handling during plugin execution:
+//
+//	  plugin := loadActivePlugin()
+//
+//	  // Simulate plugin execution failure
+//	  err := executePluginOperation(plugin)
+//	  if err != nil {
+//	      plugin.SetError(err.Error())
+//
+//	      log.Error("Plugin execution failed",
+//	          "plugin", plugin.Name(),
+//	          "error", err.Error(),
+//	          "status", plugin.Status().String())
+//
+//	      // Trigger error recovery workflow
+//	      notifyPluginError(plugin.ID(), err.Error())
+//	  }
+//
+//	  // Check if plugin is in error state
+//	  if plugin.Status() == entities.PluginStatusError {
+//	      fmt.Println("Plugin requires manual intervention")
+//	  }
 //
 // State Transitions:
-//   Any Status → Error: Plugin encounters unrecoverable error
-//   Error → Active: Manual recovery or automatic error resolution
+//
+//	Any Status → Error: Plugin encounters unrecoverable error
+//	Error → Active: Manual recovery or automatic error resolution
 //
 // Events Generated:
 //   - PluginError: Contains plugin ID, name, error message, and error timestamp
@@ -979,7 +1040,8 @@ func (p *Plugin) Deactivate() result.Result[bool] {
 //   - Plugin Registry: Error plugins excluded from execution selection
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Plugin) SetError(errorMessage string) {
 	p.status = PluginStatusError
 	p.updatedAt = time.Now()
@@ -1007,41 +1069,45 @@ func (p *Plugin) SetError(errorMessage string) {
 //   - Configuration updates generate audit events for tracking
 //
 // Parameters:
-//   config map[string]interface{}: New configuration parameters to apply
+//
+//	config map[string]interface{}: New configuration parameters to apply
 //
 // Returns:
-//   result.Result[bool]: Success(true) if configuration updated, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if configuration updated, or Failure with validation error
 //
 // Example:
-//   Updating plugin configuration:
 //
-//     plugin := loadPlugin("database-extractor")
-//     
-//     // New configuration with updated connection parameters
-//     newConfig := map[string]interface{}{
-//         "host":               "new-db-server.company.com",
-//         "port":               5432,
-//         "database":           "production_db",
-//         "username":           "app_user",
-//         "password":           secretManager.GetPassword("db_password"),
-//         "connection_timeout": 30,
-//         "max_connections":    10,
-//         "ssl_mode":           "require",
-//     }
-//     
-//     result := plugin.UpdateConfig(newConfig)
-//     if result.IsFailure() {
-//         log.Error("Failed to update plugin config", "error", result.Error())
-//         return result.Error()
-//     }
-//     
-//     log.Info("Plugin configuration updated", "plugin", plugin.Name())
+//	Updating plugin configuration:
+//
+//	  plugin := loadPlugin("database-extractor")
+//
+//	  // New configuration with updated connection parameters
+//	  newConfig := map[string]interface{}{
+//	      "host":               "new-db-server.company.com",
+//	      "port":               5432,
+//	      "database":           "production_db",
+//	      "username":           "app_user",
+//	      "password":           secretManager.GetPassword("db_password"),
+//	      "connection_timeout": 30,
+//	      "max_connections":    10,
+//	      "ssl_mode":           "require",
+//	  }
+//
+//	  result := plugin.UpdateConfig(newConfig)
+//	  if result.IsFailure() {
+//	      log.Error("Failed to update plugin config", "error", result.Error())
+//	      return result.Error()
+//	  }
+//
+//	  log.Info("Plugin configuration updated", "plugin", plugin.Name())
 //
 // Configuration Examples:
-//   Database plugins: host, port, credentials, connection pooling
-//   API plugins: endpoints, authentication, rate limiting, timeouts
-//   File plugins: paths, formats, compression, encoding
-//   Processing plugins: batch size, parallelism, memory limits
+//
+//	Database plugins: host, port, credentials, connection pooling
+//	API plugins: endpoints, authentication, rate limiting, timeouts
+//	File plugins: paths, formats, compression, encoding
+//	Processing plugins: batch size, parallelism, memory limits
 //
 // Validation Errors:
 //   - ValidationError: "config cannot be nil" - when config parameter is nil
@@ -1056,7 +1122,8 @@ func (p *Plugin) SetError(errorMessage string) {
 //   - Audit Trail: Track configuration changes for compliance
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Plugin) UpdateConfig(config map[string]interface{}) result.Result[bool] {
 	if config == nil {
 		return result.Failure[bool](errors.ValidationError("config cannot be nil"))
@@ -1092,40 +1159,43 @@ func (p *Plugin) UpdateConfig(config map[string]interface{}) result.Result[bool]
 //   - Capability list maintains insertion order for consistent behavior
 //
 // Parameters:
-//   capability string: Name of the capability to add (must be non-empty)
+//
+//	capability string: Name of the capability to add (must be non-empty)
 //
 // Returns:
-//   result.Result[bool]: Success(true) if capability added, or Failure with validation error
+//
+//	result.Result[bool]: Success(true) if capability added, or Failure with validation error
 //
 // Example:
-//   Adding capabilities during plugin configuration:
 //
-//     plugin := loadPlugin("data-processor")
-//     
-//     // Add data processing capabilities
-//     capabilities := []string{
-//         "json-transformation",
-//         "csv-parsing",
-//         "data-validation",
-//         "schema-inference",
-//         "parallel-processing",
-//     }
-//     
-//     for _, capability := range capabilities {
-//         result := plugin.AddCapability(capability)
-//         if result.IsFailure() {
-//             if result.Error().Error() == "capability already exists" {
-//                 log.Debug("Capability already exists", "capability", capability)
-//                 continue
-//             }
-//             return result.Error()
-//         }
-//         log.Info("Added capability", "plugin", plugin.Name(), "capability", capability)
-//     }
-//     
-//     // Verify capabilities were added
-//     allCapabilities := plugin.Capabilities()
-//     fmt.Printf("Plugin now has %d capabilities\n", len(allCapabilities))
+//	Adding capabilities during plugin configuration:
+//
+//	  plugin := loadPlugin("data-processor")
+//
+//	  // Add data processing capabilities
+//	  capabilities := []string{
+//	      "json-transformation",
+//	      "csv-parsing",
+//	      "data-validation",
+//	      "schema-inference",
+//	      "parallel-processing",
+//	  }
+//
+//	  for _, capability := range capabilities {
+//	      result := plugin.AddCapability(capability)
+//	      if result.IsFailure() {
+//	          if result.Error().Error() == "capability already exists" {
+//	              log.Debug("Capability already exists", "capability", capability)
+//	              continue
+//	          }
+//	          return result.Error()
+//	      }
+//	      log.Info("Added capability", "plugin", plugin.Name(), "capability", capability)
+//	  }
+//
+//	  // Verify capabilities were added
+//	  allCapabilities := plugin.Capabilities()
+//	  fmt.Printf("Plugin now has %d capabilities\n", len(allCapabilities))
 //
 // Capability Naming Conventions:
 //   - Use kebab-case: "incremental-extraction", "real-time-streaming"
@@ -1143,7 +1213,8 @@ func (p *Plugin) UpdateConfig(config map[string]interface{}) result.Result[bool]
 //   - Feature Gates: Runtime feature detection and enabling
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Plugin) AddCapability(capability string) result.Result[bool] {
 	if capability == "" {
 		return result.Failure[bool](errors.ValidationError("capability cannot be empty"))
@@ -1176,39 +1247,42 @@ func (p *Plugin) AddCapability(capability string) result.Result[bool] {
 //   - Removal operation is idempotent-safe (fails if capability not found)
 //
 // Parameters:
-//   capability string: Name of the capability to remove
+//
+//	capability string: Name of the capability to remove
 //
 // Returns:
-//   result.Result[bool]: Success(true) if capability removed, or Failure if not found
+//
+//	result.Result[bool]: Success(true) if capability removed, or Failure if not found
 //
 // Example:
-//   Managing plugin capabilities dynamically:
 //
-//     plugin := loadPlugin("multi-format-processor")
-//     
-//     // Check current capabilities
-//     capabilities := plugin.Capabilities()
-//     fmt.Printf("Current capabilities: %v\n", capabilities)
-//     
-//     // Remove deprecated or unsupported capabilities
-//     deprecatedCapabilities := []string{
-//         "legacy-xml-format",
-//         "deprecated-api-v1",
-//         "experimental-feature",
-//     }
-//     
-//     for _, capability := range deprecatedCapabilities {
-//         result := plugin.RemoveCapability(capability)
-//         if result.IsFailure() {
-//             log.Debug("Capability not found for removal", "capability", capability)
-//             continue
-//         }
-//         log.Info("Removed capability", "plugin", plugin.Name(), "capability", capability)
-//     }
-//     
-//     // Verify capabilities were removed
-//     updatedCapabilities := plugin.Capabilities()
-//     fmt.Printf("Updated capabilities: %v\n", updatedCapabilities)
+//	Managing plugin capabilities dynamically:
+//
+//	  plugin := loadPlugin("multi-format-processor")
+//
+//	  // Check current capabilities
+//	  capabilities := plugin.Capabilities()
+//	  fmt.Printf("Current capabilities: %v\n", capabilities)
+//
+//	  // Remove deprecated or unsupported capabilities
+//	  deprecatedCapabilities := []string{
+//	      "legacy-xml-format",
+//	      "deprecated-api-v1",
+//	      "experimental-feature",
+//	  }
+//
+//	  for _, capability := range deprecatedCapabilities {
+//	      result := plugin.RemoveCapability(capability)
+//	      if result.IsFailure() {
+//	          log.Debug("Capability not found for removal", "capability", capability)
+//	          continue
+//	      }
+//	      log.Info("Removed capability", "plugin", plugin.Name(), "capability", capability)
+//	  }
+//
+//	  // Verify capabilities were removed
+//	  updatedCapabilities := plugin.Capabilities()
+//	  fmt.Printf("Updated capabilities: %v\n", updatedCapabilities)
 //
 // Use Cases:
 //   - Feature Deprecation: Remove support for deprecated features
@@ -1226,7 +1300,8 @@ func (p *Plugin) AddCapability(capability string) result.Result[bool] {
 //   - Version Migration: Capability changes during plugin updates
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Plugin) RemoveCapability(capability string) result.Result[bool] {
 	for i, existing := range p.capabilities {
 		if existing == capability {
@@ -1246,49 +1321,52 @@ func (p *Plugin) RemoveCapability(capability string) result.Result[bool] {
 // selection, compatibility checking, and feature detection in pipeline construction.
 //
 // Parameters:
-//   capability string: Name of the capability to check for
+//
+//	capability string: Name of the capability to check for
 //
 // Returns:
-//   bool: true if the plugin has the capability, false otherwise
+//
+//	bool: true if the plugin has the capability, false otherwise
 //
 // Example:
-//   Feature-based plugin selection:
 //
-//     plugin := loadPlugin("oracle-extractor")
-//     
-//     // Check for required capabilities
-//     requiredCapabilities := []string{
-//         "incremental-extraction",
-//         "schema-discovery",
-//         "bulk-processing",
-//     }
-//     
-//     allSupported := true
-//     for _, required := range requiredCapabilities {
-//         if !plugin.HasCapability(required) {
-//             log.Warn("Plugin missing required capability", 
-//                 "plugin", plugin.Name(),
-//                 "capability", required)
-//             allSupported = false
-//         }
-//     }
-//     
-//     if allSupported {
-//         fmt.Println("Plugin supports all required capabilities")
-//     }
-//     
-//     // Check for optional capabilities
-//     if plugin.HasCapability("parallel-processing") {
-//         fmt.Println("Plugin supports parallel processing - enabling optimization")
-//         enableParallelMode(plugin)
-//     }
-//     
-//     // Conditional feature usage
-//     if plugin.HasCapability("real-time-streaming") {
-//         setupStreamingPipeline(plugin)
-//     } else {
-//         setupBatchPipeline(plugin)
-//     }
+//	Feature-based plugin selection:
+//
+//	  plugin := loadPlugin("oracle-extractor")
+//
+//	  // Check for required capabilities
+//	  requiredCapabilities := []string{
+//	      "incremental-extraction",
+//	      "schema-discovery",
+//	      "bulk-processing",
+//	  }
+//
+//	  allSupported := true
+//	  for _, required := range requiredCapabilities {
+//	      if !plugin.HasCapability(required) {
+//	          log.Warn("Plugin missing required capability",
+//	              "plugin", plugin.Name(),
+//	              "capability", required)
+//	          allSupported = false
+//	      }
+//	  }
+//
+//	  if allSupported {
+//	      fmt.Println("Plugin supports all required capabilities")
+//	  }
+//
+//	  // Check for optional capabilities
+//	  if plugin.HasCapability("parallel-processing") {
+//	      fmt.Println("Plugin supports parallel processing - enabling optimization")
+//	      enableParallelMode(plugin)
+//	  }
+//
+//	  // Conditional feature usage
+//	  if plugin.HasCapability("real-time-streaming") {
+//	      setupStreamingPipeline(plugin)
+//	  } else {
+//	      setupBatchPipeline(plugin)
+//	  }
 //
 // Common Usage Patterns:
 //   - Pipeline Builder: Select plugins based on required capabilities
@@ -1303,7 +1381,8 @@ func (p *Plugin) RemoveCapability(capability string) result.Result[bool] {
 //   - Resource Planning: Capability-aware resource allocation and optimization
 //
 // Thread Safety:
-//   Safe for concurrent access as it only reads the capabilities list.
+//
+//	Safe for concurrent access as it only reads the capabilities list.
 func (p *Plugin) HasCapability(capability string) bool {
 	for _, existing := range p.capabilities {
 		if existing == capability {
@@ -1320,48 +1399,50 @@ func (p *Plugin) HasCapability(capability string) bool {
 // sourcing, CQRS read model updates, and integration with external systems.
 //
 // Returns:
-//   []DomainEvent: List of uncommitted domain events generated by plugin operations
+//
+//	[]DomainEvent: List of uncommitted domain events generated by plugin operations
 //
 // Example:
-//   Processing plugin domain events:
 //
-//     plugin := loadPlugin()
-//     
-//     // Perform business operations that generate events
-//     plugin.Activate()
-//     plugin.UpdateConfig(newConfig)
-//     plugin.AddCapability("new-feature")
-//     
-//     // Retrieve and process events
-//     events := plugin.GetEvents()
-//     fmt.Printf("Plugin generated %d events\n", len(events))
-//     
-//     for _, event := range events {
-//         fmt.Printf("Event: %s at %s\n", event.Type, event.Timestamp)
-//         
-//         // Process events for different purposes
-//         switch event.Type {
-//         case "PluginActivated":
-//             updatePluginStatus(event)
-//             notifyPluginAvailable(event)
-//         case "PluginConfigUpdated":
-//             invalidateConfigCache(event)
-//             auditConfigChange(event)
-//         case "PluginCapabilityAdded":
-//             updatePluginIndex(event)
-//             notifyCapabilityChange(event)
-//         }
-//     }
-//     
-//     // Clear events after processing
-//     plugin.ClearEvents()
+//	Processing plugin domain events:
+//
+//	  plugin := loadPlugin()
+//
+//	  // Perform business operations that generate events
+//	  plugin.Activate()
+//	  plugin.UpdateConfig(newConfig)
+//	  plugin.AddCapability("new-feature")
+//
+//	  // Retrieve and process events
+//	  events := plugin.GetEvents()
+//	  fmt.Printf("Plugin generated %d events\n", len(events))
+//
+//	  for _, event := range events {
+//	      fmt.Printf("Event: %s at %s\n", event.Type, event.Timestamp)
+//
+//	      // Process events for different purposes
+//	      switch event.Type {
+//	      case "PluginActivated":
+//	          updatePluginStatus(event)
+//	          notifyPluginAvailable(event)
+//	      case "PluginConfigUpdated":
+//	          invalidateConfigCache(event)
+//	          auditConfigChange(event)
+//	      case "PluginCapabilityAdded":
+//	          updatePluginIndex(event)
+//	          notifyCapabilityChange(event)
+//	      }
+//	  }
+//
+//	  // Clear events after processing
+//	  plugin.ClearEvents()
 //
 // Event Processing Workflow:
-//   1. Business operations generate domain events
-//   2. Events accumulate in the aggregate until persistence
-//   3. Application layer retrieves events for processing
-//   4. Events are published to event bus for handlers
-//   5. Events are cleared after successful processing
+//  1. Business operations generate domain events
+//  2. Events accumulate in the aggregate until persistence
+//  3. Application layer retrieves events for processing
+//  4. Events are published to event bus for handlers
+//  5. Events are cleared after successful processing
 //
 // Integration:
 //   - Event Sourcing: Events stored in event store for aggregate reconstruction
@@ -1370,7 +1451,8 @@ func (p *Plugin) HasCapability(capability string) bool {
 //   - Audit Trail: Complete history of plugin operations and changes
 //
 // Thread Safety:
-//   Safe for concurrent read access. Event generation managed through business methods.
+//
+//	Safe for concurrent read access. Event generation managed through business methods.
 func (p *Plugin) GetEvents() []DomainEvent {
 	return p.events
 }
@@ -1383,42 +1465,43 @@ func (p *Plugin) GetEvents() []DomainEvent {
 // published and processed.
 //
 // Example:
-//   Complete event processing workflow:
 //
-//     plugin := loadPlugin()
-//     
-//     // Perform business operations (generates events)
-//     plugin.Activate()
-//     plugin.UpdateConfig(newConfig)
-//     
-//     // Process events
-//     events := plugin.GetEvents()
-//     
-//     // Publish events to event bus
-//     for _, event := range events {
-//         if err := eventBus.Publish(event); err != nil {
-//             log.Error("Failed to publish event", "error", err, "event", event.Type)
-//             return err // Don't clear events if publishing failed
-//         }
-//     }
-//     
-//     // Save aggregate to repository
-//     if err := pluginRepository.Save(plugin); err != nil {
-//         log.Error("Failed to save plugin", "error", err)
-//         return err // Don't clear events if save failed
-//     }
-//     
-//     // Clear events only after successful processing
-//     plugin.ClearEvents()
-//     log.Info("Plugin events processed successfully", "count", len(events))
+//	Complete event processing workflow:
+//
+//	  plugin := loadPlugin()
+//
+//	  // Perform business operations (generates events)
+//	  plugin.Activate()
+//	  plugin.UpdateConfig(newConfig)
+//
+//	  // Process events
+//	  events := plugin.GetEvents()
+//
+//	  // Publish events to event bus
+//	  for _, event := range events {
+//	      if err := eventBus.Publish(event); err != nil {
+//	          log.Error("Failed to publish event", "error", err, "event", event.Type)
+//	          return err // Don't clear events if publishing failed
+//	      }
+//	  }
+//
+//	  // Save aggregate to repository
+//	  if err := pluginRepository.Save(plugin); err != nil {
+//	      log.Error("Failed to save plugin", "error", err)
+//	      return err // Don't clear events if save failed
+//	  }
+//
+//	  // Clear events only after successful processing
+//	  plugin.ClearEvents()
+//	  log.Info("Plugin events processed successfully", "count", len(events))
 //
 // Event Lifecycle:
-//   1. Business operations generate and accumulate events
-//   2. Application layer retrieves events with GetEvents()
-//   3. Events are persisted to event store
-//   4. Events are published to event bus for handlers
-//   5. Events are cleared with ClearEvents() after success
-//   6. Failed processing preserves events for retry
+//  1. Business operations generate and accumulate events
+//  2. Application layer retrieves events with GetEvents()
+//  3. Events are persisted to event store
+//  4. Events are published to event bus for handlers
+//  5. Events are cleared with ClearEvents() after success
+//  6. Failed processing preserves events for retry
 //
 // Integration:
 //   - Event Processing: Reset event collection after successful publishing
@@ -1427,7 +1510,8 @@ func (p *Plugin) GetEvents() []DomainEvent {
 //   - Memory Management: Prevent event accumulation and memory leaks
 //
 // Thread Safety:
-//   Not thread-safe - should be called from single thread managing the aggregate.
+//
+//	Not thread-safe - should be called from single thread managing the aggregate.
 func (p *Plugin) ClearEvents() {
 	p.events = make([]DomainEvent, 0)
 }
@@ -1451,47 +1535,50 @@ func (p *Plugin) addEvent(event DomainEvent) {
 //   - Processors: Compatible with all plugin types (general-purpose processing)
 //
 // Parameters:
-//   other *Plugin: The plugin to check compatibility with
+//
+//	other *Plugin: The plugin to check compatibility with
 //
 // Returns:
-//   bool: true if plugins can be chained together, false otherwise
+//
+//	bool: true if plugins can be chained together, false otherwise
 //
 // Example:
-//   Pipeline construction with compatibility checking:
 //
-//     extractor := loadPlugin("oracle-extractor")     // PluginTypeExtractor
-//     transformer := loadPlugin("json-transformer")    // PluginTypeTransformer
-//     loader := loadPlugin("postgres-loader")          // PluginTypeLoader
-//     processor := loadPlugin("data-validator")        // PluginTypeProcessor
-//     
-//     // Valid pipeline chains
-//     if extractor.IsCompatibleWith(transformer) {
-//         fmt.Println("Can chain: Extractor → Transformer")
-//     }
-//     
-//     if transformer.IsCompatibleWith(loader) {
-//         fmt.Println("Can chain: Transformer → Loader")
-//     }
-//     
-//     if extractor.IsCompatibleWith(loader) {
-//         fmt.Println("Can chain: Extractor → Loader (direct)")
-//     }
-//     
-//     // Processor compatibility
-//     if processor.IsCompatibleWith(transformer) {
-//         fmt.Println("Processor can work with Transformer")
-//     }
-//     
-//     // Invalid chains
-//     if !loader.IsCompatibleWith(transformer) {
-//         fmt.Println("Cannot chain: Loader → Transformer (loaders are endpoints)")
-//     }
-//     
-//     // Build valid pipeline
-//     pipeline := []Plugin{extractor, processor, transformer, loader}
-//     if validatePipelineCompatibility(pipeline) {
-//         fmt.Println("Pipeline is valid")
-//     }
+//	Pipeline construction with compatibility checking:
+//
+//	  extractor := loadPlugin("oracle-extractor")     // PluginTypeExtractor
+//	  transformer := loadPlugin("json-transformer")    // PluginTypeTransformer
+//	  loader := loadPlugin("postgres-loader")          // PluginTypeLoader
+//	  processor := loadPlugin("data-validator")        // PluginTypeProcessor
+//
+//	  // Valid pipeline chains
+//	  if extractor.IsCompatibleWith(transformer) {
+//	      fmt.Println("Can chain: Extractor → Transformer")
+//	  }
+//
+//	  if transformer.IsCompatibleWith(loader) {
+//	      fmt.Println("Can chain: Transformer → Loader")
+//	  }
+//
+//	  if extractor.IsCompatibleWith(loader) {
+//	      fmt.Println("Can chain: Extractor → Loader (direct)")
+//	  }
+//
+//	  // Processor compatibility
+//	  if processor.IsCompatibleWith(transformer) {
+//	      fmt.Println("Processor can work with Transformer")
+//	  }
+//
+//	  // Invalid chains
+//	  if !loader.IsCompatibleWith(transformer) {
+//	      fmt.Println("Cannot chain: Loader → Transformer (loaders are endpoints)")
+//	  }
+//
+//	  // Build valid pipeline
+//	  pipeline := []Plugin{extractor, processor, transformer, loader}
+//	  if validatePipelineCompatibility(pipeline) {
+//	      fmt.Println("Pipeline is valid")
+//	  }
 //
 // Common Pipeline Patterns:
 //   - Extract → Load: Direct data movement without transformation
@@ -1506,7 +1593,8 @@ func (p *Plugin) addEvent(event DomainEvent) {
 //   - Error Prevention: Catch invalid plugin combinations before execution
 //
 // Thread Safety:
-//   Safe for concurrent access as it only reads immutable plugin properties.
+//
+//	Safe for concurrent access as it only reads immutable plugin properties.
 func (p *Plugin) IsCompatibleWith(other *Plugin) bool {
 	// Basic compatibility check based on types
 	switch p.pluginType {

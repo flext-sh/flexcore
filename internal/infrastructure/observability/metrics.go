@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 const (
@@ -455,7 +455,7 @@ func (mc *MetricsCollector) manageCounterMetric(name string, tags map[string]str
 }
 
 // manageGaugeMetric manages gauge metric creation and operation
-// SOLID SRP: Single responsibility for gauge metric management  
+// SOLID SRP: Single responsibility for gauge metric management
 // DRY PRINCIPLE: Uses unified manageMetric eliminating 20-line duplication (mass=106)
 func (mc *MetricsCollector) manageGaugeMetric(name string, tags map[string]string, operation func(*Gauge)) {
 	creator := &GaugeCreator{mc: mc}

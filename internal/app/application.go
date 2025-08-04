@@ -6,12 +6,13 @@
 // proper separation of concerns.
 //
 // Architecture:
-//   The Application Layer implements several key architectural patterns:
-//   - Use Case Orchestration: Coordinates business workflows and operations
-//   - Command/Query Responsibility Segregation (CQRS): Separates read and write operations
-//   - Dependency Inversion: Depends on abstractions rather than concrete implementations
-//   - Transaction Management: Ensures data consistency across operations
-//   - Event Coordination: Manages domain event publishing and handling
+//
+//	The Application Layer implements several key architectural patterns:
+//	- Use Case Orchestration: Coordinates business workflows and operations
+//	- Command/Query Responsibility Segregation (CQRS): Separates read and write operations
+//	- Dependency Inversion: Depends on abstractions rather than concrete implementations
+//	- Transaction Management: Ensures data consistency across operations
+//	- Event Coordination: Manages domain event publishing and handling
 //
 // Key Components:
 //   - Application Service: Main orchestrator for business use cases
@@ -27,29 +28,30 @@
 //   - Cross-Cutting Concerns: Logging, monitoring, security, and error handling
 //
 // Example:
-//   Complete application initialization and lifecycle:
 //
-//     config, err := config.Load("config.yaml")
-//     if err != nil {
-//         return fmt.Errorf("config load failed: %w", err)
-//     }
-//     
-//     app, err := app.NewApplication(config)
-//     if err != nil {
-//         return fmt.Errorf("application creation failed: %w", err)
-//     }
-//     
-//     ctx := context.Background()
-//     if err := app.Start(ctx); err != nil {
-//         return fmt.Errorf("application start failed: %w", err)
-//     }
-//     
-//     // Graceful shutdown
-//     defer func() {
-//         shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-//         defer cancel()
-//         app.Stop(shutdownCtx)
-//     }()
+//	Complete application initialization and lifecycle:
+//
+//	  config, err := config.Load("config.yaml")
+//	  if err != nil {
+//	      return fmt.Errorf("config load failed: %w", err)
+//	  }
+//
+//	  app, err := app.NewApplication(config)
+//	  if err != nil {
+//	      return fmt.Errorf("application creation failed: %w", err)
+//	  }
+//
+//	  ctx := context.Background()
+//	  if err := app.Start(ctx); err != nil {
+//	      return fmt.Errorf("application start failed: %w", err)
+//	  }
+//
+//	  // Graceful shutdown
+//	  defer func() {
+//	      shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+//	      defer cancel()
+//	      app.Stop(shutdownCtx)
+//	  }()
 //
 // Author: FLEXT Development Team
 // Version: 0.9.0
@@ -62,8 +64,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/flext/flexcore/pkg/config"
-	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/config"
+	"github.com/flext-sh/flexcore/pkg/logging"
 	"go.uber.org/zap"
 )
 
@@ -75,69 +77,72 @@ import (
 // coordinating between presentation, domain, and infrastructure layers.
 //
 // Architecture:
-//   The Application struct implements several architectural patterns:
-//   - Service Orchestration: Coordinates business workflows and use cases
-//   - Dependency Management: Manages dependencies and their lifecycle
-//   - Configuration Management: Handles environment-specific configuration
-//   - Server Management: Manages HTTP server lifecycle and graceful shutdown
-//   - Route Organization: Structures API endpoints and middleware integration
+//
+//	The Application struct implements several architectural patterns:
+//	- Service Orchestration: Coordinates business workflows and use cases
+//	- Dependency Management: Manages dependencies and their lifecycle
+//	- Configuration Management: Handles environment-specific configuration
+//	- Server Management: Manages HTTP server lifecycle and graceful shutdown
+//	- Route Organization: Structures API endpoints and middleware integration
 //
 // Fields:
-//   config *config.Config: Application configuration with environment-specific settings
-//   server *http.Server: HTTP server instance with configured timeouts and middleware
-//   mux *http.ServeMux: Request multiplexer for routing and handler organization
+//
+//	config *config.Config: Application configuration with environment-specific settings
+//	server *http.Server: HTTP server instance with configured timeouts and middleware
+//	mux *http.ServeMux: Request multiplexer for routing and handler organization
 //
 // Lifecycle:
-//   1. **Initialization**: Application created with configuration validation
-//   2. **Configuration**: Logging, database, and external service setup
-//   3. **Route Setup**: HTTP handlers and middleware configuration
-//   4. **Service Start**: HTTP server start with graceful error handling
-//   5. **Runtime Operations**: Request processing and business logic execution
-//   6. **Graceful Shutdown**: Clean resource cleanup and connection termination
+//  1. **Initialization**: Application created with configuration validation
+//  2. **Configuration**: Logging, database, and external service setup
+//  3. **Route Setup**: HTTP handlers and middleware configuration
+//  4. **Service Start**: HTTP server start with graceful error handling
+//  5. **Runtime Operations**: Request processing and business logic execution
+//  6. **Graceful Shutdown**: Clean resource cleanup and connection termination
 //
 // Example:
-//   Complete application lifecycle management:
 //
-//     // Load configuration from environment
-//     config := &config.Config{
-//         App: config.AppConfig{
-//             Environment: "production",
-//             Version:     "0.9.0",
-//             Debug:       false,
-//         },
-//         Server: config.ServerConfig{
-//             Host:         "0.0.0.0",
-//             Port:         8080,
-//             ReadTimeout:  30 * time.Second,
-//             WriteTimeout: 30 * time.Second,
-//             IdleTimeout:  60 * time.Second,
-//         },
-//     }
-//     
-//     // Create application instance
-//     app, err := NewApplication(config)
-//     if err != nil {
-//         log.Fatal("Application creation failed", "error", err)
-//     }
-//     
-//     // Start application services
-//     ctx := context.Background()
-//     if err := app.Start(ctx); err != nil {
-//         log.Fatal("Application start failed", "error", err)
-//     }
-//     
-//     // Handle shutdown signals
-//     sigChan := make(chan os.Signal, 1)
-//     signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-//     <-sigChan
-//     
-//     // Graceful shutdown
-//     shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-//     defer cancel()
-//     
-//     if err := app.Stop(shutdownCtx); err != nil {
-//         log.Error("Graceful shutdown failed", "error", err)
-//     }
+//	Complete application lifecycle management:
+//
+//	  // Load configuration from environment
+//	  config := &config.Config{
+//	      App: config.AppConfig{
+//	          Environment: "production",
+//	          Version:     "0.9.0",
+//	          Debug:       false,
+//	      },
+//	      Server: config.ServerConfig{
+//	          Host:         "0.0.0.0",
+//	          Port:         8080,
+//	          ReadTimeout:  30 * time.Second,
+//	          WriteTimeout: 30 * time.Second,
+//	          IdleTimeout:  60 * time.Second,
+//	      },
+//	  }
+//
+//	  // Create application instance
+//	  app, err := NewApplication(config)
+//	  if err != nil {
+//	      log.Fatal("Application creation failed", "error", err)
+//	  }
+//
+//	  // Start application services
+//	  ctx := context.Background()
+//	  if err := app.Start(ctx); err != nil {
+//	      log.Fatal("Application start failed", "error", err)
+//	  }
+//
+//	  // Handle shutdown signals
+//	  sigChan := make(chan os.Signal, 1)
+//	  signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+//	  <-sigChan
+//
+//	  // Graceful shutdown
+//	  shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+//	  defer cancel()
+//
+//	  if err := app.Stop(shutdownCtx); err != nil {
+//	      log.Error("Graceful shutdown failed", "error", err)
+//	  }
 //
 // Integration:
 //   - Configuration Layer: Environment-specific settings and feature flags
@@ -147,12 +152,13 @@ import (
 //   - Database Layer: Connection pooling and transaction management
 //
 // Thread Safety:
-//   Application instances are designed for single-threaded initialization and shutdown.
-//   Runtime operations are thread-safe through Go's HTTP server implementation.
+//
+//	Application instances are designed for single-threaded initialization and shutdown.
+//	Runtime operations are thread-safe through Go's HTTP server implementation.
 type Application struct {
-	config *config.Config  // Application configuration with environment-specific settings
-	server *http.Server    // HTTP server instance with configured timeouts and security
-	mux    *http.ServeMux  // Request multiplexer for routing and handler organization
+	config *config.Config // Application configuration with environment-specific settings
+	server *http.Server   // HTTP server instance with configured timeouts and security
+	mux    *http.ServeMux // Request multiplexer for routing and handler organization
 }
 
 // NewApplication creates a new FlexCore application instance with comprehensive initialization.
@@ -163,55 +169,58 @@ type Application struct {
 // state before returning.
 //
 // Initialization Process:
-//   1. **Configuration Validation**: Validates required configuration parameters
-//   2. **Logging Setup**: Initializes structured logging with appropriate log levels
-//   3. **HTTP Server Creation**: Configures server with timeouts and security settings
-//   4. **Route Registration**: Sets up API endpoints and middleware chain
-//   5. **Dependency Injection**: Initializes application dependencies and services
+//  1. **Configuration Validation**: Validates required configuration parameters
+//  2. **Logging Setup**: Initializes structured logging with appropriate log levels
+//  3. **HTTP Server Creation**: Configures server with timeouts and security settings
+//  4. **Route Registration**: Sets up API endpoints and middleware chain
+//  5. **Dependency Injection**: Initializes application dependencies and services
 //
 // Parameters:
-//   cfg *config.Config: Application configuration with validated settings (required)
+//
+//	cfg *config.Config: Application configuration with validated settings (required)
 //
 // Returns:
-//   *Application: Fully initialized application instance ready for startup
-//   error: Configuration validation or initialization error
+//
+//	*Application: Fully initialized application instance ready for startup
+//	error: Configuration validation or initialization error
 //
 // Example:
-//   Application creation with full configuration:
 //
-//     config := &config.Config{
-//         App: config.AppConfig{
-//             Environment: "production",
-//             Version:     "0.9.0",
-//             Debug:       false,
-//             ServiceName: "flexcore",
-//         },
-//         Server: config.ServerConfig{
-//             Host:         "0.0.0.0",
-//             Port:         8080,
-//             ReadTimeout:  30 * time.Second,
-//             WriteTimeout: 30 * time.Second,
-//             IdleTimeout:  60 * time.Second,
-//         },
-//         Database: config.DatabaseConfig{
-//             Host:     "localhost",
-//             Port:     5432,
-//             Name:     "flexcore",
-//             Username: "flexcore_user",
-//             Password: secretManager.GetPassword("db_password"),
-//         },
-//     }
-//     
-//     app, err := NewApplication(config)
-//     if err != nil {
-//         log.Fatal("Application initialization failed", "error", err)
-//         return err
-//     }
-//     
-//     log.Info("Application created successfully", 
-//         "environment", config.App.Environment,
-//         "version", config.App.Version,
-//         "address", fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port))
+//	Application creation with full configuration:
+//
+//	  config := &config.Config{
+//	      App: config.AppConfig{
+//	          Environment: "production",
+//	          Version:     "0.9.0",
+//	          Debug:       false,
+//	          ServiceName: "flexcore",
+//	      },
+//	      Server: config.ServerConfig{
+//	          Host:         "0.0.0.0",
+//	          Port:         8080,
+//	          ReadTimeout:  30 * time.Second,
+//	          WriteTimeout: 30 * time.Second,
+//	          IdleTimeout:  60 * time.Second,
+//	      },
+//	      Database: config.DatabaseConfig{
+//	          Host:     "localhost",
+//	          Port:     5432,
+//	          Name:     "flexcore",
+//	          Username: "flexcore_user",
+//	          Password: secretManager.GetPassword("db_password"),
+//	      },
+//	  }
+//
+//	  app, err := NewApplication(config)
+//	  if err != nil {
+//	      log.Fatal("Application initialization failed", "error", err)
+//	      return err
+//	  }
+//
+//	  log.Info("Application created successfully",
+//	      "environment", config.App.Environment,
+//	      "version", config.App.Version,
+//	      "address", fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port))
 //
 // Configuration Requirements:
 //   - cfg must not be nil (required for all application operations)
@@ -237,8 +246,9 @@ type Application struct {
 //   - Dependency Container: Service registration and lifecycle management
 //
 // Thread Safety:
-//   Safe for concurrent access during initialization. Runtime thread safety
-//   managed by Go's HTTP server implementation.
+//
+//	Safe for concurrent access during initialization. Runtime thread safety
+//	managed by Go's HTTP server implementation.
 func NewApplication(cfg *config.Config) (*Application, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("config cannot be nil")
@@ -294,16 +304,17 @@ func NewApplication(cfg *config.Config) (*Application, error) {
 //   - Future routes: Pipeline management, plugin operations, monitoring endpoints
 //
 // Example:
-//   Route registration with middleware:
 //
-//     app := &Application{mux: http.NewServeMux()}
-//     app.setupRoutes()
-//     
-//     // Routes are now available for HTTP requests
-//     server := &http.Server{
-//         Handler: app.mux,
-//         Addr:    ":8080",
-//     }
+//	Route registration with middleware:
+//
+//	  app := &Application{mux: http.NewServeMux()}
+//	  app.setupRoutes()
+//
+//	  // Routes are now available for HTTP requests
+//	  server := &http.Server{
+//	      Handler: app.mux,
+//	      Addr:    ":8080",
+//	  }
 //
 // Middleware Integration (Planned):
 //   - Authentication: JWT token validation and user context
@@ -326,8 +337,9 @@ func NewApplication(cfg *config.Config) (*Application, error) {
 //   - Documentation: OpenAPI/Swagger documentation generation ready
 //
 // Thread Safety:
-//   Safe to call during application initialization. Route registration
-//   should be completed before starting the HTTP server.
+//
+//	Safe to call during application initialization. Route registration
+//	should be completed before starting the HTTP server.
 func (a *Application) setupRoutes() {
 	a.mux.HandleFunc("/health", a.handleHealth)
 	a.mux.HandleFunc("/", a.handleRoot)
@@ -345,35 +357,38 @@ func (a *Application) setupRoutes() {
 // Content-Type: application/json
 //
 // Response Format:
-//   {
-//     "status": "ok",
-//     "timestamp": "2024-01-15T10:30:45Z"
-//   }
+//
+//	{
+//	  "status": "ok",
+//	  "timestamp": "2024-01-15T10:30:45Z"
+//	}
 //
 // Parameters:
-//   w http.ResponseWriter: HTTP response writer for sending health status
-//   r *http.Request: HTTP request (method and headers validated)
+//
+//	w http.ResponseWriter: HTTP response writer for sending health status
+//	r *http.Request: HTTP request (method and headers validated)
 //
 // Example:
-//   Health check integration with monitoring:
 //
-//     // Kubernetes liveness probe
-//     livenessProbe:
-//       httpGet:
-//         path: /health
-//         port: 8080
-//       initialDelaySeconds: 30
-//       periodSeconds: 10
-//     
-//     // Load balancer health check
-//     curl -f http://flexcore:8080/health || exit 1
-//     
-//     // Monitoring system integration
-//     http_request_duration_seconds{
-//       method="GET",
-//       endpoint="/health",
-//       status="200"
-//     }
+//	Health check integration with monitoring:
+//
+//	  // Kubernetes liveness probe
+//	  livenessProbe:
+//	    httpGet:
+//	      path: /health
+//	      port: 8080
+//	    initialDelaySeconds: 30
+//	    periodSeconds: 10
+//
+//	  // Load balancer health check
+//	  curl -f http://flexcore:8080/health || exit 1
+//
+//	  // Monitoring system integration
+//	  http_request_duration_seconds{
+//	    method="GET",
+//	    endpoint="/health",
+//	    status="200"
+//	  }
 //
 // Response Codes:
 //   - 200 OK: Service is healthy and operational
@@ -393,7 +408,8 @@ func (a *Application) setupRoutes() {
 //   - API Gateway: Upstream service health validation
 //
 // Thread Safety:
-//   Safe for concurrent access. Health status is read-only operation.
+//
+//	Safe for concurrent access. Health status is read-only operation.
 func (a *Application) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -412,37 +428,40 @@ func (a *Application) handleHealth(w http.ResponseWriter, r *http.Request) {
 // Content-Type: application/json
 //
 // Response Format:
-//   {
-//     "service": "flexcore",
-//     "version": "0.9.0",
-//     "environment": "production"
-//   }
+//
+//	{
+//	  "service": "flexcore",
+//	  "version": "0.9.0",
+//	  "environment": "production"
+//	}
 //
 // Parameters:
-//   w http.ResponseWriter: HTTP response writer for service information
-//   r *http.Request: HTTP request (method and headers processed)
+//
+//	w http.ResponseWriter: HTTP response writer for service information
+//	r *http.Request: HTTP request (method and headers processed)
 //
 // Example:
-//   Service discovery and API exploration:
 //
-//     // Client service discovery
-//     response, err := http.Get("http://flexcore:8080/")
-//     if err != nil {
-//         return fmt.Errorf("service discovery failed: %w", err)
-//     }
-//     
-//     var serviceInfo struct {
-//         Service     string `json:"service"`
-//         Version     string `json:"version"`
-//         Environment string `json:"environment"`
-//     }
-//     
-//     if err := json.NewDecoder(response.Body).Decode(&serviceInfo); err != nil {
-//         return fmt.Errorf("service info decode failed: %w", err)
-//     }
-//     
-//     fmt.Printf("Connected to %s v%s (%s)\n", 
-//         serviceInfo.Service, serviceInfo.Version, serviceInfo.Environment)
+//	Service discovery and API exploration:
+//
+//	  // Client service discovery
+//	  response, err := http.Get("http://flexcore:8080/")
+//	  if err != nil {
+//	      return fmt.Errorf("service discovery failed: %w", err)
+//	  }
+//
+//	  var serviceInfo struct {
+//	      Service     string `json:"service"`
+//	      Version     string `json:"version"`
+//	      Environment string `json:"environment"`
+//	  }
+//
+//	  if err := json.NewDecoder(response.Body).Decode(&serviceInfo); err != nil {
+//	      return fmt.Errorf("service info decode failed: %w", err)
+//	  }
+//
+//	  fmt.Printf("Connected to %s v%s (%s)\n",
+//	      serviceInfo.Service, serviceInfo.Version, serviceInfo.Environment)
 //
 // Enhanced API Information (Planned):
 //   - API version and compatibility information
@@ -464,7 +483,8 @@ func (a *Application) handleHealth(w http.ResponseWriter, r *http.Request) {
 //   - Client Libraries: Automatic service discovery and configuration
 //
 // Thread Safety:
-//   Safe for concurrent access. Service information is read-only metadata.
+//
+//	Safe for concurrent access. Service information is read-only metadata.
 func (a *Application) handleRoot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -478,46 +498,49 @@ func (a *Application) handleRoot(w http.ResponseWriter, r *http.Request) {
 // graceful startup patterns with proper error handling and observability integration.
 //
 // Startup Sequence:
-//   1. **Service Initialization**: Core services and dependencies startup
-//   2. **HTTP Server Start**: Non-blocking server startup in dedicated goroutine
-//   3. **Health Check Activation**: Health endpoints become available
-//   4. **Service Registration**: Register with service discovery (future)
-//   5. **Monitoring Integration**: Metrics and tracing activation
+//  1. **Service Initialization**: Core services and dependencies startup
+//  2. **HTTP Server Start**: Non-blocking server startup in dedicated goroutine
+//  3. **Health Check Activation**: Health endpoints become available
+//  4. **Service Registration**: Register with service discovery (future)
+//  5. **Monitoring Integration**: Metrics and tracing activation
 //
 // Parameters:
-//   ctx context.Context: Application context for cancellation and timeout handling
+//
+//	ctx context.Context: Application context for cancellation and timeout handling
 //
 // Returns:
-//   error: Startup error if critical services fail to initialize
+//
+//	error: Startup error if critical services fail to initialize
 //
 // Example:
-//   Application startup with proper error handling:
 //
-//     app, err := NewApplication(config)
-//     if err != nil {
-//         return fmt.Errorf("application creation failed: %w", err)
-//     }
-//     
-//     ctx := context.Background()
-//     if err := app.Start(ctx); err != nil {
-//         return fmt.Errorf("application startup failed: %w", err)
-//     }
-//     
-//     // Wait for server to be ready
-//     time.Sleep(100 * time.Millisecond)
-//     
-//     // Verify server is responding
-//     resp, err := http.Get("http://localhost:8080/health")
-//     if err != nil {
-//         return fmt.Errorf("health check failed: %w", err)
-//     }
-//     defer resp.Body.Close()
-//     
-//     if resp.StatusCode != http.StatusOK {
-//         return fmt.Errorf("server not healthy: status %d", resp.StatusCode)
-//     }
-//     
-//     log.Info("FlexCore application started successfully")
+//	Application startup with proper error handling:
+//
+//	  app, err := NewApplication(config)
+//	  if err != nil {
+//	      return fmt.Errorf("application creation failed: %w", err)
+//	  }
+//
+//	  ctx := context.Background()
+//	  if err := app.Start(ctx); err != nil {
+//	      return fmt.Errorf("application startup failed: %w", err)
+//	  }
+//
+//	  // Wait for server to be ready
+//	  time.Sleep(100 * time.Millisecond)
+//
+//	  // Verify server is responding
+//	  resp, err := http.Get("http://localhost:8080/health")
+//	  if err != nil {
+//	      return fmt.Errorf("health check failed: %w", err)
+//	  }
+//	  defer resp.Body.Close()
+//
+//	  if resp.StatusCode != http.StatusOK {
+//	      return fmt.Errorf("server not healthy: status %d", resp.StatusCode)
+//	  }
+//
+//	  log.Info("FlexCore application started successfully")
 //
 // Startup Logging:
 //   - Service start confirmation with configuration details
@@ -543,8 +566,9 @@ func (a *Application) handleRoot(w http.ResponseWriter, r *http.Request) {
 //   - Service Discovery: Automatic service registration (planned)
 //
 // Thread Safety:
-//   Safe for single-threaded startup sequence. Concurrent access to running
-//   application managed by Go's HTTP server implementation.
+//
+//	Safe for single-threaded startup sequence. Concurrent access to running
+//	application managed by Go's HTTP server implementation.
 func (a *Application) Start(ctx context.Context) error {
 	logging.Logger.Info("Starting FlexCore application",
 		zap.String("address", a.server.Addr),
@@ -569,43 +593,46 @@ func (a *Application) Start(ctx context.Context) error {
 // service shutdown with timeout handling and error recovery.
 //
 // Shutdown Sequence:
-//   1. **Shutdown Initiation**: Log shutdown start and stop accepting new requests
-//   2. **Active Request Completion**: Wait for in-flight requests to complete
-//   3. **Resource Cleanup**: Close database connections, release locks, cleanup temp files
-//   4. **Service Deregistration**: Remove from service discovery (future)
-//   5. **Final Logging**: Log successful shutdown completion
+//  1. **Shutdown Initiation**: Log shutdown start and stop accepting new requests
+//  2. **Active Request Completion**: Wait for in-flight requests to complete
+//  3. **Resource Cleanup**: Close database connections, release locks, cleanup temp files
+//  4. **Service Deregistration**: Remove from service discovery (future)
+//  5. **Final Logging**: Log successful shutdown completion
 //
 // Parameters:
-//   ctx context.Context: Shutdown context with timeout for controlling shutdown duration
+//
+//	ctx context.Context: Shutdown context with timeout for controlling shutdown duration
 //
 // Returns:
-//   error: Shutdown error if graceful shutdown fails or times out
+//
+//	error: Shutdown error if graceful shutdown fails or times out
 //
 // Example:
-//   Graceful shutdown with signal handling:
 //
-//     // Setup signal handling
-//     sigChan := make(chan os.Signal, 1)
-//     signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-//     
-//     // Start application
-//     app, _ := NewApplication(config)
-//     app.Start(context.Background())
-//     
-//     // Wait for shutdown signal
-//     <-sigChan
-//     log.Info("Shutdown signal received")
-//     
-//     // Graceful shutdown with timeout
-//     shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-//     defer cancel()
-//     
-//     if err := app.Stop(shutdownCtx); err != nil {
-//         log.Error("Graceful shutdown failed", "error", err)
-//         os.Exit(1)
-//     }
-//     
-//     log.Info("Application shutdown completed successfully")
+//	Graceful shutdown with signal handling:
+//
+//	  // Setup signal handling
+//	  sigChan := make(chan os.Signal, 1)
+//	  signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+//
+//	  // Start application
+//	  app, _ := NewApplication(config)
+//	  app.Start(context.Background())
+//
+//	  // Wait for shutdown signal
+//	  <-sigChan
+//	  log.Info("Shutdown signal received")
+//
+//	  // Graceful shutdown with timeout
+//	  shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+//	  defer cancel()
+//
+//	  if err := app.Stop(shutdownCtx); err != nil {
+//	      log.Error("Graceful shutdown failed", "error", err)
+//	      os.Exit(1)
+//	  }
+//
+//	  log.Info("Application shutdown completed successfully")
 //
 // Timeout Handling:
 //   - Context timeout determines maximum shutdown duration
@@ -627,8 +654,9 @@ func (a *Application) Start(ctx context.Context) error {
 //   - Monitoring: Shutdown metrics and completion status tracking
 //
 // Thread Safety:
-//   Safe for single-threaded shutdown sequence. HTTP server shutdown is
-//   thread-safe and handles concurrent request completion.
+//
+//	Safe for single-threaded shutdown sequence. HTTP server shutdown is
+//	thread-safe and handles concurrent request completion.
 func (a *Application) Stop(ctx context.Context) error {
 	logging.Logger.Info("Stopping FlexCore application")
 	return a.server.Shutdown(ctx)
@@ -642,37 +670,39 @@ func (a *Application) Stop(ctx context.Context) error {
 // as immutable to prevent unintended side effects.
 //
 // Returns:
-//   *config.Config: Application configuration with all settings and parameters
+//
+//	*config.Config: Application configuration with all settings and parameters
 //
 // Example:
-//   Configuration access for runtime decisions:
 //
-//     app, _ := NewApplication(config)
-//     
-//     // Access configuration for runtime decisions
-//     appConfig := app.Config()
-//     
-//     // Environment-specific behavior
-//     if appConfig.App.Environment == "development" {
-//         log.SetLevel(log.DebugLevel)
-//         enableDeveloperFeatures()
-//     }
-//     
-//     // Feature flag evaluation
-//     if appConfig.App.Debug {
-//         enableDebugEndpoints()
-//         logDetailedRequestInfo()
-//     }
-//     
-//     // Server configuration access
-//     serverAddr := fmt.Sprintf("%s:%d", 
-//         appConfig.Server.Host, 
-//         appConfig.Server.Port)
-//     
-//     log.Info("Server configuration", 
-//         "address", serverAddr,
-//         "read_timeout", appConfig.Server.ReadTimeout,
-//         "write_timeout", appConfig.Server.WriteTimeout)
+//	Configuration access for runtime decisions:
+//
+//	  app, _ := NewApplication(config)
+//
+//	  // Access configuration for runtime decisions
+//	  appConfig := app.Config()
+//
+//	  // Environment-specific behavior
+//	  if appConfig.App.Environment == "development" {
+//	      log.SetLevel(log.DebugLevel)
+//	      enableDeveloperFeatures()
+//	  }
+//
+//	  // Feature flag evaluation
+//	  if appConfig.App.Debug {
+//	      enableDebugEndpoints()
+//	      logDetailedRequestInfo()
+//	  }
+//
+//	  // Server configuration access
+//	  serverAddr := fmt.Sprintf("%s:%d",
+//	      appConfig.Server.Host,
+//	      appConfig.Server.Port)
+//
+//	  log.Info("Server configuration",
+//	      "address", serverAddr,
+//	      "read_timeout", appConfig.Server.ReadTimeout,
+//	      "write_timeout", appConfig.Server.WriteTimeout)
 //
 // Configuration Categories:
 //   - App: Application metadata (name, version, environment)
@@ -701,8 +731,9 @@ func (a *Application) Stop(ctx context.Context) error {
 //   - Security: Runtime security policy and credential management
 //
 // Thread Safety:
-//   Safe for concurrent read access. Configuration is immutable after
-//   application initialization.
+//
+//	Safe for concurrent read access. Configuration is immutable after
+//	application initialization.
 func (a *Application) Config() *config.Config {
 	return a.config
 }

@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/flext/flexcore/internal/domain"
+	"github.com/flext-sh/flexcore/internal/domain"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

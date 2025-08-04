@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/result"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -127,7 +127,7 @@ func (ctx *EventLoadingContext) executeEventLoading() result.Result[[]Event] {
 	if rowsResult.IsFailure() {
 		return result.Failure[[]Event](rowsResult.Error())
 	}
-	
+
 	rows := rowsResult.Value()
 	defer rows.Close()
 
@@ -170,11 +170,11 @@ func (ctx *EventLoadingContext) processEventRows(rows *sql.Rows) result.Result[b
 		if eventResult.IsFailure() {
 			return result.Failure[bool](eventResult.Error())
 		}
-		
+
 		event := eventResult.Value()
 		ctx.events = append(ctx.events, event)
 	}
-	
+
 	return result.Success(true)
 }
 

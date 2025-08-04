@@ -14,7 +14,7 @@ import (
 	hashicorpPlugin "github.com/hashicorp/go-plugin"
 	_ "github.com/lib/pq"
 
-	"github.com/flext/flexcore/pkg/plugin"
+	"github.com/flext-sh/flexcore/pkg/plugin"
 )
 
 const (
@@ -134,7 +134,7 @@ func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]inter
 	}
 
 	log.Printf("[PostgresProcessor] Processing input with %d keys", len(input))
-	
+
 	// Delegate to shared implementation
 	return pp.ExecuteWithStats(ctx, input, processorType)
 }

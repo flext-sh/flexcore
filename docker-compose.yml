@@ -276,7 +276,7 @@ x-common-labels: &common-labels
   com.flext.project: "flexcore"
   com.flext.environment: "development"
   com.flext.maintainer: "FLEXT Team"
-  com.flext.documentation: "https://github.com/flext/flexcore"
+  com.flext.documentation: "https://github.com/flext-sh/flexcore"
   com.flext.version: "0.9.0"
 
 # Apply labels to all services

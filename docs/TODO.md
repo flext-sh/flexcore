@@ -15,7 +15,7 @@ Este documento identifica desvios arquiteturais e falhas de design no projeto Fl
 **Arquivo**: `internal/app/application.go:10`
 
 ```go
-import "github.com/flext/flexcore/pkg/config"
+import "github.com/flext-sh/flexcore/pkg/config"
 ```
 
 **Impacto**:

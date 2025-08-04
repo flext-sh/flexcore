@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/logging"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +17,7 @@ type FlextHTTPAdapter struct {
 	flextBaseURL string
 	httpClient   *http.Client
 	logger       logging.LoggerInterface
-	
+
 	// SOLID SRP: Specialized orchestrator for plugin execution with reduced returns
 	pluginOrchestrator *PluginExecutionOrchestrator
 }
@@ -27,13 +27,13 @@ func NewFlextHTTPAdapter(flextBaseURL string, logger logging.LoggerInterface) *F
 	httpClient := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	
+
 	// Create zap logger for the orchestrator (since LoggerInterface doesn't expose the underlying zap logger)
 	zapLogger, _ := zap.NewProduction()
-	
+
 	// Create specialized plugin orchestrator with SOLID SRP principles
 	orchestrator := NewPluginExecutionOrchestrator(flextBaseURL, httpClient, zapLogger)
-	
+
 	return &FlextHTTPAdapter{
 		flextBaseURL:       flextBaseURL,
 		httpClient:         httpClient,
@@ -132,7 +132,7 @@ func (fha *FlextHTTPAdapter) executePlugin(ctx context.Context, params map[strin
 	// Delegate to specialized orchestrator with consolidated error handling
 	result, err := fha.pluginOrchestrator.ExecutePlugin(ctx, params)
 	if err != nil {
-		fha.logger.Error("Plugin execution failed", 
+		fha.logger.Error("Plugin execution failed",
 			zap.Any("params", params),
 			zap.Error(err),
 		)

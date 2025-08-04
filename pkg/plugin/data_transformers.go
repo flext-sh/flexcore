@@ -147,18 +147,17 @@ func (dts *DataTransformationService) getMapTransformers() map[string]MapTransfo
 	}
 }
 
-
 // Utility functions
 
 // NestMap creates nested structure from flat keys with dots
 // DRY PRINCIPLE: Eliminates 23-line duplication (mass=117) between two main.go files
 func NestMap(data map[string]interface{}) map[string]interface{} {
 	nested := make(map[string]interface{})
-	
+
 	for key, value := range data {
 		parts := strings.Split(key, ".")
 		current := nested
-		
+
 		for i, part := range parts {
 			if i == len(parts)-1 {
 				current[part] = value
@@ -172,7 +171,7 @@ func NestMap(data map[string]interface{}) map[string]interface{} {
 			}
 		}
 	}
-	
+
 	return nested
 }
 
@@ -190,7 +189,7 @@ func flattenMapRecursive(data map[string]interface{}, prefix string, result map[
 		if prefix != "" {
 			newKey = prefix + "." + key
 		}
-		
+
 		if mapValue, ok := value.(map[string]interface{}); ok {
 			flattenMapRecursive(mapValue, newKey, result)
 		} else {
