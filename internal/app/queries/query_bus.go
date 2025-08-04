@@ -6,12 +6,13 @@
 // caching, pagination, filtering, and optimized read model access.
 //
 // Architecture:
-//   The Query Bus implementation follows several enterprise patterns:
-//   - Query Pattern: Encapsulates data retrieval requests with immutable query objects
-//   - Repository Pattern: Optimized read models and data access for query processing
-//   - Caching Pattern: Intelligent result caching with cache invalidation strategies
-//   - Pagination Pattern: Efficient large dataset handling with cursor-based pagination
-//   - Builder Pattern: Query bus creation with flexible configuration options
+//
+//	The Query Bus implementation follows several enterprise patterns:
+//	- Query Pattern: Encapsulates data retrieval requests with immutable query objects
+//	- Repository Pattern: Optimized read models and data access for query processing
+//	- Caching Pattern: Intelligent result caching with cache invalidation strategies
+//	- Pagination Pattern: Efficient large dataset handling with cursor-based pagination
+//	- Builder Pattern: Query bus creation with flexible configuration options
 //
 // Core Components:
 //   - Query Interface: Standard contract for all query objects
@@ -27,34 +28,35 @@
 //   - PagedResult[T]: Type-safe pagination results with navigation metadata
 //
 // Example:
-//   Complete query bus setup with caching:
 //
-//     // Create query bus with caching enabled
-//     queryBus := queries.NewQueryBusBuilder().
-//         WithCache().
-//         Build()
-//     
-//     // Register query handlers
-//     pipelineListHandler := &ListPipelinesHandler{readModel: pipelineReadModel}
-//     queryBus.RegisterHandler(&ListPipelinesQuery{}, pipelineListHandler)
-//     
-//     // Execute queries with pagination
-//     query := queries.NewPagedQuery("ListPipelines", 1, 20).
-//         WithOrderBy("created_at", "DESC")
-//     
-//     result := queryBus.Execute(ctx, &ListPipelinesQuery{
-//         PagedQuery: query,
-//         Owner:      "data-team",
-//         Status:     entities.PipelineStatusActive,
-//     })
-//     
-//     if result.IsFailure() {
-//         return fmt.Errorf("query execution failed: %w", result.Error())
-//     }
-//     
-//     pagedResult := result.Value().(queries.PagedResult[*PipelineView])
-//     fmt.Printf("Found %d pipelines (page %d of %d)\n", 
-//         len(pagedResult.Items), pagedResult.Page, pagedResult.TotalPages)
+//	Complete query bus setup with caching:
+//
+//	  // Create query bus with caching enabled
+//	  queryBus := queries.NewQueryBusBuilder().
+//	      WithCache().
+//	      Build()
+//
+//	  // Register query handlers
+//	  pipelineListHandler := &ListPipelinesHandler{readModel: pipelineReadModel}
+//	  queryBus.RegisterHandler(&ListPipelinesQuery{}, pipelineListHandler)
+//
+//	  // Execute queries with pagination
+//	  query := queries.NewPagedQuery("ListPipelines", 1, 20).
+//	      WithOrderBy("created_at", "DESC")
+//
+//	  result := queryBus.Execute(ctx, &ListPipelinesQuery{
+//	      PagedQuery: query,
+//	      Owner:      "data-team",
+//	      Status:     entities.PipelineStatusActive,
+//	  })
+//
+//	  if result.IsFailure() {
+//	      return fmt.Errorf("query execution failed: %w", result.Error())
+//	  }
+//
+//	  pagedResult := result.Value().(queries.PagedResult[*PipelineView])
+//	  fmt.Printf("Found %d pipelines (page %d of %d)\n",
+//	      len(pagedResult.Items), pagedResult.Page, pagedResult.TotalPages)
 //
 // Integration:
 //   - Read Models: Optimized data structures for query processing
@@ -72,8 +74,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/flext/flexcore/pkg/cqrs"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/cqrs"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // Query represents a query in the CQRS pattern for read operations.
@@ -91,33 +93,34 @@ import (
 //   - Queries can be cached based on parameters for improved performance
 //
 // Example:
-//   Implementing custom queries:
 //
-//     type ListPipelinesQuery struct {
-//         queries.PagedQuery
-//         Owner  string
-//         Status entities.PipelineStatus
-//         Tags   []string
-//     }
-//     
-//     func NewListPipelinesQuery(owner string, page, pageSize int) *ListPipelinesQuery {
-//         return &ListPipelinesQuery{
-//             PagedQuery: queries.NewPagedQuery("ListPipelines", page, pageSize),
-//             Owner:      owner,
-//         }
-//     }
-//     
-//     // QueryType is implemented by PagedQuery
-//     // Additional filtering methods can be added
-//     func (q *ListPipelinesQuery) WithStatus(status entities.PipelineStatus) *ListPipelinesQuery {
-//         q.Status = status
-//         return q
-//     }
-//     
-//     func (q *ListPipelinesQuery) WithTags(tags []string) *ListPipelinesQuery {
-//         q.Tags = tags
-//         return q
-//     }
+//	Implementing custom queries:
+//
+//	  type ListPipelinesQuery struct {
+//	      queries.PagedQuery
+//	      Owner  string
+//	      Status entities.PipelineStatus
+//	      Tags   []string
+//	  }
+//
+//	  func NewListPipelinesQuery(owner string, page, pageSize int) *ListPipelinesQuery {
+//	      return &ListPipelinesQuery{
+//	          PagedQuery: queries.NewPagedQuery("ListPipelines", page, pageSize),
+//	          Owner:      owner,
+//	      }
+//	  }
+//
+//	  // QueryType is implemented by PagedQuery
+//	  // Additional filtering methods can be added
+//	  func (q *ListPipelinesQuery) WithStatus(status entities.PipelineStatus) *ListPipelinesQuery {
+//	      q.Status = status
+//	      return q
+//	  }
+//
+//	  func (q *ListPipelinesQuery) WithTags(tags []string) *ListPipelinesQuery {
+//	      q.Tags = tags
+//	      return q
+//	  }
 //
 // Integration:
 //   - Query Handlers: Process specific query types with optimized data access
@@ -125,7 +128,7 @@ import (
 //   - Caching: Queries can be used as cache keys for result storage
 //   - Serialization: Queries can be serialized for logging and debugging
 type Query interface {
-	QueryType() string  // Returns unique query type identifier for routing and caching
+	QueryType() string // Returns unique query type identifier for routing and caching
 }
 
 // QueryHandler represents a type-safe handler for processing specific query types.
@@ -136,8 +139,9 @@ type Query interface {
 // coordinate with read models and infrastructure services.
 //
 // Type Parameters:
-//   T Query: Specific query type that this handler processes
-//   R any: Result type that this handler returns (strongly typed)
+//
+//	T Query: Specific query type that this handler processes
+//	R any: Result type that this handler returns (strongly typed)
 //
 // Handler Responsibilities:
 //   - Access optimized read models and data projections
@@ -147,42 +151,43 @@ type Query interface {
 //   - Return execution results with proper error handling
 //
 // Example:
-//   Implementing a query handler:
 //
-//     type ListPipelinesHandler struct {
-//         pipelineReadModel PipelineReadModel
-//         cache             CacheService
-//         logger            logging.Logger
-//     }
-//     
-//     func (h *ListPipelinesHandler) Handle(
-//         ctx context.Context, 
-//         query *ListPipelinesQuery,
-//     ) result.Result[queries.PagedResult[*PipelineView]] {
-//         // 1. Apply filters and build query criteria
-//         criteria := h.buildQueryCriteria(query)
-//         
-//         // 2. Access read model with pagination
-//         pipelines, totalCount, err := h.pipelineReadModel.List(
-//             ctx, criteria, query.Page, query.PageSize,
-//         )
-//         if err != nil {
-//             return result.Failure[queries.PagedResult[*PipelineView]](err)
-//         }
-//         
-//         // 3. Transform to view models
-//         viewModels := make([]*PipelineView, len(pipelines))
-//         for i, pipeline := range pipelines {
-//             viewModels[i] = h.transformToView(pipeline)
-//         }
-//         
-//         // 4. Create paged result
-//         pagedResult := queries.NewPagedResult(
-//             viewModels, totalCount, query.Page, query.PageSize,
-//         )
-//         
-//         return result.Success(pagedResult)
-//     }
+//	Implementing a query handler:
+//
+//	  type ListPipelinesHandler struct {
+//	      pipelineReadModel PipelineReadModel
+//	      cache             CacheService
+//	      logger            logging.Logger
+//	  }
+//
+//	  func (h *ListPipelinesHandler) Handle(
+//	      ctx context.Context,
+//	      query *ListPipelinesQuery,
+//	  ) result.Result[queries.PagedResult[*PipelineView]] {
+//	      // 1. Apply filters and build query criteria
+//	      criteria := h.buildQueryCriteria(query)
+//
+//	      // 2. Access read model with pagination
+//	      pipelines, totalCount, err := h.pipelineReadModel.List(
+//	          ctx, criteria, query.Page, query.PageSize,
+//	      )
+//	      if err != nil {
+//	          return result.Failure[queries.PagedResult[*PipelineView]](err)
+//	      }
+//
+//	      // 3. Transform to view models
+//	      viewModels := make([]*PipelineView, len(pipelines))
+//	      for i, pipeline := range pipelines {
+//	          viewModels[i] = h.transformToView(pipeline)
+//	      }
+//
+//	      // 4. Create paged result
+//	      pagedResult := queries.NewPagedResult(
+//	          viewModels, totalCount, query.Page, query.PageSize,
+//	      )
+//
+//	      return result.Success(pagedResult)
+//	  }
 //
 // Integration:
 //   - Read Models: Accesses optimized data structures for query processing
@@ -190,7 +195,7 @@ type Query interface {
 //   - Caching: Integrates with caching layers for performance optimization
 //   - Logging: Provides query execution logging and performance monitoring
 type QueryHandler[T Query, R any] interface {
-	Handle(ctx context.Context, query T) result.Result[R]  // Processes query with full type safety
+	Handle(ctx context.Context, query T) result.Result[R] // Processes query with full type safety
 }
 
 // QueryBus coordinates query execution and handler management in the CQRS architecture.
@@ -208,40 +213,41 @@ type QueryHandler[T Query, R any] interface {
 //   - Read Model Coordination: Coordinates access to optimized read models
 //
 // Example:
-//   Complete query bus usage:
 //
-//     // Create and configure query bus
-//     queryBus := queries.NewQueryBusBuilder().
-//         WithCache().
-//         Build()
-//     
-//     // Register handlers for different query types
-//     queryBus.RegisterHandler(&ListPipelinesQuery{}, listPipelinesHandler)
-//     queryBus.RegisterHandler(&GetPipelineQuery{}, getPipelineHandler)
-//     queryBus.RegisterHandler(&SearchPipelinesQuery{}, searchPipelinesHandler)
-//     
-//     // Execute queries with different patterns
-//     
-//     // Simple query execution
-//     query := &GetPipelineQuery{ID: pipelineID}
-//     result := queryBus.Execute(ctx, query)
-//     if result.IsFailure() {
-//         return fmt.Errorf("query failed: %w", result.Error())
-//     }
-//     
-//     pipeline := result.Value().(*PipelineView)
-//     
-//     // Paginated query execution
-//     listQuery := queries.NewPagedQuery("ListPipelines", 1, 20)
-//     listResult := queryBus.Execute(ctx, &ListPipelinesQuery{
-//         PagedQuery: listQuery,
-//         Owner:      "data-team",
-//     })
-//     
-//     if listResult.IsSuccess() {
-//         pagedResult := listResult.Value().(queries.PagedResult[*PipelineView])
-//         fmt.Printf("Found %d pipelines\n", len(pagedResult.Items))
-//     }
+//	Complete query bus usage:
+//
+//	  // Create and configure query bus
+//	  queryBus := queries.NewQueryBusBuilder().
+//	      WithCache().
+//	      Build()
+//
+//	  // Register handlers for different query types
+//	  queryBus.RegisterHandler(&ListPipelinesQuery{}, listPipelinesHandler)
+//	  queryBus.RegisterHandler(&GetPipelineQuery{}, getPipelineHandler)
+//	  queryBus.RegisterHandler(&SearchPipelinesQuery{}, searchPipelinesHandler)
+//
+//	  // Execute queries with different patterns
+//
+//	  // Simple query execution
+//	  query := &GetPipelineQuery{ID: pipelineID}
+//	  result := queryBus.Execute(ctx, query)
+//	  if result.IsFailure() {
+//	      return fmt.Errorf("query failed: %w", result.Error())
+//	  }
+//
+//	  pipeline := result.Value().(*PipelineView)
+//
+//	  // Paginated query execution
+//	  listQuery := queries.NewPagedQuery("ListPipelines", 1, 20)
+//	  listResult := queryBus.Execute(ctx, &ListPipelinesQuery{
+//	      PagedQuery: listQuery,
+//	      Owner:      "data-team",
+//	  })
+//
+//	  if listResult.IsSuccess() {
+//	      pagedResult := listResult.Value().(queries.PagedResult[*PipelineView])
+//	      fmt.Printf("Found %d pipelines\n", len(pagedResult.Items))
+//	  }
 //
 // Integration:
 //   - Application Layer: Central coordination point for all read operations
@@ -249,8 +255,8 @@ type QueryHandler[T Query, R any] interface {
 //   - Read Models: Optimized data access through specialized read models
 //   - Caching Layer: Result caching for improved query performance
 type QueryBus interface {
-	RegisterHandler(query Query, handler interface{}) error           // Registers handler for query type
-	Execute(ctx context.Context, query Query) result.Result[interface{}]  // Executes query with optimization
+	RegisterHandler(query Query, handler interface{}) error              // Registers handler for query type
+	Execute(ctx context.Context, query Query) result.Result[interface{}] // Executes query with optimization
 }
 
 // InMemoryQueryBus provides a thread-safe in-memory implementation of QueryBus.
@@ -268,33 +274,35 @@ type QueryBus interface {
 //   - Read Optimization: Optimized for high-throughput read operations
 //
 // Fields:
-//   mu sync.RWMutex: Reader-writer mutex for thread-safe access to handlers map
-//   handlers map[string]interface{}: Query type to handler mapping registry
-//   validator *cqrs.BusValidationUtilities: Shared validation logic for DRY compliance
-//   invoker *cqrs.HandlerInvoker: Shared handler invocation with reflection optimization
+//
+//	mu sync.RWMutex: Reader-writer mutex for thread-safe access to handlers map
+//	handlers map[string]interface{}: Query type to handler mapping registry
+//	validator *cqrs.BusValidationUtilities: Shared validation logic for DRY compliance
+//	invoker *cqrs.HandlerInvoker: Shared handler invocation with reflection optimization
 //
 // Example:
-//   Direct usage (typically used through builder pattern):
 //
-//     queryBus := queries.NewInMemoryQueryBus()
-//     
-//     // Register handlers
-//     listHandler := &ListPipelinesHandler{readModel: pipelineReadModel}
-//     err := queryBus.RegisterHandler(&ListPipelinesQuery{}, listHandler)
-//     if err != nil {
-//         return fmt.Errorf("handler registration failed: %w", err)
-//     }
-//     
-//     // Execute queries
-//     query := &ListPipelinesQuery{Owner: "data-team"}
-//     result := queryBus.Execute(ctx, query)
-//     if result.IsFailure() {
-//         return result.Error()
-//     }
-//     
-//     // Check registered query types
-//     registeredTypes := queryBus.GetRegisteredQueries()
-//     fmt.Printf("Registered queries: %v\n", registeredTypes)
+//	Direct usage (typically used through builder pattern):
+//
+//	  queryBus := queries.NewInMemoryQueryBus()
+//
+//	  // Register handlers
+//	  listHandler := &ListPipelinesHandler{readModel: pipelineReadModel}
+//	  err := queryBus.RegisterHandler(&ListPipelinesQuery{}, listHandler)
+//	  if err != nil {
+//	      return fmt.Errorf("handler registration failed: %w", err)
+//	  }
+//
+//	  // Execute queries
+//	  query := &ListPipelinesQuery{Owner: "data-team"}
+//	  result := queryBus.Execute(ctx, query)
+//	  if result.IsFailure() {
+//	      return result.Error()
+//	  }
+//
+//	  // Check registered query types
+//	  registeredTypes := queryBus.GetRegisteredQueries()
+//	  fmt.Printf("Registered queries: %v\n", registeredTypes)
 //
 // Performance Characteristics:
 //   - Read Operations: Optimized for high-throughput concurrent query execution
@@ -314,10 +322,10 @@ type QueryBus interface {
 //   - Builder Pattern: Created through QueryBusBuilder for configuration flexibility
 //   - Result Pattern: All operations return Result types for explicit error handling
 type InMemoryQueryBus struct {
-	mu        sync.RWMutex                    // Thread-safe access to handlers registry
-	handlers  map[string]interface{}          // Query type to handler mapping
-	validator *cqrs.BusValidationUtilities   // Shared validation logic for DRY compliance
-	invoker   *cqrs.HandlerInvoker           // Shared handler invocation with reflection
+	mu        sync.RWMutex                 // Thread-safe access to handlers registry
+	handlers  map[string]interface{}       // Query type to handler mapping
+	validator *cqrs.BusValidationUtilities // Shared validation logic for DRY compliance
+	invoker   *cqrs.HandlerInvoker         // Shared handler invocation with reflection
 }
 
 // NewInMemoryQueryBus creates a new in-memory query bus
@@ -342,36 +350,39 @@ func NewQueryBus() QueryBus {
 // QueryHandler interface for their designated query type.
 //
 // Parameters:
-//   query Query: Example query instance for type identification
-//   handler interface{}: Handler implementation (must implement QueryHandler[T, R])
+//
+//	query Query: Example query instance for type identification
+//	handler interface{}: Handler implementation (must implement QueryHandler[T, R])
 //
 // Returns:
-//   error: Registration error if handler type validation fails
+//
+//	error: Registration error if handler type validation fails
 //
 // Example:
-//   Registering query handlers:
 //
-//     queryBus := queries.NewInMemoryQueryBus()
-//     
-//     // Register different query handlers
-//     listHandler := &ListPipelinesHandler{readModel: pipelineReadModel}
-//     getHandler := &GetPipelineHandler{readModel: pipelineReadModel}
-//     searchHandler := &SearchPipelinesHandler{searchIndex: searchIndex}
-//     
-//     // Type-safe registration
-//     if err := queryBus.RegisterHandler(&ListPipelinesQuery{}, listHandler); err != nil {
-//         return fmt.Errorf("list handler registration failed: %w", err)
-//     }
-//     
-//     if err := queryBus.RegisterHandler(&GetPipelineQuery{}, getHandler); err != nil {
-//         return fmt.Errorf("get handler registration failed: %w", err)
-//     }
-//     
-//     if err := queryBus.RegisterHandler(&SearchPipelinesQuery{}, searchHandler); err != nil {
-//         return fmt.Errorf("search handler registration failed: %w", err)
-//     }
-//     
-//     log.Info("All query handlers registered successfully")
+//	Registering query handlers:
+//
+//	  queryBus := queries.NewInMemoryQueryBus()
+//
+//	  // Register different query handlers
+//	  listHandler := &ListPipelinesHandler{readModel: pipelineReadModel}
+//	  getHandler := &GetPipelineHandler{readModel: pipelineReadModel}
+//	  searchHandler := &SearchPipelinesHandler{searchIndex: searchIndex}
+//
+//	  // Type-safe registration
+//	  if err := queryBus.RegisterHandler(&ListPipelinesQuery{}, listHandler); err != nil {
+//	      return fmt.Errorf("list handler registration failed: %w", err)
+//	  }
+//
+//	  if err := queryBus.RegisterHandler(&GetPipelineQuery{}, getHandler); err != nil {
+//	      return fmt.Errorf("get handler registration failed: %w", err)
+//	  }
+//
+//	  if err := queryBus.RegisterHandler(&SearchPipelinesQuery{}, searchHandler); err != nil {
+//	      return fmt.Errorf("search handler registration failed: %w", err)
+//	  }
+//
+//	  log.Info("All query handlers registered successfully")
 //
 // Validation:
 //   - Handler must implement QueryHandler[T, R] interface
@@ -380,12 +391,14 @@ func NewQueryBus() QueryBus {
 //   - Type compatibility validated through reflection
 //
 // DRY Principle:
-//   Uses shared registration logic from cqrs.BusValidationUtilities to eliminate
-//   21-line duplication (mass=117) with command bus registration, ensuring consistent
-//   validation behavior across command and query buses.
+//
+//	Uses shared registration logic from cqrs.BusValidationUtilities to eliminate
+//	21-line duplication (mass=117) with command bus registration, ensuring consistent
+//	validation behavior across command and query buses.
 //
 // Thread Safety:
-//   Uses write lock for exclusive access during handler registration.
+//
+//	Uses write lock for exclusive access during handler registration.
 func (bus *InMemoryQueryBus) RegisterHandler(query Query, handler interface{}) error {
 	bus.mu.Lock()
 	defer bus.mu.Unlock()
@@ -402,53 +415,56 @@ func (bus *InMemoryQueryBus) RegisterHandler(query Query, handler interface{}) e
 // provides thread-safe concurrent execution optimized for read operations.
 //
 // Parameters:
-//   ctx context.Context: Execution context for cancellation and timeout handling
-//   query Query: Query instance to execute
+//
+//	ctx context.Context: Execution context for cancellation and timeout handling
+//	query Query: Query instance to execute
 //
 // Returns:
-//   result.Result[interface{}]: Query result with success value or error
+//
+//	result.Result[interface{}]: Query result with success value or error
 //
 // Example:
-//   Synchronous query execution:
 //
-//     queryBus := setupQueryBus()
-//     
-//     // Simple query execution
-//     query := &GetPipelineQuery{ID: "pipeline-123"}
-//     
-//     // Execute with context and timeout
-//     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//     defer cancel()
-//     
-//     result := queryBus.Execute(ctx, query)
-//     if result.IsFailure() {
-//         log.Error("Query execution failed", "error", result.Error(), "query", query.QueryType())
-//         return result.Error()
-//     }
-//     
-//     // Extract result value
-//     pipeline := result.Value().(*PipelineView)
-//     log.Info("Pipeline retrieved successfully", "id", pipeline.ID, "name", pipeline.Name)
-//     
-//     // Paginated query execution
-//     listQuery := &ListPipelinesQuery{
-//         PagedQuery: queries.NewPagedQuery("ListPipelines", 1, 20),
-//         Owner:      "data-team",
-//     }
-//     
-//     listResult := queryBus.Execute(ctx, listQuery)
-//     if listResult.IsSuccess() {
-//         pagedResult := listResult.Value().(queries.PagedResult[*PipelineView])
-//         fmt.Printf("Found %d pipelines (page %d of %d)\n", 
-//             len(pagedResult.Items), pagedResult.Page, pagedResult.TotalPages)
-//     }
+//	Synchronous query execution:
+//
+//	  queryBus := setupQueryBus()
+//
+//	  // Simple query execution
+//	  query := &GetPipelineQuery{ID: "pipeline-123"}
+//
+//	  // Execute with context and timeout
+//	  ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	  defer cancel()
+//
+//	  result := queryBus.Execute(ctx, query)
+//	  if result.IsFailure() {
+//	      log.Error("Query execution failed", "error", result.Error(), "query", query.QueryType())
+//	      return result.Error()
+//	  }
+//
+//	  // Extract result value
+//	  pipeline := result.Value().(*PipelineView)
+//	  log.Info("Pipeline retrieved successfully", "id", pipeline.ID, "name", pipeline.Name)
+//
+//	  // Paginated query execution
+//	  listQuery := &ListPipelinesQuery{
+//	      PagedQuery: queries.NewPagedQuery("ListPipelines", 1, 20),
+//	      Owner:      "data-team",
+//	  }
+//
+//	  listResult := queryBus.Execute(ctx, listQuery)
+//	  if listResult.IsSuccess() {
+//	      pagedResult := listResult.Value().(queries.PagedResult[*PipelineView])
+//	      fmt.Printf("Found %d pipelines (page %d of %d)\n",
+//	          len(pagedResult.Items), pagedResult.Page, pagedResult.TotalPages)
+//	  }
 //
 // Execution Flow:
-//   1. Acquire read lock for thread-safe handler access
-//   2. Look up handler by query type
-//   3. Validate handler exists and is compatible
-//   4. Invoke handler with query and context
-//   5. Return handler result with proper error wrapping
+//  1. Acquire read lock for thread-safe handler access
+//  2. Look up handler by query type
+//  3. Validate handler exists and is compatible
+//  4. Invoke handler with query and context
+//  5. Return handler result with proper error wrapping
 //
 // Error Handling:
 //   - Handler not found: Returns appropriate error with query type
@@ -463,12 +479,14 @@ func (bus *InMemoryQueryBus) RegisterHandler(query Query, handler interface{}) e
 //   - No write operations during query execution for maximum performance
 //
 // DRY Principle:
-//   Uses shared execution logic from cqrs.BusValidationUtilities to eliminate
-//   21-line duplication (mass=148) with command bus execution, ensuring consistent
-//   error handling and execution patterns.
+//
+//	Uses shared execution logic from cqrs.BusValidationUtilities to eliminate
+//	21-line duplication (mass=148) with command bus execution, ensuring consistent
+//	error handling and execution patterns.
 //
 // Thread Safety:
-//   Uses read lock for concurrent query execution while allowing handler registration.
+//
+//	Uses read lock for concurrent query execution while allowing handler registration.
 func (bus *InMemoryQueryBus) Execute(ctx context.Context, query Query) result.Result[interface{}] {
 	bus.mu.RLock()
 	defer bus.mu.RUnlock()

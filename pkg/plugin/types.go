@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // ProcessingStats represents plugin processing statistics

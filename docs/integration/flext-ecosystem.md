@@ -673,7 +673,7 @@ spec:
     spec:
       containers:
         - name: flexcore
-          image: flext/flexcore:0.9.0
+          image: flext-sh/flexcore:0.9.0
           ports:
             - containerPort: 8080
           env:

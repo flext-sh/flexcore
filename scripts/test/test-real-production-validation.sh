@@ -35,7 +35,7 @@ package main
 import (
     "context"
     "fmt"
-    "github.com/flext/flexcore/infrastructure/di"
+    "github.com/flext-sh/flexcore/infrastructure/di"
 )
 
 func main() {
@@ -54,7 +54,7 @@ func main() {
 }
 EOF
 
-cd /tmp && go mod init di-test && go mod edit -require=github.com/flext/flexcore@v0.0.0 && go mod edit -replace=github.com/flext/flexcore=/home/marlonsc/flext/flexcore
+cd /tmp && go mod init di-test && go mod edit -require=github.com/flext-sh/flexcore@v0.0.0 && go mod edit -replace=github.com/flext-sh/flexcore=/home/marlonsc/flext-sh/flexcore
 go run di-test.go 2>/dev/null || echo "✅ REAL DI Container structure validated"
 cd - >/dev/null || exit
 

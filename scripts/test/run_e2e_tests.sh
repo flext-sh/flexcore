@@ -121,7 +121,7 @@ fi
 
 # Build FlexCore
 log_info "Building FlexCore..."
-cd /home/marlonsc/flext/flexcore
+cd /home/marlonsc/flext-sh/flexcore
 go build -o flexcore-test ./cmd/flexcore/
 
 # Build plugins

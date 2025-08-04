@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/rpc"
 
-	"github.com/flext/flexcore/pkg/plugin"
+	"github.com/flext-sh/flexcore/pkg/plugin"
 	hashicorpPlugin "github.com/hashicorp/go-plugin"
 )
 

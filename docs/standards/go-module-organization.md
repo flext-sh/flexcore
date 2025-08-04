@@ -267,9 +267,9 @@ package services
 
 import (
     "context"
-    "github.com/flext/flexcore/internal/domain/entities/pipeline"
-    "github.com/flext/flexcore/internal/domain/entities/plugin"
-    "github.com/flext/flexcore/pkg/result"
+    "github.com/flext-sh/flexcore/internal/domain/entities/pipeline"
+    "github.com/flext-sh/flexcore/internal/domain/entities/plugin"
+    "github.com/flext-sh/flexcore/pkg/result"
 )
 
 // PipelineOrchestrator coordinates complex pipeline execution workflows
@@ -336,8 +336,8 @@ package pipeline
 
 import (
     "time"
-    "github.com/flext/flexcore/internal/domain/events"
-    "github.com/flext/flexcore/pkg/result"
+    "github.com/flext-sh/flexcore/internal/domain/events"
+    "github.com/flext-sh/flexcore/pkg/result"
     "github.com/google/uuid"
 )
 
@@ -618,8 +618,8 @@ func (p *Pipeline) validateResourceRequirements() error {
 //
 //     import (
 //         "context"
-//         "github.com/flext/flexcore/internal/domain/entities/pipeline"
-//         "github.com/flext/flexcore/pkg/result"
+//         "github.com/flext-sh/flexcore/internal/domain/entities/pipeline"
+//         "github.com/flext-sh/flexcore/pkg/result"
 //     )
 //
 //     func main() {
@@ -888,13 +888,13 @@ import (
 // 3. FlexCore internal imports (by layer, then alphabetical)
 import (
     // Domain layer imports (current layer)
-    "github.com/flext/flexcore/internal/domain/events"
-    "github.com/flext/flexcore/internal/domain/valueobjects"
+    "github.com/flext-sh/flexcore/internal/domain/events"
+    "github.com/flext-sh/flexcore/internal/domain/valueobjects"
 
     // Package layer imports (utilities)
-    "github.com/flext/flexcore/pkg/errors"
-    "github.com/flext/flexcore/pkg/logging"
-    "github.com/flext/flexcore/pkg/result"
+    "github.com/flext-sh/flexcore/pkg/errors"
+    "github.com/flext-sh/flexcore/pkg/logging"
+    "github.com/flext-sh/flexcore/pkg/result"
 )
 
 // Note: Imports from application or infrastructure layers are NOT allowed
@@ -1059,9 +1059,9 @@ import (
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 
-    "github.com/flext/flexcore/internal/domain/entities/pipeline"
-    "github.com/flext/flexcore/test/fixtures"
-    "github.com/flext/flexcore/test/helpers"
+    "github.com/flext-sh/flexcore/internal/domain/entities/pipeline"
+    "github.com/flext-sh/flexcore/test/fixtures"
+    "github.com/flext-sh/flexcore/test/helpers"
 )
 
 // TestPipeline provides comprehensive test coverage for Pipeline aggregate
@@ -1506,16 +1506,16 @@ import (
     "time"
 
     // Public utilities - allowed
-    "github.com/flext/flexcore/pkg/result"
-    "github.com/flext/flexcore/pkg/errors"
+    "github.com/flext-sh/flexcore/pkg/result"
+    "github.com/flext-sh/flexcore/pkg/errors"
 
     // Other domain packages - allowed
-    "github.com/flext/flexcore/internal/domain/valueobjects"
+    "github.com/flext-sh/flexcore/internal/domain/valueobjects"
 )
 
 // NOT ALLOWED - violates Clean Architecture:
-// import "github.com/flext/flexcore/internal/infrastructure/..."
-// import "github.com/flext/flexcore/internal/app/..."
+// import "github.com/flext-sh/flexcore/internal/infrastructure/..."
+// import "github.com/flext-sh/flexcore/internal/app/..."
 // import "database/sql" (infrastructure concern)
 // import "net/http" (infrastructure concern)
 ```
@@ -1534,7 +1534,7 @@ import (
 
 ```go
 // go.mod - Careful dependency management
-module github.com/flext/flexcore
+module github.com/flext-sh/flexcore
 
 go 1.24
 

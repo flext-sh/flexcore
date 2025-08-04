@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flext/flexcore/internal/domain/entities"
-	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/internal/domain/entities"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 const (
@@ -424,21 +424,21 @@ func NewSearchTextMatcher() *SearchTextMatcher {
 	return &SearchTextMatcher{}
 }
 
-// contains checks if s contains substr (case-insensitive)  
+// contains checks if s contains substr (case-insensitive)
 // SOLID SRP: Eliminates complex binary expression by using specialized validation methods
 func (m *SearchTextMatcher) contains(s, substr string) bool {
 	if m.isEmptySearch(substr) {
 		return true
 	}
-	
+
 	if m.isInvalidInput(s, substr) {
 		return false
 	}
-	
+
 	if m.isExactMatch(s, substr) {
 		return true
 	}
-	
+
 	return m.isCaseInsensitiveMatch(s, substr)
 }
 

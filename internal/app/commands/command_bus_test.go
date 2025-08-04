@@ -6,8 +6,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/flext/flexcore/internal/app/commands"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/internal/app/commands"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

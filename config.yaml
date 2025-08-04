@@ -1,35 +1,32 @@
 app:
   name: "flexcore"
-  version: "0.9.0"
+  version: "2.0.0"
   environment: "development"
   debug: true
   port: 8080
 
-jwt:
-  secret: "test-secret-key-for-development"
-  issuer: "flexcore"
-  expiry_duration: "24h"
-  refresh_enabled: true
-
 database:
-  type: "postgres"
+  type: "memory"
   host: "localhost"
   port: 5432
-  name: "flexcore_dev"
+  name: "flexcore"
   user: "postgres"
   password: ""
   ssl_mode: "disable"
   max_open_conns: 25
   max_idle_conns: 5
   max_lifetime: "5m"
+  auto_migrate: true
 
-redis:
-  url: "" # Leave empty for development mode (simulated coordinator)
-  # url: "redis://localhost:6379" # Uncomment for production Redis
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: "15s"
+  write_timeout: "15s"
+  idle_timeout: "60s"
 
-metrics:
-  enabled: true
-  path: "/metrics"
-
-tracing:
-  enabled: false
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+  structured: true

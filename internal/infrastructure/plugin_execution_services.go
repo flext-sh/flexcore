@@ -91,10 +91,10 @@ func (peo *PluginExecutionOrchestrator) executeAndProcessResponse(ctx context.Co
 
 // PluginExecutionRequest represents validated plugin execution request
 type PluginExecutionRequest struct {
-	PluginName string
-	Command    string
-	Args       []interface{}
-	URL        string
+	PluginName  string
+	Command     string
+	Args        []interface{}
+	URL         string
 	RequestBody []byte
 }
 

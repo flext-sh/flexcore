@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // Snapshot represents an aggregate snapshot

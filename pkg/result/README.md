@@ -1,6 +1,6 @@
 # Result Package
 
-**Package**: `github.com/flext/flexcore/pkg/result`  
+**Package**: `github.com/flext-sh/flexcore/pkg/result`  
 **Version**: 0.9.0  
 **Status**: Production Ready
 

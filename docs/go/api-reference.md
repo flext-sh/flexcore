@@ -5,7 +5,7 @@ This document provides comprehensive API documentation for FlexCore's Go compone
 ## 📦 Package Structure
 
 ```
-github.com/flext/flexcore/
+github.com/flext-sh/flexcore/
 ├── internal/
 │   ├── domain/           # Domain layer - business logic
 │   ├── app/             # Application layer - use cases

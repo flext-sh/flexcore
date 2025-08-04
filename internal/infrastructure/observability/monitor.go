@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 const (
@@ -365,7 +365,7 @@ func (m *Monitor) healthLoop(ctx context.Context) {
 	}
 }
 
-// resourceLoop runs periodic resource monitoring  
+// resourceLoop runs periodic resource monitoring
 // DRY PRINCIPLE: Uses shared periodic loop pattern
 func (m *Monitor) resourceLoop(ctx context.Context) {
 	m.runPeriodicLoop(ctx, m.config.ResourceInterval, m.monitorResources)

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/flext/flexcore/internal/application/services"
-	"github.com/flext/flexcore/pkg/config"
-	"github.com/flext/flexcore/pkg/logging"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/internal/application/services"
+	"github.com/flext-sh/flexcore/pkg/config"
+	"github.com/flext-sh/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"go.uber.org/zap"
 )
 
@@ -93,7 +93,7 @@ func (fc *FlexCoreContainer) Initialize(ctx context.Context) error {
 	// Use orchestrator for centralized error handling
 	orchestrator := fc.createInitializationOrchestrator(ctx)
 	initResult := orchestrator.InitializeAllComponents()
-	
+
 	if initResult.IsFailure() {
 		return initResult.Error()
 	}
@@ -184,7 +184,7 @@ func (fc *FlexCoreContainer) Shutdown(ctx context.Context) error {
 	// Use orchestrator for shutdown coordination
 	shutdownOrchestrator := fc.createShutdownOrchestrator(ctx)
 	shutdownResult := shutdownOrchestrator.ShutdownAllComponents()
-	
+
 	if shutdownResult.IsFailure() {
 		fc.logger.Error("Container shutdown had errors", zap.Error(shutdownResult.Error()))
 	}

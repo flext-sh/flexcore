@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/flext/flexcore/pkg/logging"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -99,7 +99,7 @@ func (es *PostgreSQLEventStore) SaveEvent(ctx context.Context, event interface{}
 func (es *PostgreSQLEventStore) GetEvents(ctx context.Context, streamID string) ([]EventEntry, error) {
 	queryBuilder := es.createEventQueryBuilder(ctx)
 	queryResult := queryBuilder.WithStreamFilter(streamID).ExecuteQuery()
-	
+
 	if queryResult.IsFailure() {
 		return nil, queryResult.Error()
 	}
@@ -112,7 +112,7 @@ func (es *PostgreSQLEventStore) GetEvents(ctx context.Context, streamID string) 
 func (es *PostgreSQLEventStore) GetAllEvents(ctx context.Context) ([]EventEntry, error) {
 	queryBuilder := es.createEventQueryBuilder(ctx)
 	queryResult := queryBuilder.WithoutFilters().ExecuteQuery()
-	
+
 	if queryResult.IsFailure() {
 		return nil, queryResult.Error()
 	}
@@ -125,7 +125,7 @@ func (es *PostgreSQLEventStore) GetAllEvents(ctx context.Context) ([]EventEntry,
 func (es *PostgreSQLEventStore) GetEventsByType(ctx context.Context, eventType string) ([]EventEntry, error) {
 	queryBuilder := es.createEventQueryBuilder(ctx)
 	queryResult := queryBuilder.WithTypeFilter(eventType).ExecuteQuery()
-	
+
 	if queryResult.IsFailure() {
 		return nil, queryResult.Error()
 	}
@@ -213,7 +213,7 @@ func (qb *EventQueryBuilder) ExecuteQuery() result.Result[[]EventEntry] {
 	// Convert events using specialized converter
 	converter := qb.createEventConverter()
 	conversionResult := converter.ConvertEventsToEntries(events)
-	
+
 	if conversionResult.IsFailure() {
 		return result.Failure[[]EventEntry](conversionResult.Error())
 	}
@@ -249,7 +249,7 @@ func (converter *EventConverter) ConvertEventsToEntries(events []Event) result.R
 				zap.Error(conversionResult.Error()))
 			continue
 		}
-		
+
 		eventEntries = append(eventEntries, conversionResult.Value())
 	}
 

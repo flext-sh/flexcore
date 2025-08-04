@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/flext/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/logging"
 	"go.uber.org/zap"
 )
 
@@ -40,12 +40,12 @@ type CommandBus interface {
 // WorkflowServiceConfig contains all dependencies for WorkflowService
 // PARAMETER OBJECT PATTERN: Eliminates 6-parameter constructor complexity
 type WorkflowServiceConfig struct {
-	EventBus     EventBus                    // Event Sourcing + CQRS
-	PluginLoader PluginLoader                // HashiCorp-style plugins
-	Cluster      CoordinationLayer           // Distributed coordination
-	Repository   EventStore                  // Event Store for audit trail
-	CommandBus   CommandBus                  // CQRS command processing
-	Logger       logging.LoggerInterface     // Structured logging
+	EventBus     EventBus                // Event Sourcing + CQRS
+	PluginLoader PluginLoader            // HashiCorp-style plugins
+	Cluster      CoordinationLayer       // Distributed coordination
+	Repository   EventStore              // Event Store for audit trail
+	CommandBus   CommandBus              // CQRS command processing
+	Logger       logging.LoggerInterface // Structured logging
 }
 
 // ConfigValidator provides specialized validation for workflow service configuration
@@ -103,7 +103,7 @@ type WorkflowService struct {
 	repository   EventStore        // Event Store for audit trail
 	commandBus   CommandBus        // CQRS command processing
 	logger       logging.LoggerInterface
-	
+
 	// SOLID SRP: Specialized orchestrator for pipeline execution with reduced returns
 	pipelineOrchestrator *PipelineExecutionOrchestrator
 }
@@ -114,7 +114,7 @@ func NewWorkflowService(config *WorkflowServiceConfig) (*WorkflowService, error)
 	if config == nil {
 		return nil, fmt.Errorf("WorkflowServiceConfig cannot be nil")
 	}
-	
+
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
@@ -213,7 +213,7 @@ func NewWorkflowServiceLegacy(
 		WithCommandBus(commandBus).
 		WithLogger(logger).
 		Build()
-	
+
 	if err != nil {
 		// Log error but maintain backward compatibility by creating service anyway
 		if logger != nil {
@@ -229,7 +229,7 @@ func NewWorkflowServiceLegacy(
 			logger:       logger,
 		}
 	}
-	
+
 	return service
 }
 
@@ -279,14 +279,14 @@ func NewPipelineExecutionCompletedEvent(pipelineID string, result interface{}) *
 // SOLID SRP: Reduced from 6 returns to 2 returns (67% reduction) using specialized orchestrator
 func (ws *WorkflowService) ExecuteFlextPipeline(ctx context.Context, pipelineID string) error {
 	// Log pipeline execution start
-	ws.logger.Info("Starting FLEXT pipeline execution", 
+	ws.logger.Info("Starting FLEXT pipeline execution",
 		zap.String("pipeline_id", pipelineID),
 		zap.String("cluster_node", ws.cluster.GetNodeID()),
 	)
 
 	// Delegate to specialized orchestrator with consolidated error handling
 	if err := ws.pipelineOrchestrator.ExecutePipeline(ctx, pipelineID); err != nil {
-		ws.logger.Error("FLEXT pipeline execution failed", 
+		ws.logger.Error("FLEXT pipeline execution failed",
 			zap.String("pipeline_id", pipelineID),
 			zap.Error(err),
 		)
@@ -294,7 +294,7 @@ func (ws *WorkflowService) ExecuteFlextPipeline(ctx context.Context, pipelineID 
 	}
 
 	// Log successful completion
-	ws.logger.Info("FLEXT pipeline execution completed successfully", 
+	ws.logger.Info("FLEXT pipeline execution completed successfully",
 		zap.String("pipeline_id", pipelineID),
 	)
 	return nil

@@ -145,7 +145,7 @@ func (dp *BaseDataProcessor) HealthCheck(ctx context.Context) error {
 	if dp.statistics == nil {
 		return &HealthCheckError{Message: "statistics not available"}
 	}
-	
+
 	return nil
 }
 
@@ -154,7 +154,7 @@ func (dp *BaseDataProcessor) HealthCheck(ctx context.Context) error {
 func (dp *BaseDataProcessor) GetInfo() PluginInfo {
 	return dp.utilities.CreatePluginInfo(
 		"data-processor",
-		"data-processor", 
+		"data-processor",
 		"0.9.0",
 		"Real data processing plugin with filtering, enrichment, and transformation",
 		dp.statistics.StartTime,
@@ -180,10 +180,10 @@ func (dp *BaseDataProcessor) GetStatistics() *ProcessingStats {
 // DRY PRINCIPLE: Eliminates 35-line duplication (mass=178) between all processor implementations
 func (dp *BaseDataProcessor) Cleanup() error {
 	log.Printf("[DataProcessor] Starting cleanup...")
-	
+
 	// Calculate final statistics
 	dp.statisticsManager.CalculateFinalStatistics()
-	
+
 	// Save statistics to file if configured
 	if dp.config != nil {
 		if statsFile, ok := dp.config["stats_file"].(string); ok && statsFile != "" {
@@ -193,7 +193,7 @@ func (dp *BaseDataProcessor) Cleanup() error {
 			}
 		}
 	}
-	
+
 	log.Printf("[DataProcessor] Cleanup completed")
 	return nil
 }
@@ -203,7 +203,3 @@ func (dp *BaseDataProcessor) Shutdown() error {
 	log.Printf("[DataProcessor] Shutting down")
 	return nil
 }
-
-
-
-

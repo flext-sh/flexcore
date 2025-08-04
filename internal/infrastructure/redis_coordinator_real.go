@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/flext/flexcore/pkg/logging"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -71,7 +71,7 @@ func (rc *RealRedisCoordinator) CoordinateExecution(ctx context.Context, workflo
 	// Use orchestrator for centralized error handling
 	orchestrator := rc.createCoordinationOrchestrator(ctx, workflowID)
 	coordinationResult := orchestrator.CoordinateDistributedExecution()
-	
+
 	if coordinationResult.IsFailure() {
 		return coordinationResult.Error()
 	}
@@ -258,7 +258,7 @@ func (rot *RedisOperationTemplate) ExecuteRedisOperation(
 
 func (rc *RealRedisCoordinator) registerNode(ctx context.Context) error {
 	template := NewRedisOperationTemplate(rc, ctx, "node registration")
-	
+
 	return template.ExecuteRedisOperation(
 		func() error {
 			nodeKey := rc.nodePrefix + rc.nodeID
@@ -304,7 +304,7 @@ func NewLockOperationResult(success bool, err error) *LockOperationResult {
 // acquireLock acquires a distributed lock using template method pattern
 func (rc *RealRedisCoordinator) acquireLock(ctx context.Context, lockKey string, expiration time.Duration) (bool, error) {
 	template := NewRedisOperationTemplate(rc, ctx, "lock acquisition")
-	
+
 	var acquired bool
 	err := template.ExecuteRedisOperation(
 		func() error {
@@ -325,14 +325,14 @@ func (rc *RealRedisCoordinator) acquireLock(ctx context.Context, lockKey string,
 			zap.Duration("expiration", expiration),
 		},
 	)
-	
+
 	return acquired, err
 }
 
 // releaseLock releases a distributed lock using template method pattern
 func (rc *RealRedisCoordinator) releaseLock(ctx context.Context, lockKey string) error {
 	template := NewRedisOperationTemplate(rc, ctx, "lock release")
-	
+
 	return template.ExecuteRedisOperation(
 		func() error {
 			// Use Lua script to ensure we only delete our own lock
@@ -396,11 +396,11 @@ func (rc *RealRedisCoordinator) electLeader(ctx context.Context, leaderKey, work
 func (rc *RealRedisCoordinator) distributeWorkload(ctx context.Context, workflowID string) error {
 	distributor := rc.createWorkloadDistributor(ctx, workflowID)
 	distributionResult := distributor.DistributeWorkloadAcrossNodes()
-	
+
 	if distributionResult.IsFailure() {
 		return distributionResult.Error()
 	}
-	
+
 	return nil
 }
 
@@ -434,7 +434,7 @@ func (distributor *WorkloadDistributor) DistributeWorkloadAcrossNodes() result.R
 	if nodesResult.IsFailure() {
 		return result.Failure[bool](nodesResult.Error())
 	}
-	
+
 	availableNodes := nodesResult.Value()
 
 	// Phase 2: Create and store distribution plan
@@ -469,13 +469,13 @@ func (distributor *WorkloadDistributor) discoverAvailableNodes() result.Result[[
 // SOLID SRP: Single responsibility for health filtering
 func (distributor *WorkloadDistributor) filterHealthyNodes(nodeKeys []string) []string {
 	var availableNodes []string
-	
+
 	for _, nodeKey := range nodeKeys {
 		if nodeInfo := distributor.getNodeInfo(nodeKey); nodeInfo != nil && nodeInfo.Status == "healthy" {
 			availableNodes = append(availableNodes, nodeInfo.ID)
 		}
 	}
-	
+
 	return availableNodes
 }
 
@@ -500,7 +500,7 @@ func (distributor *WorkloadDistributor) getNodeInfo(nodeKey string) *NodeInfo {
 func (distributor *WorkloadDistributor) createAndStoreDistributionPlan(availableNodes []string) result.Result[bool] {
 	// Create distribution plan
 	distributionPlan := distributor.createDistributionPlan(availableNodes)
-	
+
 	// Marshal plan to JSON
 	planData, err := json.Marshal(distributionPlan)
 	if err != nil {
@@ -642,11 +642,11 @@ func (rc *RealRedisCoordinator) Stop() error {
 func (rc *RealRedisCoordinator) GetClusterStatus() (map[string]NodeInfo, error) {
 	collector := rc.createClusterStatusCollector()
 	statusResult := collector.CollectClusterStatus()
-	
+
 	if statusResult.IsFailure() {
 		return nil, statusResult.Error()
 	}
-	
+
 	return statusResult.Value(), nil
 }
 
@@ -668,18 +668,18 @@ func (rc *RealRedisCoordinator) createClusterStatusCollector() *ClusterStatusCol
 // SOLID SRP: Single responsibility for complete cluster status collection
 func (collector *ClusterStatusCollector) CollectClusterStatus() result.Result[map[string]NodeInfo] {
 	ctx := context.Background()
-	
+
 	// Phase 1: Get all node keys
 	nodeKeysResult := collector.getAllNodeKeys(ctx)
 	if nodeKeysResult.IsFailure() {
 		return result.Failure[map[string]NodeInfo](nodeKeysResult.Error())
 	}
-	
+
 	nodeKeys := nodeKeysResult.Value()
-	
+
 	// Phase 2: Collect all node information
 	cluster := collector.collectAllNodeInformation(ctx, nodeKeys)
-	
+
 	return result.Success(cluster)
 }
 
@@ -690,7 +690,7 @@ func (collector *ClusterStatusCollector) getAllNodeKeys(ctx context.Context) res
 	if err != nil {
 		return result.Failure[[]string](fmt.Errorf("failed to get cluster nodes: %w", err))
 	}
-	
+
 	return result.Success(nodeKeys)
 }
 
@@ -698,13 +698,13 @@ func (collector *ClusterStatusCollector) getAllNodeKeys(ctx context.Context) res
 // SOLID SRP: Single responsibility for node information collection
 func (collector *ClusterStatusCollector) collectAllNodeInformation(ctx context.Context, nodeKeys []string) map[string]NodeInfo {
 	cluster := make(map[string]NodeInfo)
-	
+
 	for _, nodeKey := range nodeKeys {
 		if nodeInfo := collector.getNodeInformation(ctx, nodeKey); nodeInfo != nil {
 			cluster[nodeInfo.ID] = *nodeInfo
 		}
 	}
-	
+
 	return cluster
 }
 

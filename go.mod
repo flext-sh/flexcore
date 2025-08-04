@@ -1,4 +1,4 @@
-module github.com/flext/flexcore
+module github.com/flext-sh/flexcore
 
 go 1.23.0
 

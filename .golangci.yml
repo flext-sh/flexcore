@@ -38,7 +38,7 @@ linters-settings:
     line-length: 120
 
   goimports:
-    local-prefixes: github.com/flext/flexcore
+    local-prefixes: github.com/flext-sh/flexcore
 
   gocritic:
     enabled-tags:
@@ -68,7 +68,7 @@ linters-settings:
       main:
         allow:
           - $gostd
-          - github.com/flext/flexcore
+          - github.com/flext-sh/flexcore
           - github.com/hashicorp/go-plugin
           - github.com/lib/pq
           - github.com/mattn/go-sqlite3

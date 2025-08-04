@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/flext/flexcore/pkg/errors"
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/google/uuid"
 )
 

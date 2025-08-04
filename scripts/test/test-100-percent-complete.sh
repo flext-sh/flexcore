@@ -240,7 +240,7 @@ echo ""
 echo "📚 Test 8: Parameterizable Library Architecture"
 library_features=0
 
-if [ -f "go.mod" ] && grep -q "module github.com/flext/flexcore" go.mod; then
+if [ -f "go.mod" ] && grep -q "module github.com/flext-sh/flexcore" go.mod; then
 	echo "  ✅ Go module structure: IMPLEMENTED"
 	((library_features++))
 fi

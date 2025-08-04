@@ -40,7 +40,7 @@ This comprehensive guide will help you install FlexCore and set up your developm
 ```bash
 # Clone the FlexCore repository
 git clone https://github.com/flext-sh/flext.git
-cd flext/flexcore
+cd flext-sh/flexcore
 
 # Verify you're in the correct directory
 ls -la
@@ -115,7 +115,7 @@ If successful, you should see:
 ```bash
 # Clone repository
 git clone https://github.com/flext-sh/flext.git
-cd flext/flexcore
+cd flext-sh/flexcore
 
 # Build and start everything
 make docker-up

@@ -13,12 +13,14 @@
 //   - SetPipelineScheduleCommand: Configures automated pipeline scheduling
 //
 // Command Handlers:
-//   Each command has a corresponding handler implementing CommandHandler[T] interface
-//   with complete business logic, repository integration, and event publishing.
+//
+//	Each command has a corresponding handler implementing CommandHandler[T] interface
+//	with complete business logic, repository integration, and event publishing.
 //
 // Pipeline Execution Orchestrator:
-//   Specialized orchestrator following SOLID SRP principles for complex pipeline
-//   execution coordination with proper error recovery and workflow management.
+//
+//	Specialized orchestrator following SOLID SRP principles for complex pipeline
+//	execution coordination with proper error recovery and workflow management.
 //
 // Integration:
 //   - Domain Layer: Pipeline and PipelineStep entities for business logic
@@ -35,9 +37,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/flext/flexcore/internal/domain/entities"
-	"github.com/flext/flexcore/pkg/result"
-	"github.com/flext/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/internal/domain/entities"
+	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // CreatePipelineCommand represents a command to create a new data processing pipeline.
@@ -47,11 +49,12 @@ import (
 // The command follows CQRS principles with immutable data and comprehensive validation.
 //
 // Fields:
-//   BaseCommand: Inherited command infrastructure with type identification
-//   Name string: Unique pipeline name for identification and discovery (required)
-//   Description string: Detailed pipeline description and purpose (optional)
-//   Owner string: Pipeline owner identifier for access control (required)
-//   Tags []string: Classification tags for organization and filtering (optional)
+//
+//	BaseCommand: Inherited command infrastructure with type identification
+//	Name string: Unique pipeline name for identification and discovery (required)
+//	Description string: Detailed pipeline description and purpose (optional)
+//	Owner string: Pipeline owner identifier for access control (required)
+//	Tags []string: Classification tags for organization and filtering (optional)
 //
 // Business Rules:
 //   - Pipeline names must be unique within the owner's scope
@@ -60,22 +63,23 @@ import (
 //   - Description supports rich text for comprehensive documentation
 //
 // Example:
-//   Creating a new data processing pipeline:
 //
-//     command := commands.NewCreatePipelineCommand(
-//         "customer-data-etl",
-//         "ETL pipeline for customer data processing from CRM to analytics warehouse",
-//         "data-team",
-//         []string{"etl", "customer-data", "analytics", "daily"},
-//     )
-//     
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsFailure() {
-//         return fmt.Errorf("pipeline creation failed: %w", result.Error())
-//     }
-//     
-//     pipeline := result.Value().(*entities.Pipeline)
-//     log.Info("Pipeline created successfully", "id", pipeline.ID(), "name", pipeline.Name())
+//	Creating a new data processing pipeline:
+//
+//	  command := commands.NewCreatePipelineCommand(
+//	      "customer-data-etl",
+//	      "ETL pipeline for customer data processing from CRM to analytics warehouse",
+//	      "data-team",
+//	      []string{"etl", "customer-data", "analytics", "daily"},
+//	  )
+//
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsFailure() {
+//	      return fmt.Errorf("pipeline creation failed: %w", result.Error())
+//	  }
+//
+//	  pipeline := result.Value().(*entities.Pipeline)
+//	  log.Info("Pipeline created successfully", "id", pipeline.ID(), "name", pipeline.Name())
 //
 // Integration:
 //   - Processed by CreatePipelineCommandHandler
@@ -84,10 +88,10 @@ import (
 //   - Persisted through PipelineRepository
 type CreatePipelineCommand struct {
 	BaseCommand
-	Name        string    // Unique pipeline name for identification
-	Description string    // Detailed pipeline description and purpose
-	Owner       string    // Pipeline owner identifier for access control
-	Tags        []string  // Classification tags for organization and filtering
+	Name        string   // Unique pipeline name for identification
+	Description string   // Detailed pipeline description and purpose
+	Owner       string   // Pipeline owner identifier for access control
+	Tags        []string // Classification tags for organization and filtering
 }
 
 // NewCreatePipelineCommand creates a new create pipeline command with validation.
@@ -97,48 +101,53 @@ type CreatePipelineCommand struct {
 // a clean API for command creation with parameter validation.
 //
 // Parameters:
-//   name string: Unique pipeline name (required, must be non-empty)
-//   description string: Pipeline description (optional, can be empty)
-//   owner string: Pipeline owner identifier (required, must be valid user)
-//   tags []string: Classification tags (optional, can be nil or empty)
+//
+//	name string: Unique pipeline name (required, must be non-empty)
+//	description string: Pipeline description (optional, can be empty)
+//	owner string: Pipeline owner identifier (required, must be valid user)
+//	tags []string: Classification tags (optional, can be nil or empty)
 //
 // Returns:
-//   CreatePipelineCommand: Fully initialized command ready for execution
+//
+//	CreatePipelineCommand: Fully initialized command ready for execution
 //
 // Example:
-//   Creating commands for different pipeline types:
 //
-//     // Data processing pipeline
-//     etlCommand := commands.NewCreatePipelineCommand(
-//         "sales-data-pipeline",
-//         "Daily sales data processing from multiple sources",
-//         "analytics-team",
-//         []string{"sales", "daily", "multi-source"},
-//     )
-//     
-//     // Real-time streaming pipeline
-//     streamingCommand := commands.NewCreatePipelineCommand(
-//         "real-time-events",
-//         "Real-time event processing for user analytics",
-//         "streaming-team",
-//         []string{"streaming", "real-time", "events"},
-//     )
-//     
-//     // Simple data migration pipeline
-//     migrationCommand := commands.NewCreatePipelineCommand(
-//         "legacy-migration",
-//         "One-time migration from legacy system",
-//         "migration-team",
-//         []string{"migration", "one-time", "legacy"},
-//     )
+//	Creating commands for different pipeline types:
+//
+//	  // Data processing pipeline
+//	  etlCommand := commands.NewCreatePipelineCommand(
+//	      "sales-data-pipeline",
+//	      "Daily sales data processing from multiple sources",
+//	      "analytics-team",
+//	      []string{"sales", "daily", "multi-source"},
+//	  )
+//
+//	  // Real-time streaming pipeline
+//	  streamingCommand := commands.NewCreatePipelineCommand(
+//	      "real-time-events",
+//	      "Real-time event processing for user analytics",
+//	      "streaming-team",
+//	      []string{"streaming", "real-time", "events"},
+//	  )
+//
+//	  // Simple data migration pipeline
+//	  migrationCommand := commands.NewCreatePipelineCommand(
+//	      "legacy-migration",
+//	      "One-time migration from legacy system",
+//	      "migration-team",
+//	      []string{"migration", "one-time", "legacy"},
+//	  )
 //
 // Validation:
-//   Parameter validation is performed by the command handler during execution.
-//   This factory focuses on proper initialization and type safety.
+//
+//	Parameter validation is performed by the command handler during execution.
+//	This factory focuses on proper initialization and type safety.
 //
 // Integration:
-//   Command is designed for execution through CommandBus with proper
-//   routing to CreatePipelineCommandHandler.
+//
+//	Command is designed for execution through CommandBus with proper
+//	routing to CreatePipelineCommandHandler.
 func NewCreatePipelineCommand(name, description, owner string, tags []string) CreatePipelineCommand {
 	return CreatePipelineCommand{
 		BaseCommand: NewBaseCommand("CreatePipeline"),
@@ -164,33 +173,35 @@ func NewCreatePipelineCommand(name, description, owner string, tags []string) Cr
 //   - Domain event publishing for system coordination
 //
 // Fields:
-//   repository PipelineRepository: Data access abstraction for pipeline persistence
-//   eventBus EventBus: Event publishing infrastructure for domain events
+//
+//	repository PipelineRepository: Data access abstraction for pipeline persistence
+//	eventBus EventBus: Event publishing infrastructure for domain events
 //
 // Example:
-//   Handler initialization and usage:
 //
-//     handler := commands.NewCreatePipelineCommandHandler(
-//         pipelineRepository,
-//         eventBus,
-//     )
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&CreatePipelineCommand{}, handler)
-//     
-//     // Handler processes commands through command bus
-//     command := commands.NewCreatePipelineCommand(
-//         "data-processing-pipeline",
-//         "Customer data ETL pipeline",
-//         "data-team",
-//         []string{"etl", "customer"},
-//     )
-//     
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsSuccess() {
-//         pipeline := result.Value().(*entities.Pipeline)
-//         log.Info("Pipeline created", "id", pipeline.ID())
-//     }
+//	Handler initialization and usage:
+//
+//	  handler := commands.NewCreatePipelineCommandHandler(
+//	      pipelineRepository,
+//	      eventBus,
+//	  )
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&CreatePipelineCommand{}, handler)
+//
+//	  // Handler processes commands through command bus
+//	  command := commands.NewCreatePipelineCommand(
+//	      "data-processing-pipeline",
+//	      "Customer data ETL pipeline",
+//	      "data-team",
+//	      []string{"etl", "customer"},
+//	  )
+//
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsSuccess() {
+//	      pipeline := result.Value().(*entities.Pipeline)
+//	      log.Info("Pipeline created", "id", pipeline.ID())
+//	  }
 //
 // Integration:
 //   - Command Bus: Registered as handler for CreatePipelineCommand
@@ -198,7 +209,7 @@ func NewCreatePipelineCommand(name, description, owner string, tags []string) Cr
 //   - Infrastructure: Repository and event bus dependency injection
 //   - Transaction Management: Participates in application transactions
 type CreatePipelineCommandHandler struct {
-	repository PipelineRepository  // Data access abstraction for pipeline persistence
+	repository PipelineRepository // Data access abstraction for pipeline persistence
 	eventBus   EventBus           // Event publishing infrastructure for domain events
 }
 
@@ -223,29 +234,30 @@ type CreatePipelineCommandHandler struct {
 //   - List: Retrieves paginated pipeline collections with filtering support
 //
 // Example:
-//   Repository usage in command handlers:
 //
-//     type CreatePipelineHandler struct {
-//         repository PipelineRepository
-//         eventBus   EventBus
-//     }
-//     
-//     func (h *CreatePipelineHandler) Handle(ctx context.Context, cmd CreatePipelineCommand) {
-//         // Check for existing pipeline
-//         existing, err := h.repository.FindByName(ctx, cmd.Name)
-//         if err != nil && !errors.Is(err, errors.NotFoundError{}) {
-//             return result.Failure(err)
-//         }
-//         if existing != nil {
-//             return result.Failure(errors.AlreadyExistsError("pipeline exists"))
-//         }
-//         
-//         // Create and save new pipeline
-//         pipeline := entities.NewPipeline(cmd.Name, cmd.Description, cmd.Owner)
-//         if err := h.repository.Save(ctx, pipeline.Value()); err != nil {
-//             return result.Failure(err)
-//         }
-//     }
+//	Repository usage in command handlers:
+//
+//	  type CreatePipelineHandler struct {
+//	      repository PipelineRepository
+//	      eventBus   EventBus
+//	  }
+//
+//	  func (h *CreatePipelineHandler) Handle(ctx context.Context, cmd CreatePipelineCommand) {
+//	      // Check for existing pipeline
+//	      existing, err := h.repository.FindByName(ctx, cmd.Name)
+//	      if err != nil && !errors.Is(err, errors.NotFoundError{}) {
+//	          return result.Failure(err)
+//	      }
+//	      if existing != nil {
+//	          return result.Failure(errors.AlreadyExistsError("pipeline exists"))
+//	      }
+//
+//	      // Create and save new pipeline
+//	      pipeline := entities.NewPipeline(cmd.Name, cmd.Description, cmd.Owner)
+//	      if err := h.repository.Save(ctx, pipeline.Value()); err != nil {
+//	          return result.Failure(err)
+//	      }
+//	  }
 //
 // Integration:
 //   - Infrastructure Layer: Implemented by concrete persistence adapters
@@ -253,11 +265,11 @@ type CreatePipelineCommandHandler struct {
 //   - Application Layer: Used by command handlers for data operations
 //   - Transaction Support: Operations participate in application transactions
 type PipelineRepository interface {
-	Save(ctx context.Context, pipeline *entities.Pipeline) error                        // Persists pipeline aggregate with optimistic concurrency
-	FindByID(ctx context.Context, id entities.PipelineID) (*entities.Pipeline, error)  // Retrieves pipeline by unique identifier
-	FindByName(ctx context.Context, name string) (*entities.Pipeline, error)           // Searches pipeline by name for uniqueness validation
-	Delete(ctx context.Context, id entities.PipelineID) error                          // Removes pipeline with proper cleanup
-	List(ctx context.Context, limit, offset int) ([]*entities.Pipeline, error)         // Retrieves paginated pipeline collections
+	Save(ctx context.Context, pipeline *entities.Pipeline) error                      // Persists pipeline aggregate with optimistic concurrency
+	FindByID(ctx context.Context, id entities.PipelineID) (*entities.Pipeline, error) // Retrieves pipeline by unique identifier
+	FindByName(ctx context.Context, name string) (*entities.Pipeline, error)          // Searches pipeline by name for uniqueness validation
+	Delete(ctx context.Context, id entities.PipelineID) error                         // Removes pipeline with proper cleanup
+	List(ctx context.Context, limit, offset int) ([]*entities.Pipeline, error)        // Retrieves paginated pipeline collections
 }
 
 // EventBus represents an event bus for publishing domain events across the system.
@@ -274,29 +286,30 @@ type PipelineRepository interface {
 //   - Context Awareness: Supports cancellation and timeout for event publishing
 //
 // Example:
-//   Event publishing in command handlers:
 //
-//     func (h *CreatePipelineHandler) Handle(ctx context.Context, cmd CreatePipelineCommand) {
-//         // Create pipeline and generate events
-//         pipeline := entities.NewPipeline(cmd.Name, cmd.Description, cmd.Owner)
-//         
-//         // Save aggregate
-//         if err := h.repository.Save(ctx, pipeline.Value()); err != nil {
-//             return result.Failure(err)
-//         }
-//         
-//         // Publish domain events
-//         events := pipeline.Value().GetEvents()
-//         for _, event := range events {
-//             if err := h.eventBus.Publish(ctx, event); err != nil {
-//                 // Log error but don't fail the command (eventual consistency)
-//                 log.Error("Event publishing failed", "event", event.Type, "error", err)
-//             }
-//         }
-//         
-//         // Clear events after publishing
-//         pipeline.Value().ClearEvents()
-//     }
+//	Event publishing in command handlers:
+//
+//	  func (h *CreatePipelineHandler) Handle(ctx context.Context, cmd CreatePipelineCommand) {
+//	      // Create pipeline and generate events
+//	      pipeline := entities.NewPipeline(cmd.Name, cmd.Description, cmd.Owner)
+//
+//	      // Save aggregate
+//	      if err := h.repository.Save(ctx, pipeline.Value()); err != nil {
+//	          return result.Failure(err)
+//	      }
+//
+//	      // Publish domain events
+//	      events := pipeline.Value().GetEvents()
+//	      for _, event := range events {
+//	          if err := h.eventBus.Publish(ctx, event); err != nil {
+//	              // Log error but don't fail the command (eventual consistency)
+//	              log.Error("Event publishing failed", "event", event.Type, "error", err)
+//	          }
+//	      }
+//
+//	      // Clear events after publishing
+//	      pipeline.Value().ClearEvents()
+//	  }
 //
 // Integration:
 //   - Infrastructure Layer: Implemented by message brokers (Redis, RabbitMQ, Kafka)
@@ -304,7 +317,7 @@ type PipelineRepository interface {
 //   - Read Models: Event handlers update query projections
 //   - External Systems: Integration events for webhooks and notifications
 type EventBus interface {
-	Publish(ctx context.Context, event interface{}) error  // Publishes domain event with reliable delivery
+	Publish(ctx context.Context, event interface{}) error // Publishes domain event with reliable delivery
 }
 
 // NewCreatePipelineCommandHandler creates a new create pipeline command handler with dependencies.
@@ -314,26 +327,29 @@ type EventBus interface {
 // for clean architecture and testability.
 //
 // Parameters:
-//   repository PipelineRepository: Data access abstraction for pipeline persistence (required)
-//   eventBus EventBus: Event publishing infrastructure for domain events (required)
+//
+//	repository PipelineRepository: Data access abstraction for pipeline persistence (required)
+//	eventBus EventBus: Event publishing infrastructure for domain events (required)
 //
 // Returns:
-//   *CreatePipelineCommandHandler: Fully initialized handler ready for command processing
+//
+//	*CreatePipelineCommandHandler: Fully initialized handler ready for command processing
 //
 // Example:
-//   Handler initialization in application setup:
 //
-//     // Initialize dependencies
-//     pipelineRepo := postgresql.NewPipelineRepository(db)
-//     eventBus := redis.NewEventBus(redisClient)
-//     
-//     // Create handler with dependency injection
-//     handler := commands.NewCreatePipelineCommandHandler(pipelineRepo, eventBus)
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&CreatePipelineCommand{}, handler)
-//     
-//     log.Info("CreatePipelineCommandHandler registered successfully")
+//	Handler initialization in application setup:
+//
+//	  // Initialize dependencies
+//	  pipelineRepo := postgresql.NewPipelineRepository(db)
+//	  eventBus := redis.NewEventBus(redisClient)
+//
+//	  // Create handler with dependency injection
+//	  handler := commands.NewCreatePipelineCommandHandler(pipelineRepo, eventBus)
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&CreatePipelineCommand{}, handler)
+//
+//	  log.Info("CreatePipelineCommandHandler registered successfully")
 //
 // Integration:
 //   - Application Setup: Called during application initialization
@@ -355,49 +371,52 @@ func NewCreatePipelineCommandHandler(repository PipelineRepository, eventBus Eve
 // coordination.
 //
 // Business Logic Flow:
-//   1. Validate pipeline name uniqueness within owner scope
-//   2. Create new pipeline domain aggregate with validation
-//   3. Apply command data (tags, metadata) to the aggregate
-//   4. Persist pipeline through repository with optimistic concurrency
-//   5. Publish domain events for system coordination
-//   6. Return created pipeline as command result
+//  1. Validate pipeline name uniqueness within owner scope
+//  2. Create new pipeline domain aggregate with validation
+//  3. Apply command data (tags, metadata) to the aggregate
+//  4. Persist pipeline through repository with optimistic concurrency
+//  5. Publish domain events for system coordination
+//  6. Return created pipeline as command result
 //
 // Parameters:
-//   ctx context.Context: Execution context for cancellation and timeout handling
-//   command CreatePipelineCommand: Command with pipeline creation data
+//
+//	ctx context.Context: Execution context for cancellation and timeout handling
+//	command CreatePipelineCommand: Command with pipeline creation data
 //
 // Returns:
-//   result.Result[interface{}]: Success with created Pipeline or Failure with error
+//
+//	result.Result[interface{}]: Success with created Pipeline or Failure with error
 //
 // Example:
-//   Command execution flow:
 //
-//     handler := &CreatePipelineCommandHandler{
-//         repository: pipelineRepo,
-//         eventBus:   eventBus,
-//     }
-//     
-//     command := CreatePipelineCommand{
-//         Name:        "analytics-pipeline",
-//         Description: "Daily analytics data processing",
-//         Owner:       "analytics-team",
-//         Tags:        []string{"analytics", "daily"},
-//     }
-//     
-//     result := handler.Handle(ctx, command)
-//     if result.IsFailure() {
-//         switch err := result.Error().(type) {
-//         case *errors.AlreadyExistsError:
-//             return fmt.Errorf("pipeline name conflict: %w", err)
-//         case *errors.ValidationError:
-//             return fmt.Errorf("invalid pipeline data: %w", err)
-//         default:
-//             return fmt.Errorf("pipeline creation failed: %w", err)
-//         }
-//     }
-//     
-//     pipeline := result.Value().(*entities.Pipeline)
-//     log.Info("Pipeline created successfully", "id", pipeline.ID(), "name", pipeline.Name())
+//	Command execution flow:
+//
+//	  handler := &CreatePipelineCommandHandler{
+//	      repository: pipelineRepo,
+//	      eventBus:   eventBus,
+//	  }
+//
+//	  command := CreatePipelineCommand{
+//	      Name:        "analytics-pipeline",
+//	      Description: "Daily analytics data processing",
+//	      Owner:       "analytics-team",
+//	      Tags:        []string{"analytics", "daily"},
+//	  }
+//
+//	  result := handler.Handle(ctx, command)
+//	  if result.IsFailure() {
+//	      switch err := result.Error().(type) {
+//	      case *errors.AlreadyExistsError:
+//	          return fmt.Errorf("pipeline name conflict: %w", err)
+//	      case *errors.ValidationError:
+//	          return fmt.Errorf("invalid pipeline data: %w", err)
+//	      default:
+//	          return fmt.Errorf("pipeline creation failed: %w", err)
+//	      }
+//	  }
+//
+//	  pipeline := result.Value().(*entities.Pipeline)
+//	  log.Info("Pipeline created successfully", "id", pipeline.ID(), "name", pipeline.Name())
 //
 // Business Rules Enforced:
 //   - Pipeline names must be unique within the system
@@ -460,14 +479,15 @@ func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command Creat
 // processing workflows with proper dependency management and error handling.
 //
 // Fields:
-//   BaseCommand: Inherited command infrastructure with type identification
-//   PipelineID entities.PipelineID: Target pipeline identifier (required)
-//   StepName string: Unique step name within the pipeline (required)
-//   StepType string: Step type identifier for processor selection (required)
-//   Config map[string]interface{}: Step-specific configuration parameters (optional)
-//   DependsOn []string: List of prerequisite step names for execution ordering (optional)
-//   MaxRetries int: Maximum retry attempts for step execution (default from entities)
-//   Timeout time.Duration: Step execution timeout (default from entities)
+//
+//	BaseCommand: Inherited command infrastructure with type identification
+//	PipelineID entities.PipelineID: Target pipeline identifier (required)
+//	StepName string: Unique step name within the pipeline (required)
+//	StepType string: Step type identifier for processor selection (required)
+//	Config map[string]interface{}: Step-specific configuration parameters (optional)
+//	DependsOn []string: List of prerequisite step names for execution ordering (optional)
+//	MaxRetries int: Maximum retry attempts for step execution (default from entities)
+//	Timeout time.Duration: Step execution timeout (default from entities)
 //
 // Business Rules:
 //   - Step names must be unique within the pipeline
@@ -477,45 +497,46 @@ func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command Creat
 //   - Configuration must be valid for the specified step type
 //
 // Example:
-//   Adding different types of processing steps:
 //
-//     // Data extraction step
-//     extractCommand := commands.NewAddPipelineStepCommand(
-//         pipelineID,
-//         "extract-customer-data",
-//         "oracle-extractor",
-//     )
-//     extractCommand.Config = map[string]interface{}{
-//         "connection_string": "oracle://prod-db:1521/CUSTOMER",
-//         "query": "SELECT * FROM customers WHERE updated_date > ?",
-//         "batch_size": 10000,
-//     }
-//     extractCommand.MaxRetries = 3
-//     extractCommand.Timeout = 30 * time.Minute
-//     
-//     // Data transformation step (depends on extraction)
-//     transformCommand := commands.NewAddPipelineStepCommand(
-//         pipelineID,
-//         "transform-customer-data",
-//         "json-transformer",
-//     )
-//     transformCommand.Config = map[string]interface{}{
-//         "transformation_rules": "customer_transform.json",
-//         "output_format": "parquet",
-//     }
-//     transformCommand.DependsOn = []string{"extract-customer-data"}
-//     
-//     // Data loading step (depends on transformation)
-//     loadCommand := commands.NewAddPipelineStepCommand(
-//         pipelineID,
-//         "load-to-warehouse",
-//         "postgres-loader",
-//     )
-//     loadCommand.Config = map[string]interface{}{
-//         "target_table": "analytics.customer_data",
-//         "load_strategy": "upsert",
-//     }
-//     loadCommand.DependsOn = []string{"transform-customer-data"}
+//	Adding different types of processing steps:
+//
+//	  // Data extraction step
+//	  extractCommand := commands.NewAddPipelineStepCommand(
+//	      pipelineID,
+//	      "extract-customer-data",
+//	      "oracle-extractor",
+//	  )
+//	  extractCommand.Config = map[string]interface{}{
+//	      "connection_string": "oracle://prod-db:1521/CUSTOMER",
+//	      "query": "SELECT * FROM customers WHERE updated_date > ?",
+//	      "batch_size": 10000,
+//	  }
+//	  extractCommand.MaxRetries = 3
+//	  extractCommand.Timeout = 30 * time.Minute
+//
+//	  // Data transformation step (depends on extraction)
+//	  transformCommand := commands.NewAddPipelineStepCommand(
+//	      pipelineID,
+//	      "transform-customer-data",
+//	      "json-transformer",
+//	  )
+//	  transformCommand.Config = map[string]interface{}{
+//	      "transformation_rules": "customer_transform.json",
+//	      "output_format": "parquet",
+//	  }
+//	  transformCommand.DependsOn = []string{"extract-customer-data"}
+//
+//	  // Data loading step (depends on transformation)
+//	  loadCommand := commands.NewAddPipelineStepCommand(
+//	      pipelineID,
+//	      "load-to-warehouse",
+//	      "postgres-loader",
+//	  )
+//	  loadCommand.Config = map[string]interface{}{
+//	      "target_table": "analytics.customer_data",
+//	      "load_strategy": "upsert",
+//	  }
+//	  loadCommand.DependsOn = []string{"transform-customer-data"}
 //
 // Integration:
 //   - Processed by AddPipelineStepCommandHandler
@@ -524,13 +545,13 @@ func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command Creat
 //   - Validates step dependencies and configuration
 type AddPipelineStepCommand struct {
 	BaseCommand
-	PipelineID entities.PipelineID     // Target pipeline identifier
-	StepName   string                  // Unique step name within the pipeline
-	StepType   string                  // Step type identifier for processor selection
-	Config     map[string]interface{}  // Step-specific configuration parameters
-	DependsOn  []string                // List of prerequisite step names for execution ordering
-	MaxRetries int                     // Maximum retry attempts for step execution
-	Timeout    time.Duration           // Step execution timeout
+	PipelineID entities.PipelineID    // Target pipeline identifier
+	StepName   string                 // Unique step name within the pipeline
+	StepType   string                 // Step type identifier for processor selection
+	Config     map[string]interface{} // Step-specific configuration parameters
+	DependsOn  []string               // List of prerequisite step names for execution ordering
+	MaxRetries int                    // Maximum retry attempts for step execution
+	Timeout    time.Duration          // Step execution timeout
 }
 
 // NewAddPipelineStepCommand creates a new add pipeline step command with sensible defaults.
@@ -540,42 +561,45 @@ type AddPipelineStepCommand struct {
 // can be applied after creation through direct field assignment.
 //
 // Parameters:
-//   pipelineID entities.PipelineID: Target pipeline identifier (required)
-//   stepName string: Unique step name within the pipeline (required)
-//   stepType string: Step type identifier for processor selection (required)
+//
+//	pipelineID entities.PipelineID: Target pipeline identifier (required)
+//	stepName string: Unique step name within the pipeline (required)
+//	stepType string: Step type identifier for processor selection (required)
 //
 // Returns:
-//   AddPipelineStepCommand: Fully initialized command with defaults ready for customization
+//
+//	AddPipelineStepCommand: Fully initialized command with defaults ready for customization
 //
 // Example:
-//   Creating and customizing pipeline steps:
 //
-//     // Create basic step with defaults
-//     command := commands.NewAddPipelineStepCommand(
-//         pipelineID,
-//         "data-validation",
-//         "schema-validator",
-//     )
-//     
-//     // Customize configuration
-//     command.Config = map[string]interface{}{
-//         "schema_file": "customer_schema.json",
-//         "strict_mode": true,
-//         "error_threshold": 0.01,
-//     }
-//     
-//     // Set dependencies
-//     command.DependsOn = []string{"extract-data", "clean-data"}
-//     
-//     // Override execution parameters
-//     command.MaxRetries = 5
-//     command.Timeout = 15 * time.Minute
-//     
-//     // Execute command
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsFailure() {
-//         return fmt.Errorf("step addition failed: %w", result.Error())
-//     }
+//	Creating and customizing pipeline steps:
+//
+//	  // Create basic step with defaults
+//	  command := commands.NewAddPipelineStepCommand(
+//	      pipelineID,
+//	      "data-validation",
+//	      "schema-validator",
+//	  )
+//
+//	  // Customize configuration
+//	  command.Config = map[string]interface{}{
+//	      "schema_file": "customer_schema.json",
+//	      "strict_mode": true,
+//	      "error_threshold": 0.01,
+//	  }
+//
+//	  // Set dependencies
+//	  command.DependsOn = []string{"extract-data", "clean-data"}
+//
+//	  // Override execution parameters
+//	  command.MaxRetries = 5
+//	  command.Timeout = 15 * time.Minute
+//
+//	  // Execute command
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsFailure() {
+//	      return fmt.Errorf("step addition failed: %w", result.Error())
+//	  }
 //
 // Default Values:
 //   - Config: Empty map ready for configuration
@@ -584,8 +608,9 @@ type AddPipelineStepCommand struct {
 //   - Timeout: entities.DefaultTimeoutMinutes converted to time.Duration
 //
 // Integration:
-//   Command is designed for execution through CommandBus with proper
-//   routing to AddPipelineStepCommandHandler for processing.
+//
+//	Command is designed for execution through CommandBus with proper
+//	routing to AddPipelineStepCommandHandler for processing.
 func NewAddPipelineStepCommand(pipelineID entities.PipelineID, stepName, stepType string) AddPipelineStepCommand {
 	return AddPipelineStepCommand{
 		BaseCommand: NewBaseCommand("AddPipelineStep"),
@@ -615,35 +640,37 @@ func NewAddPipelineStepCommand(pipelineID entities.PipelineID, stepName, stepTyp
 //   - Domain event publishing for step addition tracking
 //
 // Fields:
-//   repository PipelineRepository: Data access abstraction for pipeline operations
-//   eventBus EventBus: Event publishing infrastructure for domain events
+//
+//	repository PipelineRepository: Data access abstraction for pipeline operations
+//	eventBus EventBus: Event publishing infrastructure for domain events
 //
 // Example:
-//   Handler initialization and usage:
 //
-//     handler := commands.NewAddPipelineStepCommandHandler(
-//         pipelineRepository,
-//         eventBus,
-//     )
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&AddPipelineStepCommand{}, handler)
-//     
-//     // Handler processes commands through command bus
-//     command := commands.NewAddPipelineStepCommand(
-//         pipelineID,
-//         "data-transformation",
-//         "json-transformer",
-//     )
-//     command.Config = map[string]interface{}{
-//         "rules_file": "transform_rules.json",
-//     }
-//     
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsSuccess() {
-//         step := result.Value().(*entities.PipelineStep)
-//         log.Info("Step added", "step", step.Name, "pipeline", pipelineID)
-//     }
+//	Handler initialization and usage:
+//
+//	  handler := commands.NewAddPipelineStepCommandHandler(
+//	      pipelineRepository,
+//	      eventBus,
+//	  )
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&AddPipelineStepCommand{}, handler)
+//
+//	  // Handler processes commands through command bus
+//	  command := commands.NewAddPipelineStepCommand(
+//	      pipelineID,
+//	      "data-transformation",
+//	      "json-transformer",
+//	  )
+//	  command.Config = map[string]interface{}{
+//	      "rules_file": "transform_rules.json",
+//	  }
+//
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsSuccess() {
+//	      step := result.Value().(*entities.PipelineStep)
+//	      log.Info("Step added", "step", step.Name, "pipeline", pipelineID)
+//	  }
 //
 // Integration:
 //   - Command Bus: Registered as handler for AddPipelineStepCommand
@@ -651,7 +678,7 @@ func NewAddPipelineStepCommand(pipelineID entities.PipelineID, stepName, stepTyp
 //   - Infrastructure: Repository and event bus dependency injection
 //   - Validation: Comprehensive step and dependency validation
 type AddPipelineStepCommandHandler struct {
-	repository PipelineRepository  // Data access abstraction for pipeline operations
+	repository PipelineRepository // Data access abstraction for pipeline operations
 	eventBus   EventBus           // Event publishing infrastructure for domain events
 }
 
@@ -662,26 +689,29 @@ type AddPipelineStepCommandHandler struct {
 // for clean architecture, testability, and proper separation of concerns.
 //
 // Parameters:
-//   repository PipelineRepository: Data access abstraction for pipeline operations (required)
-//   eventBus EventBus: Event publishing infrastructure for domain events (required)
+//
+//	repository PipelineRepository: Data access abstraction for pipeline operations (required)
+//	eventBus EventBus: Event publishing infrastructure for domain events (required)
 //
 // Returns:
-//   *AddPipelineStepCommandHandler: Fully initialized handler ready for command processing
+//
+//	*AddPipelineStepCommandHandler: Fully initialized handler ready for command processing
 //
 // Example:
-//   Handler initialization in application setup:
 //
-//     // Initialize dependencies
-//     pipelineRepo := postgresql.NewPipelineRepository(db)
-//     eventBus := redis.NewEventBus(redisClient)
-//     
-//     // Create handler with dependency injection
-//     handler := commands.NewAddPipelineStepCommandHandler(pipelineRepo, eventBus)
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&AddPipelineStepCommand{}, handler)
-//     
-//     log.Info("AddPipelineStepCommandHandler registered successfully")
+//	Handler initialization in application setup:
+//
+//	  // Initialize dependencies
+//	  pipelineRepo := postgresql.NewPipelineRepository(db)
+//	  eventBus := redis.NewEventBus(redisClient)
+//
+//	  // Create handler with dependency injection
+//	  handler := commands.NewAddPipelineStepCommandHandler(pipelineRepo, eventBus)
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&AddPipelineStepCommand{}, handler)
+//
+//	  log.Info("AddPipelineStepCommandHandler registered successfully")
 //
 // Integration:
 //   - Application Setup: Called during application initialization
@@ -703,56 +733,59 @@ func NewAddPipelineStepCommandHandler(repository PipelineRepository, eventBus Ev
 // proper step integration and maintains pipeline consistency.
 //
 // Business Logic Flow:
-//   1. Load target pipeline and validate existence
-//   2. Create new pipeline step with command configuration
-//   3. Apply step configuration, dependencies, and execution parameters
-//   4. Add step to pipeline aggregate with business rule validation
-//   5. Persist updated pipeline through repository
-//   6. Publish domain events for step addition tracking
-//   7. Return created step as command result
+//  1. Load target pipeline and validate existence
+//  2. Create new pipeline step with command configuration
+//  3. Apply step configuration, dependencies, and execution parameters
+//  4. Add step to pipeline aggregate with business rule validation
+//  5. Persist updated pipeline through repository
+//  6. Publish domain events for step addition tracking
+//  7. Return created step as command result
 //
 // Parameters:
-//   ctx context.Context: Execution context for cancellation and timeout handling
-//   command AddPipelineStepCommand: Command with step addition data
+//
+//	ctx context.Context: Execution context for cancellation and timeout handling
+//	command AddPipelineStepCommand: Command with step addition data
 //
 // Returns:
-//   result.Result[interface{}]: Success with created PipelineStep or Failure with error
+//
+//	result.Result[interface{}]: Success with created PipelineStep or Failure with error
 //
 // Example:
-//   Command execution flow:
 //
-//     handler := &AddPipelineStepCommandHandler{
-//         repository: pipelineRepo,
-//         eventBus:   eventBus,
-//     }
-//     
-//     command := AddPipelineStepCommand{
-//         PipelineID: pipelineID,
-//         StepName:   "data-enrichment",
-//         StepType:   "lookup-enricher",
-//         Config: map[string]interface{}{
-//             "lookup_table": "customer_metadata",
-//             "join_key": "customer_id",
-//         },
-//         DependsOn: []string{"data-extraction", "data-cleaning"},
-//         MaxRetries: 3,
-//         Timeout: 10 * time.Minute,
-//     }
-//     
-//     result := handler.Handle(ctx, command)
-//     if result.IsFailure() {
-//         switch err := result.Error().(type) {
-//         case *errors.NotFoundError:
-//             return fmt.Errorf("pipeline not found: %w", err)
-//         case *errors.ValidationError:
-//             return fmt.Errorf("invalid step configuration: %w", err)
-//         default:
-//             return fmt.Errorf("step addition failed: %w", err)
-//         }
-//     }
-//     
-//     step := result.Value().(*entities.PipelineStep)
-//     log.Info("Step added successfully", "step", step.Name, "type", step.Type)
+//	Command execution flow:
+//
+//	  handler := &AddPipelineStepCommandHandler{
+//	      repository: pipelineRepo,
+//	      eventBus:   eventBus,
+//	  }
+//
+//	  command := AddPipelineStepCommand{
+//	      PipelineID: pipelineID,
+//	      StepName:   "data-enrichment",
+//	      StepType:   "lookup-enricher",
+//	      Config: map[string]interface{}{
+//	          "lookup_table": "customer_metadata",
+//	          "join_key": "customer_id",
+//	      },
+//	      DependsOn: []string{"data-extraction", "data-cleaning"},
+//	      MaxRetries: 3,
+//	      Timeout: 10 * time.Minute,
+//	  }
+//
+//	  result := handler.Handle(ctx, command)
+//	  if result.IsFailure() {
+//	      switch err := result.Error().(type) {
+//	      case *errors.NotFoundError:
+//	          return fmt.Errorf("pipeline not found: %w", err)
+//	      case *errors.ValidationError:
+//	          return fmt.Errorf("invalid step configuration: %w", err)
+//	      default:
+//	          return fmt.Errorf("step addition failed: %w", err)
+//	      }
+//	  }
+//
+//	  step := result.Value().(*entities.PipelineStep)
+//	  log.Info("Step added successfully", "step", step.Name, "type", step.Type)
 //
 // Business Rules Enforced:
 //   - Pipeline must exist and be in a modifiable state
@@ -816,9 +849,10 @@ func (h *AddPipelineStepCommandHandler) Handle(ctx context.Context, command AddP
 // workflow engine integration.
 //
 // Fields:
-//   BaseCommand: Inherited command infrastructure with type identification
-//   PipelineID entities.PipelineID: Unique identifier of the pipeline to execute (required)
-//   Parameters map[string]interface{}: Runtime parameters for pipeline execution (optional)
+//
+//	BaseCommand: Inherited command infrastructure with type identification
+//	PipelineID entities.PipelineID: Unique identifier of the pipeline to execute (required)
+//	Parameters map[string]interface{}: Runtime parameters for pipeline execution (optional)
 //
 // Business Rules:
 //   - Pipeline must exist and be in an executable state (Active status)
@@ -827,30 +861,31 @@ func (h *AddPipelineStepCommandHandler) Handle(ctx context.Context, command AddP
 //   - Execution triggers workflow engine with proper error handling
 //
 // Example:
-//   Executing a data processing pipeline:
 //
-//     command := commands.NewExecutePipelineCommand(
-//         pipelineID,
-//         map[string]interface{}{
-//             "source_path":      "/data/input/daily_sales.csv",
-//             "destination_path": "/data/output/processed/",
-//             "batch_size":       10000,
-//             "parallel_workers": 4,
-//             "retry_attempts":   3,
-//             "timeout_minutes":  30,
-//         },
-//     )
-//     
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsFailure() {
-//         return fmt.Errorf("pipeline execution failed: %w", result.Error())
-//     }
-//     
-//     executionResult := result.Value().(ExecutionResult)
-//     log.Info("Pipeline execution started", 
-//         "pipeline_id", executionResult.PipelineID,
-//         "workflow_id", executionResult.WorkflowID,
-//         "status", executionResult.Status)
+//	Executing a data processing pipeline:
+//
+//	  command := commands.NewExecutePipelineCommand(
+//	      pipelineID,
+//	      map[string]interface{}{
+//	          "source_path":      "/data/input/daily_sales.csv",
+//	          "destination_path": "/data/output/processed/",
+//	          "batch_size":       10000,
+//	          "parallel_workers": 4,
+//	          "retry_attempts":   3,
+//	          "timeout_minutes":  30,
+//	      },
+//	  )
+//
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsFailure() {
+//	      return fmt.Errorf("pipeline execution failed: %w", result.Error())
+//	  }
+//
+//	  executionResult := result.Value().(ExecutionResult)
+//	  log.Info("Pipeline execution started",
+//	      "pipeline_id", executionResult.PipelineID,
+//	      "workflow_id", executionResult.WorkflowID,
+//	      "status", executionResult.Status)
 //
 // Integration:
 //   - Processed by ExecutePipelineCommandHandler with PipelineExecutionOrchestrator
@@ -859,8 +894,8 @@ func (h *AddPipelineStepCommandHandler) Handle(ctx context.Context, command AddP
 //   - Integrates with WorkflowEngine for actual execution coordination
 type ExecutePipelineCommand struct {
 	BaseCommand
-	PipelineID entities.PipelineID     // Unique identifier of the pipeline to execute
-	Parameters map[string]interface{}  // Runtime parameters for pipeline execution
+	PipelineID entities.PipelineID    // Unique identifier of the pipeline to execute
+	Parameters map[string]interface{} // Runtime parameters for pipeline execution
 }
 
 // NewExecutePipelineCommand creates a new execute pipeline command with runtime parameters.
@@ -870,48 +905,51 @@ type ExecutePipelineCommand struct {
 // with immutable command objects that encapsulate all necessary execution data.
 //
 // Parameters:
-//   pipelineID entities.PipelineID: Unique identifier of the pipeline to execute (required)
-//   parameters map[string]interface{}: Runtime parameters for pipeline execution (optional)
+//
+//	pipelineID entities.PipelineID: Unique identifier of the pipeline to execute (required)
+//	parameters map[string]interface{}: Runtime parameters for pipeline execution (optional)
 //
 // Returns:
-//   ExecutePipelineCommand: Fully initialized command ready for execution
+//
+//	ExecutePipelineCommand: Fully initialized command ready for execution
 //
 // Example:
-//   Creating execution commands with different parameter sets:
 //
-//     // Basic execution with minimal parameters
-//     command := commands.NewExecutePipelineCommand(
-//         pipelineID,
-//         map[string]interface{}{
-//             "source_path": "/data/input/daily_batch.csv",
-//         },
-//     )
-//     
-//     // Advanced execution with comprehensive parameters
-//     advancedCommand := commands.NewExecutePipelineCommand(
-//         pipelineID,
-//         map[string]interface{}{
-//             "source_path":      "/data/input/",
-//             "destination_path": "/data/output/processed/",
-//             "batch_size":       10000,
-//             "parallel_workers": 4,
-//             "retry_attempts":   3,
-//             "timeout_minutes":  30,
-//             "quality_checks":   true,
-//             "notification_emails": []string{
-//                 "data-team@company.com",
-//                 "ops-team@company.com",
-//             },
-//         },
-//     )
-//     
-//     // Execute command
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsSuccess() {
-//         executionResult := result.Value().(ExecutionResult)
-//         log.Info("Pipeline execution started", 
-//             "workflow_id", executionResult.WorkflowID)
-//     }
+//	Creating execution commands with different parameter sets:
+//
+//	  // Basic execution with minimal parameters
+//	  command := commands.NewExecutePipelineCommand(
+//	      pipelineID,
+//	      map[string]interface{}{
+//	          "source_path": "/data/input/daily_batch.csv",
+//	      },
+//	  )
+//
+//	  // Advanced execution with comprehensive parameters
+//	  advancedCommand := commands.NewExecutePipelineCommand(
+//	      pipelineID,
+//	      map[string]interface{}{
+//	          "source_path":      "/data/input/",
+//	          "destination_path": "/data/output/processed/",
+//	          "batch_size":       10000,
+//	          "parallel_workers": 4,
+//	          "retry_attempts":   3,
+//	          "timeout_minutes":  30,
+//	          "quality_checks":   true,
+//	          "notification_emails": []string{
+//	              "data-team@company.com",
+//	              "ops-team@company.com",
+//	          },
+//	      },
+//	  )
+//
+//	  // Execute command
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsSuccess() {
+//	      executionResult := result.Value().(ExecutionResult)
+//	      log.Info("Pipeline execution started",
+//	          "workflow_id", executionResult.WorkflowID)
+//	  }
 //
 // Default Behavior:
 //   - Empty parameters map is acceptable for pipelines with built-in defaults
@@ -919,8 +957,9 @@ type ExecutePipelineCommand struct {
 //   - Parameter validation occurs during pipeline execution phase
 //
 // Integration:
-//   Command is designed for execution through CommandBus with proper
-//   routing to ExecutePipelineCommandHandler for processing.
+//
+//	Command is designed for execution through CommandBus with proper
+//	routing to ExecutePipelineCommandHandler for processing.
 func NewExecutePipelineCommand(pipelineID entities.PipelineID, parameters map[string]interface{}) ExecutePipelineCommand {
 	return ExecutePipelineCommand{
 		BaseCommand: NewBaseCommand("ExecutePipeline"),
@@ -950,44 +989,45 @@ type ExecutePipelineCommandHandler struct {
 //   - Error Handling: Explicit error returns for proper error propagation
 //
 // Example:
-//   Workflow engine integration:
 //
-//     type TemporalWorkflowEngine struct {
-//         client temporal.Client
-//         logger logging.Logger
-//     }
-//     
-//     func (t *TemporalWorkflowEngine) StartWorkflow(
-//         ctx context.Context,
-//         workflowName string,
-//         input interface{},
-//     ) (string, error) {
-//         options := temporal.StartWorkflowOptions{
-//             ID:        uuid.New().String(),
-//             TaskQueue: "pipeline-execution",
-//         }
-//         
-//         execution, err := t.client.ExecuteWorkflow(ctx, options, workflowName, input)
-//         if err != nil {
-//             return "", fmt.Errorf("workflow start failed: %w", err)
-//         }
-//         
-//         return execution.GetID(), nil
-//     }
-//     
-//     // Usage in pipeline execution
-//     workflowInput := map[string]interface{}{
-//         "pipelineID": pipelineID,
-//         "parameters": executionParams,
-//         "steps":      pipeline.Steps(),
-//     }
-//     
-//     workflowID, err := workflowEngine.StartWorkflow(ctx, "pipeline-execution", workflowInput)
-//     if err != nil {
-//         return fmt.Errorf("pipeline execution start failed: %w", err)
-//     }
-//     
-//     log.Info("Pipeline execution started", "workflow_id", workflowID)
+//	Workflow engine integration:
+//
+//	  type TemporalWorkflowEngine struct {
+//	      client temporal.Client
+//	      logger logging.Logger
+//	  }
+//
+//	  func (t *TemporalWorkflowEngine) StartWorkflow(
+//	      ctx context.Context,
+//	      workflowName string,
+//	      input interface{},
+//	  ) (string, error) {
+//	      options := temporal.StartWorkflowOptions{
+//	          ID:        uuid.New().String(),
+//	          TaskQueue: "pipeline-execution",
+//	      }
+//
+//	      execution, err := t.client.ExecuteWorkflow(ctx, options, workflowName, input)
+//	      if err != nil {
+//	          return "", fmt.Errorf("workflow start failed: %w", err)
+//	      }
+//
+//	      return execution.GetID(), nil
+//	  }
+//
+//	  // Usage in pipeline execution
+//	  workflowInput := map[string]interface{}{
+//	      "pipelineID": pipelineID,
+//	      "parameters": executionParams,
+//	      "steps":      pipeline.Steps(),
+//	  }
+//
+//	  workflowID, err := workflowEngine.StartWorkflow(ctx, "pipeline-execution", workflowInput)
+//	  if err != nil {
+//	      return fmt.Errorf("pipeline execution start failed: %w", err)
+//	  }
+//
+//	  log.Info("Pipeline execution started", "workflow_id", workflowID)
 //
 // Integration:
 //   - Infrastructure Layer: Implemented by concrete workflow engine adapters
@@ -995,7 +1035,7 @@ type ExecutePipelineCommandHandler struct {
 //   - External Systems: Integrates with workflow platforms and orchestrators
 //   - Error Recovery: Workflow engines provide failure handling and retry logic
 type WorkflowEngine interface {
-	StartWorkflow(ctx context.Context, workflowName string, input interface{}) (string, error)  // Starts workflow execution and returns workflow ID
+	StartWorkflow(ctx context.Context, workflowName string, input interface{}) (string, error) // Starts workflow execution and returns workflow ID
 }
 
 // NewExecutePipelineCommandHandler creates a new execute pipeline command handler with dependencies.
@@ -1006,32 +1046,35 @@ type WorkflowEngine interface {
 // external workflow engine integration.
 //
 // Parameters:
-//   repository PipelineRepository: Data access abstraction for pipeline operations (required)
-//   eventBus EventBus: Event publishing infrastructure for domain events (required)
-//   workflowEngine WorkflowEngine: External workflow system for execution coordination (required)
+//
+//	repository PipelineRepository: Data access abstraction for pipeline operations (required)
+//	eventBus EventBus: Event publishing infrastructure for domain events (required)
+//	workflowEngine WorkflowEngine: External workflow system for execution coordination (required)
 //
 // Returns:
-//   *ExecutePipelineCommandHandler: Fully initialized handler ready for command processing
+//
+//	*ExecutePipelineCommandHandler: Fully initialized handler ready for command processing
 //
 // Example:
-//   Handler initialization in application setup:
 //
-//     // Initialize dependencies
-//     pipelineRepo := postgresql.NewPipelineRepository(db)
-//     eventBus := redis.NewEventBus(redisClient)
-//     workflowEngine := temporal.NewTemporalWorkflowEngine(temporalClient)
-//     
-//     // Create handler with dependency injection
-//     handler := commands.NewExecutePipelineCommandHandler(
-//         pipelineRepo, 
-//         eventBus, 
-//         workflowEngine,
-//     )
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&ExecutePipelineCommand{}, handler)
-//     
-//     log.Info("ExecutePipelineCommandHandler registered successfully")
+//	Handler initialization in application setup:
+//
+//	  // Initialize dependencies
+//	  pipelineRepo := postgresql.NewPipelineRepository(db)
+//	  eventBus := redis.NewEventBus(redisClient)
+//	  workflowEngine := temporal.NewTemporalWorkflowEngine(temporalClient)
+//
+//	  // Create handler with dependency injection
+//	  handler := commands.NewExecutePipelineCommandHandler(
+//	      pipelineRepo,
+//	      eventBus,
+//	      workflowEngine,
+//	  )
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&ExecutePipelineCommand{}, handler)
+//
+//	  log.Info("ExecutePipelineCommandHandler registered successfully")
 //
 // Integration:
 //   - Application Setup: Called during application initialization
@@ -1061,36 +1104,39 @@ func NewExecutePipelineCommandHandler(repository PipelineRepository, eventBus Ev
 //   - Domain event publishing for execution tracking
 //
 // Fields:
-//   repository PipelineRepository: Data access for pipeline loading and state persistence
-//   eventBus EventBus: Event publishing for execution lifecycle events
-//   workflowEngine WorkflowEngine: External workflow system for actual execution
+//
+//	repository PipelineRepository: Data access for pipeline loading and state persistence
+//	eventBus EventBus: Event publishing for execution lifecycle events
+//	workflowEngine WorkflowEngine: External workflow system for actual execution
 //
 // SOLID SRP Implementation:
-//   Reduces complexity by separating execution orchestration concerns from command
-//   handling, enabling focused testing, maintenance, and evolution of execution logic.
+//
+//	Reduces complexity by separating execution orchestration concerns from command
+//	handling, enabling focused testing, maintenance, and evolution of execution logic.
 //
 // Example:
-//   Orchestrator usage in command handler:
 //
-//     orchestrator := commands.NewPipelineExecutionOrchestrator(
-//         pipelineRepository,
-//         eventBus,
-//         workflowEngine,
-//     )
-//     
-//     command := ExecutePipelineCommand{
-//         PipelineID: pipelineID,
-//         Parameters: executionParams,
-//     }
-//     
-//     result := orchestrator.Execute(ctx, command)
-//     if result.IsFailure() {
-//         // Orchestrator handles all error scenarios and recovery
-//         return result.Error()
-//     }
-//     
-//     executionResult := result.Value().(ExecutionResult)
-//     // Pipeline is now running in workflow engine
+//	Orchestrator usage in command handler:
+//
+//	  orchestrator := commands.NewPipelineExecutionOrchestrator(
+//	      pipelineRepository,
+//	      eventBus,
+//	      workflowEngine,
+//	  )
+//
+//	  command := ExecutePipelineCommand{
+//	      PipelineID: pipelineID,
+//	      Parameters: executionParams,
+//	  }
+//
+//	  result := orchestrator.Execute(ctx, command)
+//	  if result.IsFailure() {
+//	      // Orchestrator handles all error scenarios and recovery
+//	      return result.Error()
+//	  }
+//
+//	  executionResult := result.Value().(ExecutionResult)
+//	  // Pipeline is now running in workflow engine
 //
 // Integration:
 //   - WorkflowEngine: Delegates actual execution to external workflow system
@@ -1098,7 +1144,7 @@ func NewExecutePipelineCommandHandler(repository PipelineRepository, eventBus Ev
 //   - Repository: Manages pipeline state transitions during execution
 //   - Error Recovery: Handles failures with proper cleanup and state restoration
 type PipelineExecutionOrchestrator struct {
-	repository     PipelineRepository  // Data access for pipeline loading and state persistence
+	repository     PipelineRepository // Data access for pipeline loading and state persistence
 	eventBus       EventBus           // Event publishing for execution lifecycle events
 	workflowEngine WorkflowEngine     // External workflow system for actual execution
 }
@@ -1111,38 +1157,42 @@ type PipelineExecutionOrchestrator struct {
 // separate from command handling concerns.
 //
 // Parameters:
-//   repository PipelineRepository: Data access for pipeline loading and state persistence (required)
-//   eventBus EventBus: Event publishing for execution lifecycle events (required)
-//   workflowEngine WorkflowEngine: External workflow system for actual execution (required)
+//
+//	repository PipelineRepository: Data access for pipeline loading and state persistence (required)
+//	eventBus EventBus: Event publishing for execution lifecycle events (required)
+//	workflowEngine WorkflowEngine: External workflow system for actual execution (required)
 //
 // Returns:
-//   *PipelineExecutionOrchestrator: Fully initialized orchestrator ready for execution coordination
+//
+//	*PipelineExecutionOrchestrator: Fully initialized orchestrator ready for execution coordination
 //
 // Example:
-//   Orchestrator initialization and usage:
 //
-//     // Initialize dependencies
-//     pipelineRepo := postgresql.NewPipelineRepository(db)
-//     eventBus := redis.NewEventBus(redisClient)
-//     workflowEngine := temporal.NewTemporalWorkflowEngine(temporalClient)
-//     
-//     // Create orchestrator with dependency injection
-//     orchestrator := commands.NewPipelineExecutionOrchestrator(
-//         pipelineRepo,
-//         eventBus,
-//         workflowEngine,
-//     )
-//     
-//     // Use orchestrator in command handler
-//     handler := &ExecutePipelineCommandHandler{
-//         orchestrator: orchestrator,
-//     }
-//     
-//     log.Info("PipelineExecutionOrchestrator initialized successfully")
+//	Orchestrator initialization and usage:
+//
+//	  // Initialize dependencies
+//	  pipelineRepo := postgresql.NewPipelineRepository(db)
+//	  eventBus := redis.NewEventBus(redisClient)
+//	  workflowEngine := temporal.NewTemporalWorkflowEngine(temporalClient)
+//
+//	  // Create orchestrator with dependency injection
+//	  orchestrator := commands.NewPipelineExecutionOrchestrator(
+//	      pipelineRepo,
+//	      eventBus,
+//	      workflowEngine,
+//	  )
+//
+//	  // Use orchestrator in command handler
+//	  handler := &ExecutePipelineCommandHandler{
+//	      orchestrator: orchestrator,
+//	  }
+//
+//	  log.Info("PipelineExecutionOrchestrator initialized successfully")
 //
 // SOLID SRP Implementation:
-//   Orchestrator focuses exclusively on execution coordination, separated from
-//   command handling and HTTP concerns, enabling focused testing and maintenance.
+//
+//	Orchestrator focuses exclusively on execution coordination, separated from
+//	command handling and HTTP concerns, enabling focused testing and maintenance.
 //
 // Integration:
 //   - Command Handlers: Used by ExecutePipelineCommandHandler for execution logic
@@ -1165,36 +1215,39 @@ func NewPipelineExecutionOrchestrator(repository PipelineRepository, eventBus Ev
 // It follows the Context pattern for managing execution state across operations.
 //
 // Fields:
-//   Pipeline *entities.Pipeline: The pipeline aggregate being executed
-//   WorkflowID string: External workflow system execution identifier
-//   Parameters map[string]interface{}: Runtime parameters for pipeline execution
+//
+//	Pipeline *entities.Pipeline: The pipeline aggregate being executed
+//	WorkflowID string: External workflow system execution identifier
+//	Parameters map[string]interface{}: Runtime parameters for pipeline execution
 //
 // Usage Pattern:
-//   ExecutionContext is created during pipeline execution orchestration and passed
-//   through various execution phases to maintain state consistency and enable
-//   proper error handling and recovery mechanisms.
+//
+//	ExecutionContext is created during pipeline execution orchestration and passed
+//	through various execution phases to maintain state consistency and enable
+//	proper error handling and recovery mechanisms.
 //
 // Example:
-//   Execution context usage in orchestration:
 //
-//     executionCtx := &ExecutionContext{
-//         Pipeline:   pipeline,
-//         WorkflowID: "", // Set after workflow starts
-//         Parameters: map[string]interface{}{
-//             "source_path": "/data/input/",
-//             "batch_size":  10000,
-//             "timeout":     30 * time.Minute,
-//         },
-//     }
-//     
-//     // Context passed through execution phases
-//     result := orchestrator.orchestrateExecution(ctx, executionCtx)
-//     if result.IsFailure() {
-//         log.Error("Execution failed", 
-//             "pipeline_id", executionCtx.Pipeline.ID(),
-//             "workflow_id", executionCtx.WorkflowID,
-//             "error", result.Error())
-//     }
+//	Execution context usage in orchestration:
+//
+//	  executionCtx := &ExecutionContext{
+//	      Pipeline:   pipeline,
+//	      WorkflowID: "", // Set after workflow starts
+//	      Parameters: map[string]interface{}{
+//	          "source_path": "/data/input/",
+//	          "batch_size":  10000,
+//	          "timeout":     30 * time.Minute,
+//	      },
+//	  }
+//
+//	  // Context passed through execution phases
+//	  result := orchestrator.orchestrateExecution(ctx, executionCtx)
+//	  if result.IsFailure() {
+//	      log.Error("Execution failed",
+//	          "pipeline_id", executionCtx.Pipeline.ID(),
+//	          "workflow_id", executionCtx.WorkflowID,
+//	          "error", result.Error())
+//	  }
 //
 // Integration:
 //   - Pipeline Execution: Central state management during execution
@@ -1202,9 +1255,9 @@ func NewPipelineExecutionOrchestrator(repository PipelineRepository, eventBus Ev
 //   - Error Recovery: Provides context for recovery and cleanup operations
 //   - Parameter Management: Carries runtime configuration across execution phases
 type ExecutionContext struct {
-	Pipeline   *entities.Pipeline        // The pipeline aggregate being executed
-	WorkflowID string                    // External workflow system execution identifier
-	Parameters map[string]interface{}    // Runtime parameters for pipeline execution
+	Pipeline   *entities.Pipeline     // The pipeline aggregate being executed
+	WorkflowID string                 // External workflow system execution identifier
+	Parameters map[string]interface{} // Runtime parameters for pipeline execution
 }
 
 // ExecutionResult represents the comprehensive result of pipeline execution.
@@ -1215,43 +1268,46 @@ type ExecutionContext struct {
 // result tracking and monitoring integration.
 //
 // Fields:
-//   PipelineID string: Unique identifier of the executed pipeline
-//   WorkflowID string: External workflow system execution identifier
-//   Status string: Current execution status (Running, Completed, Failed)
-//   Error error: Execution error information if execution failed (optional)
+//
+//	PipelineID string: Unique identifier of the executed pipeline
+//	WorkflowID string: External workflow system execution identifier
+//	Status string: Current execution status (Running, Completed, Failed)
+//	Error error: Execution error information if execution failed (optional)
 //
 // JSON Serialization:
-//   All fields are properly tagged for JSON serialization to enable API responses,
-//   logging, and monitoring system integration.
+//
+//	All fields are properly tagged for JSON serialization to enable API responses,
+//	logging, and monitoring system integration.
 //
 // Example:
-//   Execution result creation and usage:
 //
-//     result := ExecutionResult{
-//         PipelineID: pipeline.ID().String(),
-//         WorkflowID: workflowID,
-//         Status:     pipeline.Status().String(),
-//         Error:      nil, // No error for successful execution
-//     }
-//     
-//     // JSON serialization for API response
-//     jsonData, err := json.Marshal(result)
-//     if err != nil {
-//         return fmt.Errorf("result serialization failed: %w", err)
-//     }
-//     
-//     // Logging structured result
-//     log.Info("Pipeline execution completed",
-//         "pipeline_id", result.PipelineID,
-//         "workflow_id", result.WorkflowID,
-//         "status", result.Status)
-//     
-//     // Error handling
-//     if result.Error != nil {
-//         log.Error("Pipeline execution failed",
-//             "pipeline_id", result.PipelineID,
-//             "error", result.Error)
-//     }
+//	Execution result creation and usage:
+//
+//	  result := ExecutionResult{
+//	      PipelineID: pipeline.ID().String(),
+//	      WorkflowID: workflowID,
+//	      Status:     pipeline.Status().String(),
+//	      Error:      nil, // No error for successful execution
+//	  }
+//
+//	  // JSON serialization for API response
+//	  jsonData, err := json.Marshal(result)
+//	  if err != nil {
+//	      return fmt.Errorf("result serialization failed: %w", err)
+//	  }
+//
+//	  // Logging structured result
+//	  log.Info("Pipeline execution completed",
+//	      "pipeline_id", result.PipelineID,
+//	      "workflow_id", result.WorkflowID,
+//	      "status", result.Status)
+//
+//	  // Error handling
+//	  if result.Error != nil {
+//	      log.Error("Pipeline execution failed",
+//	          "pipeline_id", result.PipelineID,
+//	          "error", result.Error)
+//	  }
 //
 // Integration:
 //   - API Responses: JSON serialization for HTTP API responses
@@ -1259,10 +1315,10 @@ type ExecutionContext struct {
 //   - Logging: Comprehensive execution result logging
 //   - Error Tracking: Centralized error information for debugging
 type ExecutionResult struct {
-	PipelineID string `json:"pipeline_id"`              // Unique identifier of the executed pipeline
-	WorkflowID string `json:"workflow_id"`              // External workflow system execution identifier
-	Status     string `json:"status"`                   // Current execution status
-	Error      error  `json:"error,omitempty"`          // Execution error information if failed
+	PipelineID string `json:"pipeline_id"`     // Unique identifier of the executed pipeline
+	WorkflowID string `json:"workflow_id"`     // External workflow system execution identifier
+	Status     string `json:"status"`          // Current execution status
+	Error      error  `json:"error,omitempty"` // Execution error information if failed
 }
 
 // Execute orchestrates pipeline execution with comprehensive error handling and recovery.
@@ -1273,47 +1329,50 @@ type ExecutionResult struct {
 // consistent error handling throughout the execution process.
 //
 // Execution Workflow:
-//   1. Load pipeline aggregate and validate execution readiness
-//   2. Prepare execution context with parameters and metadata
-//   3. Orchestrate execution through workflow engine integration
-//   4. Manage pipeline state transitions and persistence
-//   5. Publish execution events for monitoring and coordination
+//  1. Load pipeline aggregate and validate execution readiness
+//  2. Prepare execution context with parameters and metadata
+//  3. Orchestrate execution through workflow engine integration
+//  4. Manage pipeline state transitions and persistence
+//  5. Publish execution events for monitoring and coordination
 //
 // Parameters:
-//   ctx context.Context: Execution context for cancellation and timeout handling
-//   command ExecutePipelineCommand: Command with pipeline ID and execution parameters
+//
+//	ctx context.Context: Execution context for cancellation and timeout handling
+//	command ExecutePipelineCommand: Command with pipeline ID and execution parameters
 //
 // Returns:
-//   result.Result[interface{}]: Success with ExecutionResult or Failure with error
+//
+//	result.Result[interface{}]: Success with ExecutionResult or Failure with error
 //
 // Example:
-//   Orchestrated pipeline execution:
 //
-//     orchestrator := &PipelineExecutionOrchestrator{
-//         repository:     pipelineRepo,
-//         eventBus:       eventBus,
-//         workflowEngine: workflowEngine,
-//     }
-//     
-//     command := ExecutePipelineCommand{
-//         PipelineID: entities.PipelineID("pipeline-123"),
-//         Parameters: map[string]interface{}{
-//             "input_path": "/data/input/",
-//             "batch_size": 1000,
-//         },
-//     }
-//     
-//     result := orchestrator.Execute(ctx, command)
-//     if result.IsFailure() {
-//         // All error scenarios handled by orchestrator
-//         log.Error("Pipeline execution failed", "error", result.Error())
-//         return result.Error()
-//     }
-//     
-//     executionResult := result.Value().(ExecutionResult)
-//     log.Info("Pipeline execution started successfully",
-//         "pipeline_id", executionResult.PipelineID,
-//         "workflow_id", executionResult.WorkflowID)
+//	Orchestrated pipeline execution:
+//
+//	  orchestrator := &PipelineExecutionOrchestrator{
+//	      repository:     pipelineRepo,
+//	      eventBus:       eventBus,
+//	      workflowEngine: workflowEngine,
+//	  }
+//
+//	  command := ExecutePipelineCommand{
+//	      PipelineID: entities.PipelineID("pipeline-123"),
+//	      Parameters: map[string]interface{}{
+//	          "input_path": "/data/input/",
+//	          "batch_size": 1000,
+//	      },
+//	  }
+//
+//	  result := orchestrator.Execute(ctx, command)
+//	  if result.IsFailure() {
+//	      // All error scenarios handled by orchestrator
+//	      log.Error("Pipeline execution failed", "error", result.Error())
+//	      return result.Error()
+//	  }
+//
+//	  executionResult := result.Value().(ExecutionResult)
+//	  log.Info("Pipeline execution started successfully",
+//	      "pipeline_id", executionResult.PipelineID,
+//	      "workflow_id", executionResult.WorkflowID)
 //
 // Error Handling:
 //   - Pipeline not found or invalid state
@@ -1322,8 +1381,9 @@ type ExecutionResult struct {
 //   - Event publishing failures (logged but don't fail execution)
 //
 // DRY Principle Implementation:
-//   Eliminates multiple return paths by using Railway Pattern, ensuring consistent
-//   error handling and reducing code duplication across execution steps.
+//
+//	Eliminates multiple return paths by using Railway Pattern, ensuring consistent
+//	error handling and reducing code duplication across execution steps.
 //
 // Integration:
 //   - Domain Layer: Pipeline aggregate state management
@@ -1355,36 +1415,39 @@ func (o *PipelineExecutionOrchestrator) Execute(ctx context.Context, command Exe
 // exclusively on pipeline loading and validation concerns.
 //
 // Parameters:
-//   ctx context.Context: Execution context for cancellation and timeout handling
-//   pipelineID entities.PipelineID: Unique identifier of the pipeline to load
+//
+//	ctx context.Context: Execution context for cancellation and timeout handling
+//	pipelineID entities.PipelineID: Unique identifier of the pipeline to load
 //
 // Returns:
-//   *entities.Pipeline: Loaded and validated pipeline ready for execution
-//   error: Loading or validation error if pipeline cannot be executed
+//
+//	*entities.Pipeline: Loaded and validated pipeline ready for execution
+//	error: Loading or validation error if pipeline cannot be executed
 //
 // Example:
-//   Pipeline loading and validation:
 //
-//     orchestrator := &PipelineExecutionOrchestrator{
-//         repository: pipelineRepo,
-//     }
-//     
-//     pipeline, err := orchestrator.loadAndValidatePipeline(ctx, pipelineID)
-//     if err != nil {
-//         switch {
-//         case errors.Is(err, errors.NotFoundError{}):
-//             return fmt.Errorf("pipeline not found: %w", err)
-//         case errors.Is(err, errors.ValidationError{}):
-//             return fmt.Errorf("pipeline not ready for execution: %w", err)
-//         default:
-//             return fmt.Errorf("pipeline loading failed: %w", err)
-//         }
-//     }
-//     
-//     log.Info("Pipeline loaded and validated",
-//         "id", pipeline.ID(),
-//         "status", pipeline.Status().String(),
-//         "steps", len(pipeline.Steps()))
+//	Pipeline loading and validation:
+//
+//	  orchestrator := &PipelineExecutionOrchestrator{
+//	      repository: pipelineRepo,
+//	  }
+//
+//	  pipeline, err := orchestrator.loadAndValidatePipeline(ctx, pipelineID)
+//	  if err != nil {
+//	      switch {
+//	      case errors.Is(err, errors.NotFoundError{}):
+//	          return fmt.Errorf("pipeline not found: %w", err)
+//	      case errors.Is(err, errors.ValidationError{}):
+//	          return fmt.Errorf("pipeline not ready for execution: %w", err)
+//	      default:
+//	          return fmt.Errorf("pipeline loading failed: %w", err)
+//	      }
+//	  }
+//
+//	  log.Info("Pipeline loaded and validated",
+//	      "id", pipeline.ID(),
+//	      "status", pipeline.Status().String(),
+//	      "steps", len(pipeline.Steps()))
 //
 // Validation Rules:
 //   - Pipeline must exist in the repository
@@ -1399,8 +1462,9 @@ func (o *PipelineExecutionOrchestrator) Execute(ctx context.Context, command Exe
 //   - RepositoryError: Database or persistence layer errors
 //
 // SOLID SRP Implementation:
-//   Single responsibility for pipeline loading and execution readiness validation,
-//   separating concerns from workflow orchestration and execution coordination.
+//
+//	Single responsibility for pipeline loading and execution readiness validation,
+//	separating concerns from workflow orchestration and execution coordination.
 //
 // Integration:
 //   - Repository Layer: Loads pipeline aggregate from persistence
@@ -1501,8 +1565,9 @@ func (h *ExecutePipelineCommandHandler) Handle(ctx context.Context, command Exec
 // data processing operations.
 //
 // Fields:
-//   BaseCommand: Inherited command infrastructure with type identification
-//   PipelineID entities.PipelineID: Target pipeline identifier (required)
+//
+//	BaseCommand: Inherited command infrastructure with type identification
+//	PipelineID entities.PipelineID: Target pipeline identifier (required)
 //
 // Business Rules:
 //   - Pipeline must exist in the system
@@ -1512,32 +1577,33 @@ func (h *ExecutePipelineCommandHandler) Handle(ctx context.Context, command Exec
 //   - Pipeline must have at least one processing step configured
 //
 // Example:
-//   Activating a configured pipeline:
 //
-//     // Activate pipeline after configuration is complete
-//     command := commands.NewActivatePipelineCommand(pipelineID)
-//     
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsFailure() {
-//         switch err := result.Error().(type) {
-//         case *errors.ValidationError:
-//             if strings.Contains(err.Error(), "already active") {
-//                 log.Info("Pipeline is already active", "id", pipelineID)
-//                 return nil // Idempotent operation
-//             }
-//             return fmt.Errorf("pipeline activation validation failed: %w", err)
-//         case *errors.NotFoundError:
-//             return fmt.Errorf("pipeline not found: %w", err)
-//         default:
-//             return fmt.Errorf("pipeline activation failed: %w", err)
-//         }
-//     }
-//     
-//     pipeline := result.Value().(*entities.Pipeline)
-//     log.Info("Pipeline activated successfully", 
-//         "id", pipeline.ID(),
-//         "name", pipeline.Name(),
-//         "status", pipeline.Status().String())
+//	Activating a configured pipeline:
+//
+//	  // Activate pipeline after configuration is complete
+//	  command := commands.NewActivatePipelineCommand(pipelineID)
+//
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsFailure() {
+//	      switch err := result.Error().(type) {
+//	      case *errors.ValidationError:
+//	          if strings.Contains(err.Error(), "already active") {
+//	              log.Info("Pipeline is already active", "id", pipelineID)
+//	              return nil // Idempotent operation
+//	          }
+//	          return fmt.Errorf("pipeline activation validation failed: %w", err)
+//	      case *errors.NotFoundError:
+//	          return fmt.Errorf("pipeline not found: %w", err)
+//	      default:
+//	          return fmt.Errorf("pipeline activation failed: %w", err)
+//	      }
+//	  }
+//
+//	  pipeline := result.Value().(*entities.Pipeline)
+//	  log.Info("Pipeline activated successfully",
+//	      "id", pipeline.ID(),
+//	      "name", pipeline.Name(),
+//	      "status", pipeline.Status().String())
 //
 // State Transitions:
 //   - Registered → Active: Normal activation after initial configuration
@@ -1552,7 +1618,7 @@ func (h *ExecutePipelineCommandHandler) Handle(ctx context.Context, command Exec
 //   - Makes pipeline available for execution scheduling
 type ActivatePipelineCommand struct {
 	BaseCommand
-	PipelineID entities.PipelineID  // Target pipeline identifier
+	PipelineID entities.PipelineID // Target pipeline identifier
 }
 
 // NewActivatePipelineCommand creates a new activate pipeline command with validation.
@@ -1562,45 +1628,50 @@ type ActivatePipelineCommand struct {
 // immutable command objects that encapsulate the pipeline activation intention.
 //
 // Parameters:
-//   pipelineID entities.PipelineID: Target pipeline identifier for activation (required)
+//
+//	pipelineID entities.PipelineID: Target pipeline identifier for activation (required)
 //
 // Returns:
-//   ActivatePipelineCommand: Fully initialized command ready for execution
+//
+//	ActivatePipelineCommand: Fully initialized command ready for execution
 //
 // Example:
-//   Creating activation commands for different scenarios:
 //
-//     // Basic pipeline activation
-//     command := commands.NewActivatePipelineCommand(pipelineID)
-//     
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsFailure() {
-//         if strings.Contains(result.Error().Error(), "already active") {
-//             log.Info("Pipeline is already active", "id", pipelineID)
-//             return nil // Idempotent operation
-//         }
-//         return fmt.Errorf("activation failed: %w", result.Error())
-//     }
-//     
-//     pipeline := result.Value().(*entities.Pipeline)
-//     log.Info("Pipeline activated successfully",
-//         "id", pipeline.ID(),
-//         "name", pipeline.Name(),
-//         "status", pipeline.Status().String())
-//     
-//     // Pipeline is now available for execution and scheduling
-//     executionCommand := commands.NewExecutePipelineCommand(
-//         pipelineID,
-//         map[string]interface{}{"immediate": true},
-//     )
+//	Creating activation commands for different scenarios:
+//
+//	  // Basic pipeline activation
+//	  command := commands.NewActivatePipelineCommand(pipelineID)
+//
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsFailure() {
+//	      if strings.Contains(result.Error().Error(), "already active") {
+//	          log.Info("Pipeline is already active", "id", pipelineID)
+//	          return nil // Idempotent operation
+//	      }
+//	      return fmt.Errorf("activation failed: %w", result.Error())
+//	  }
+//
+//	  pipeline := result.Value().(*entities.Pipeline)
+//	  log.Info("Pipeline activated successfully",
+//	      "id", pipeline.ID(),
+//	      "name", pipeline.Name(),
+//	      "status", pipeline.Status().String())
+//
+//	  // Pipeline is now available for execution and scheduling
+//	  executionCommand := commands.NewExecutePipelineCommand(
+//	      pipelineID,
+//	      map[string]interface{}{"immediate": true},
+//	  )
 //
 // Business Context:
-//   Pipeline activation makes the pipeline available for execution and scheduling.
-//   This is typically done after pipeline configuration is complete and validated.
+//
+//	Pipeline activation makes the pipeline available for execution and scheduling.
+//	This is typically done after pipeline configuration is complete and validated.
 //
 // Integration:
-//   Command is designed for execution through CommandBus with proper
-//   routing to ActivatePipelineCommandHandler for processing.
+//
+//	Command is designed for execution through CommandBus with proper
+//	routing to ActivatePipelineCommandHandler for processing.
 func NewActivatePipelineCommand(pipelineID entities.PipelineID) ActivatePipelineCommand {
 	return ActivatePipelineCommand{
 		BaseCommand: NewBaseCommand("ActivatePipeline"),
@@ -1623,30 +1694,32 @@ func NewActivatePipelineCommand(pipelineID entities.PipelineID) ActivatePipeline
 //   - Domain event publishing for activation tracking
 //
 // Fields:
-//   repository PipelineRepository: Data access abstraction for pipeline operations
-//   eventBus EventBus: Event publishing infrastructure for domain events
+//
+//	repository PipelineRepository: Data access abstraction for pipeline operations
+//	eventBus EventBus: Event publishing infrastructure for domain events
 //
 // Example:
-//   Handler initialization and usage:
 //
-//     handler := commands.NewActivatePipelineCommandHandler(
-//         pipelineRepository,
-//         eventBus,
-//     )
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&ActivatePipelineCommand{}, handler)
-//     
-//     // Handler processes commands through command bus
-//     command := commands.NewActivatePipelineCommand(pipelineID)
-//     
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsSuccess() {
-//         pipeline := result.Value().(*entities.Pipeline)
-//         log.Info("Pipeline activated", 
-//             "id", pipeline.ID(),
-//             "status", pipeline.Status().String())
-//     }
+//	Handler initialization and usage:
+//
+//	  handler := commands.NewActivatePipelineCommandHandler(
+//	      pipelineRepository,
+//	      eventBus,
+//	  )
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&ActivatePipelineCommand{}, handler)
+//
+//	  // Handler processes commands through command bus
+//	  command := commands.NewActivatePipelineCommand(pipelineID)
+//
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsSuccess() {
+//	      pipeline := result.Value().(*entities.Pipeline)
+//	      log.Info("Pipeline activated",
+//	          "id", pipeline.ID(),
+//	          "status", pipeline.Status().String())
+//	  }
 //
 // Integration:
 //   - Command Bus: Registered as handler for ActivatePipelineCommand
@@ -1654,7 +1727,7 @@ func NewActivatePipelineCommand(pipelineID entities.PipelineID) ActivatePipeline
 //   - Infrastructure: Repository and event bus dependency injection
 //   - State Management: Coordinates pipeline state transitions
 type ActivatePipelineCommandHandler struct {
-	repository PipelineRepository  // Data access abstraction for pipeline operations
+	repository PipelineRepository // Data access abstraction for pipeline operations
 	eventBus   EventBus           // Event publishing infrastructure for domain events
 }
 
@@ -1665,26 +1738,29 @@ type ActivatePipelineCommandHandler struct {
 // for clean architecture, testability, and proper separation of concerns.
 //
 // Parameters:
-//   repository PipelineRepository: Data access abstraction for pipeline operations (required)
-//   eventBus EventBus: Event publishing infrastructure for domain events (required)
+//
+//	repository PipelineRepository: Data access abstraction for pipeline operations (required)
+//	eventBus EventBus: Event publishing infrastructure for domain events (required)
 //
 // Returns:
-//   *ActivatePipelineCommandHandler: Fully initialized handler ready for command processing
+//
+//	*ActivatePipelineCommandHandler: Fully initialized handler ready for command processing
 //
 // Example:
-//   Handler initialization in application setup:
 //
-//     // Initialize dependencies
-//     pipelineRepo := postgresql.NewPipelineRepository(db)
-//     eventBus := redis.NewEventBus(redisClient)
-//     
-//     // Create handler with dependency injection
-//     handler := commands.NewActivatePipelineCommandHandler(pipelineRepo, eventBus)
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&ActivatePipelineCommand{}, handler)
-//     
-//     log.Info("ActivatePipelineCommandHandler registered successfully")
+//	Handler initialization in application setup:
+//
+//	  // Initialize dependencies
+//	  pipelineRepo := postgresql.NewPipelineRepository(db)
+//	  eventBus := redis.NewEventBus(redisClient)
+//
+//	  // Create handler with dependency injection
+//	  handler := commands.NewActivatePipelineCommandHandler(pipelineRepo, eventBus)
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&ActivatePipelineCommand{}, handler)
+//
+//	  log.Info("ActivatePipelineCommandHandler registered successfully")
 //
 // Integration:
 //   - Application Setup: Called during application initialization
@@ -1706,52 +1782,55 @@ func NewActivatePipelineCommandHandler(repository PipelineRepository, eventBus E
 // with proper error handling and state transition management.
 //
 // Business Logic Flow:
-//   1. Load target pipeline and validate existence
-//   2. Execute pipeline activation through domain aggregate
-//   3. Persist updated pipeline state through repository
-//   4. Publish domain events for activation tracking
-//   5. Return activated pipeline as command result
+//  1. Load target pipeline and validate existence
+//  2. Execute pipeline activation through domain aggregate
+//  3. Persist updated pipeline state through repository
+//  4. Publish domain events for activation tracking
+//  5. Return activated pipeline as command result
 //
 // Parameters:
-//   ctx context.Context: Execution context for cancellation and timeout handling
-//   command ActivatePipelineCommand: Command with pipeline ID for activation
+//
+//	ctx context.Context: Execution context for cancellation and timeout handling
+//	command ActivatePipelineCommand: Command with pipeline ID for activation
 //
 // Returns:
-//   result.Result[interface{}]: Success with activated Pipeline or Failure with error
+//
+//	result.Result[interface{}]: Success with activated Pipeline or Failure with error
 //
 // Example:
-//   Command execution flow:
 //
-//     handler := &ActivatePipelineCommandHandler{
-//         repository: pipelineRepo,
-//         eventBus:   eventBus,
-//     }
-//     
-//     command := ActivatePipelineCommand{
-//         PipelineID: entities.PipelineID("pipeline-456"),
-//     }
-//     
-//     result := handler.Handle(ctx, command)
-//     if result.IsFailure() {
-//         switch err := result.Error().(type) {
-//         case *errors.NotFoundError:
-//             return fmt.Errorf("pipeline not found: %w", err)
-//         case *errors.ValidationError:
-//             if strings.Contains(err.Error(), "already active") {
-//                 log.Info("Pipeline already active - idempotent operation")
-//                 return nil
-//             }
-//             return fmt.Errorf("activation validation failed: %w", err)
-//         default:
-//             return fmt.Errorf("pipeline activation failed: %w", err)
-//         }
-//     }
-//     
-//     pipeline := result.Value().(*entities.Pipeline)
-//     log.Info("Pipeline activated successfully", 
-//         "id", pipeline.ID(),
-//         "status", pipeline.Status().String(),
-//         "steps", len(pipeline.Steps()))
+//	Command execution flow:
+//
+//	  handler := &ActivatePipelineCommandHandler{
+//	      repository: pipelineRepo,
+//	      eventBus:   eventBus,
+//	  }
+//
+//	  command := ActivatePipelineCommand{
+//	      PipelineID: entities.PipelineID("pipeline-456"),
+//	  }
+//
+//	  result := handler.Handle(ctx, command)
+//	  if result.IsFailure() {
+//	      switch err := result.Error().(type) {
+//	      case *errors.NotFoundError:
+//	          return fmt.Errorf("pipeline not found: %w", err)
+//	      case *errors.ValidationError:
+//	          if strings.Contains(err.Error(), "already active") {
+//	              log.Info("Pipeline already active - idempotent operation")
+//	              return nil
+//	          }
+//	          return fmt.Errorf("activation validation failed: %w", err)
+//	      default:
+//	          return fmt.Errorf("pipeline activation failed: %w", err)
+//	      }
+//	  }
+//
+//	  pipeline := result.Value().(*entities.Pipeline)
+//	  log.Info("Pipeline activated successfully",
+//	      "id", pipeline.ID(),
+//	      "status", pipeline.Status().String(),
+//	      "steps", len(pipeline.Steps()))
 //
 // Business Rules Enforced:
 //   - Pipeline must exist in the system
@@ -1808,10 +1887,11 @@ func (h *ActivatePipelineCommandHandler) Handle(ctx context.Context, command Act
 // global deployment scenarios.
 //
 // Fields:
-//   BaseCommand: Inherited command infrastructure with type identification
-//   PipelineID entities.PipelineID: Target pipeline identifier (required)
-//   CronExpression string: Cron expression for schedule definition (required)
-//   Timezone string: Timezone identifier for schedule execution (required)
+//
+//	BaseCommand: Inherited command infrastructure with type identification
+//	PipelineID entities.PipelineID: Target pipeline identifier (required)
+//	CronExpression string: Cron expression for schedule definition (required)
+//	Timezone string: Timezone identifier for schedule execution (required)
 //
 // Business Rules:
 //   - Pipeline must exist and be in an active state
@@ -1821,46 +1901,47 @@ func (h *ActivatePipelineCommandHandler) Handle(ctx context.Context, command Act
 //   - Scheduling overwrites any existing schedule for the pipeline
 //
 // Example:
-//   Configuring different pipeline schedules:
 //
-//     // Daily execution at 2 AM UTC
-//     dailyCommand := commands.NewSetPipelineScheduleCommand(
-//         pipelineID,
-//         "0 2 * * *",
-//         "UTC",
-//     )
-//     
-//     // Hourly execution during business hours in New York
-//     businessHoursCommand := commands.NewSetPipelineScheduleCommand(
-//         pipelineID,
-//         "0 9-17 * * 1-5",
-//         "America/New_York",
-//     )
-//     
-//     // Weekly execution on Sundays at midnight in London
-//     weeklyCommand := commands.NewSetPipelineScheduleCommand(
-//         pipelineID,
-//         "0 0 * * 0",
-//         "Europe/London",
-//     )
-//     
-//     // Monthly execution on the first day at 3 AM
-//     monthlyCommand := commands.NewSetPipelineScheduleCommand(
-//         pipelineID,
-//         "0 3 1 * *",
-//         "UTC",
-//     )
-//     
-//     result := commandBus.Execute(ctx, dailyCommand)
-//     if result.IsFailure() {
-//         return fmt.Errorf("schedule configuration failed: %w", result.Error())
-//     }
-//     
-//     schedule := result.Value().(*entities.PipelineSchedule)
-//     log.Info("Pipeline scheduled successfully",
-//         "pipeline_id", pipelineID,
-//         "expression", schedule.CronExpression,
-//         "timezone", schedule.Timezone)
+//	Configuring different pipeline schedules:
+//
+//	  // Daily execution at 2 AM UTC
+//	  dailyCommand := commands.NewSetPipelineScheduleCommand(
+//	      pipelineID,
+//	      "0 2 * * *",
+//	      "UTC",
+//	  )
+//
+//	  // Hourly execution during business hours in New York
+//	  businessHoursCommand := commands.NewSetPipelineScheduleCommand(
+//	      pipelineID,
+//	      "0 9-17 * * 1-5",
+//	      "America/New_York",
+//	  )
+//
+//	  // Weekly execution on Sundays at midnight in London
+//	  weeklyCommand := commands.NewSetPipelineScheduleCommand(
+//	      pipelineID,
+//	      "0 0 * * 0",
+//	      "Europe/London",
+//	  )
+//
+//	  // Monthly execution on the first day at 3 AM
+//	  monthlyCommand := commands.NewSetPipelineScheduleCommand(
+//	      pipelineID,
+//	      "0 3 1 * *",
+//	      "UTC",
+//	  )
+//
+//	  result := commandBus.Execute(ctx, dailyCommand)
+//	  if result.IsFailure() {
+//	      return fmt.Errorf("schedule configuration failed: %w", result.Error())
+//	  }
+//
+//	  schedule := result.Value().(*entities.PipelineSchedule)
+//	  log.Info("Pipeline scheduled successfully",
+//	      "pipeline_id", pipelineID,
+//	      "expression", schedule.CronExpression,
+//	      "timezone", schedule.Timezone)
 //
 // Cron Expression Examples:
 //   - "0 2 * * *": Daily at 2:00 AM
@@ -1876,9 +1957,9 @@ func (h *ActivatePipelineCommandHandler) Handle(ctx context.Context, command Act
 //   - Integrates with scheduling system for automated execution
 type SetPipelineScheduleCommand struct {
 	BaseCommand
-	PipelineID     entities.PipelineID  // Target pipeline identifier
-	CronExpression string               // Cron expression for schedule definition
-	Timezone       string               // Timezone identifier for schedule execution
+	PipelineID     entities.PipelineID // Target pipeline identifier
+	CronExpression string              // Cron expression for schedule definition
+	Timezone       string              // Timezone identifier for schedule execution
 }
 
 // NewSetPipelineScheduleCommand creates a new set pipeline schedule command with validation.
@@ -1888,47 +1969,50 @@ type SetPipelineScheduleCommand struct {
 // immutable command objects that encapsulate the scheduling configuration intention.
 //
 // Parameters:
-//   pipelineID entities.PipelineID: Target pipeline identifier for scheduling (required)
-//   cronExpression string: Cron expression for schedule definition (required)
-//   timezone string: Timezone identifier for schedule execution (required)
+//
+//	pipelineID entities.PipelineID: Target pipeline identifier for scheduling (required)
+//	cronExpression string: Cron expression for schedule definition (required)
+//	timezone string: Timezone identifier for schedule execution (required)
 //
 // Returns:
-//   SetPipelineScheduleCommand: Fully initialized command ready for execution
+//
+//	SetPipelineScheduleCommand: Fully initialized command ready for execution
 //
 // Example:
-//   Creating schedule commands for different scenarios:
 //
-//     // Daily execution at 2 AM UTC
-//     dailyCommand := commands.NewSetPipelineScheduleCommand(
-//         pipelineID,
-//         "0 2 * * *",
-//         "UTC",
-//     )
-//     
-//     // Business hours execution in specific timezone
-//     businessCommand := commands.NewSetPipelineScheduleCommand(
-//         pipelineID,
-//         "0 9-17 * * 1-5", // Every hour from 9 AM to 5 PM, Monday to Friday
-//         "America/New_York",
-//     )
-//     
-//     // Weekly batch processing
-//     weeklyCommand := commands.NewSetPipelineScheduleCommand(
-//         pipelineID,
-//         "0 0 * * 0", // Every Sunday at midnight
-//         "Europe/London",
-//     )
-//     
-//     result := commandBus.Execute(ctx, dailyCommand)
-//     if result.IsFailure() {
-//         return fmt.Errorf("schedule configuration failed: %w", result.Error())
-//     }
-//     
-//     schedule := result.Value().(*entities.PipelineSchedule)
-//     log.Info("Pipeline scheduled successfully",
-//         "expression", schedule.CronExpression,
-//         "timezone", schedule.Timezone,
-//         "next_run", schedule.NextExecutionTime())
+//	Creating schedule commands for different scenarios:
+//
+//	  // Daily execution at 2 AM UTC
+//	  dailyCommand := commands.NewSetPipelineScheduleCommand(
+//	      pipelineID,
+//	      "0 2 * * *",
+//	      "UTC",
+//	  )
+//
+//	  // Business hours execution in specific timezone
+//	  businessCommand := commands.NewSetPipelineScheduleCommand(
+//	      pipelineID,
+//	      "0 9-17 * * 1-5", // Every hour from 9 AM to 5 PM, Monday to Friday
+//	      "America/New_York",
+//	  )
+//
+//	  // Weekly batch processing
+//	  weeklyCommand := commands.NewSetPipelineScheduleCommand(
+//	      pipelineID,
+//	      "0 0 * * 0", // Every Sunday at midnight
+//	      "Europe/London",
+//	  )
+//
+//	  result := commandBus.Execute(ctx, dailyCommand)
+//	  if result.IsFailure() {
+//	      return fmt.Errorf("schedule configuration failed: %w", result.Error())
+//	  }
+//
+//	  schedule := result.Value().(*entities.PipelineSchedule)
+//	  log.Info("Pipeline scheduled successfully",
+//	      "expression", schedule.CronExpression,
+//	      "timezone", schedule.Timezone,
+//	      "next_run", schedule.NextExecutionTime())
 //
 // Validation Notes:
 //   - Cron expression syntax will be validated during command processing
@@ -1936,8 +2020,9 @@ type SetPipelineScheduleCommand struct {
 //   - Pipeline must exist and be in an active state
 //
 // Integration:
-//   Command is designed for execution through CommandBus with proper
-//   routing to SetPipelineScheduleCommandHandler for processing.
+//
+//	Command is designed for execution through CommandBus with proper
+//	routing to SetPipelineScheduleCommandHandler for processing.
 func NewSetPipelineScheduleCommand(pipelineID entities.PipelineID, cronExpression, timezone string) SetPipelineScheduleCommand {
 	return SetPipelineScheduleCommand{
 		BaseCommand:    NewBaseCommand("SetPipelineSchedule"),
@@ -1963,34 +2048,36 @@ func NewSetPipelineScheduleCommand(pipelineID entities.PipelineID, cronExpressio
 //   - Domain event publishing for schedule tracking
 //
 // Fields:
-//   repository PipelineRepository: Data access abstraction for pipeline operations
-//   eventBus EventBus: Event publishing infrastructure for domain events
+//
+//	repository PipelineRepository: Data access abstraction for pipeline operations
+//	eventBus EventBus: Event publishing infrastructure for domain events
 //
 // Example:
-//   Handler initialization and usage:
 //
-//     handler := commands.NewSetPipelineScheduleCommandHandler(
-//         pipelineRepository,
-//         eventBus,
-//     )
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&SetPipelineScheduleCommand{}, handler)
-//     
-//     // Handler processes commands through command bus
-//     command := commands.NewSetPipelineScheduleCommand(
-//         pipelineID,
-//         "0 2 * * *",  // Daily at 2 AM
-//         "UTC",
-//     )
-//     
-//     result := commandBus.Execute(ctx, command)
-//     if result.IsSuccess() {
-//         schedule := result.Value().(*entities.PipelineSchedule)
-//         log.Info("Pipeline scheduled",
-//             "expression", schedule.CronExpression,
-//             "timezone", schedule.Timezone)
-//     }
+//	Handler initialization and usage:
+//
+//	  handler := commands.NewSetPipelineScheduleCommandHandler(
+//	      pipelineRepository,
+//	      eventBus,
+//	  )
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&SetPipelineScheduleCommand{}, handler)
+//
+//	  // Handler processes commands through command bus
+//	  command := commands.NewSetPipelineScheduleCommand(
+//	      pipelineID,
+//	      "0 2 * * *",  // Daily at 2 AM
+//	      "UTC",
+//	  )
+//
+//	  result := commandBus.Execute(ctx, command)
+//	  if result.IsSuccess() {
+//	      schedule := result.Value().(*entities.PipelineSchedule)
+//	      log.Info("Pipeline scheduled",
+//	          "expression", schedule.CronExpression,
+//	          "timezone", schedule.Timezone)
+//	  }
 //
 // Integration:
 //   - Command Bus: Registered as handler for SetPipelineScheduleCommand
@@ -1998,7 +2085,7 @@ func NewSetPipelineScheduleCommand(pipelineID entities.PipelineID, cronExpressio
 //   - Infrastructure: Repository and event bus dependency injection
 //   - Scheduling System: Schedule changes trigger scheduling system updates
 type SetPipelineScheduleCommandHandler struct {
-	repository PipelineRepository  // Data access abstraction for pipeline operations
+	repository PipelineRepository // Data access abstraction for pipeline operations
 	eventBus   EventBus           // Event publishing infrastructure for domain events
 }
 
@@ -2009,26 +2096,29 @@ type SetPipelineScheduleCommandHandler struct {
 // for clean architecture, testability, and proper separation of concerns.
 //
 // Parameters:
-//   repository PipelineRepository: Data access abstraction for pipeline operations (required)
-//   eventBus EventBus: Event publishing infrastructure for domain events (required)
+//
+//	repository PipelineRepository: Data access abstraction for pipeline operations (required)
+//	eventBus EventBus: Event publishing infrastructure for domain events (required)
 //
 // Returns:
-//   *SetPipelineScheduleCommandHandler: Fully initialized handler ready for command processing
+//
+//	*SetPipelineScheduleCommandHandler: Fully initialized handler ready for command processing
 //
 // Example:
-//   Handler initialization in application setup:
 //
-//     // Initialize dependencies
-//     pipelineRepo := postgresql.NewPipelineRepository(db)
-//     eventBus := redis.NewEventBus(redisClient)
-//     
-//     // Create handler with dependency injection
-//     handler := commands.NewSetPipelineScheduleCommandHandler(pipelineRepo, eventBus)
-//     
-//     // Register with command bus
-//     commandBus.RegisterHandler(&SetPipelineScheduleCommand{}, handler)
-//     
-//     log.Info("SetPipelineScheduleCommandHandler registered successfully")
+//	Handler initialization in application setup:
+//
+//	  // Initialize dependencies
+//	  pipelineRepo := postgresql.NewPipelineRepository(db)
+//	  eventBus := redis.NewEventBus(redisClient)
+//
+//	  // Create handler with dependency injection
+//	  handler := commands.NewSetPipelineScheduleCommandHandler(pipelineRepo, eventBus)
+//
+//	  // Register with command bus
+//	  commandBus.RegisterHandler(&SetPipelineScheduleCommand{}, handler)
+//
+//	  log.Info("SetPipelineScheduleCommandHandler registered successfully")
 //
 // Integration:
 //   - Application Setup: Called during application initialization
@@ -2050,59 +2140,62 @@ func NewSetPipelineScheduleCommandHandler(repository PipelineRepository, eventBu
 // proper schedule integration and maintains system consistency.
 //
 // Business Logic Flow:
-//   1. Load target pipeline and validate existence
-//   2. Validate cron expression syntax and parseability
-//   3. Validate timezone identifier and availability
-//   4. Set schedule configuration on pipeline aggregate
-//   5. Persist updated pipeline through repository
-//   6. Publish domain events for schedule tracking
-//   7. Return configured schedule as command result
+//  1. Load target pipeline and validate existence
+//  2. Validate cron expression syntax and parseability
+//  3. Validate timezone identifier and availability
+//  4. Set schedule configuration on pipeline aggregate
+//  5. Persist updated pipeline through repository
+//  6. Publish domain events for schedule tracking
+//  7. Return configured schedule as command result
 //
 // Parameters:
-//   ctx context.Context: Execution context for cancellation and timeout handling
-//   command SetPipelineScheduleCommand: Command with schedule configuration data
+//
+//	ctx context.Context: Execution context for cancellation and timeout handling
+//	command SetPipelineScheduleCommand: Command with schedule configuration data
 //
 // Returns:
-//   result.Result[interface{}]: Success with PipelineSchedule or Failure with error
+//
+//	result.Result[interface{}]: Success with PipelineSchedule or Failure with error
 //
 // Example:
-//   Command execution flow:
 //
-//     handler := &SetPipelineScheduleCommandHandler{
-//         repository: pipelineRepo,
-//         eventBus:   eventBus,
-//     }
-//     
-//     command := SetPipelineScheduleCommand{
-//         PipelineID:     entities.PipelineID("pipeline-789"),
-//         CronExpression: "0 2 * * *",        // Daily at 2 AM
-//         Timezone:       "America/New_York", // Eastern timezone
-//     }
-//     
-//     result := handler.Handle(ctx, command)
-//     if result.IsFailure() {
-//         switch err := result.Error().(type) {
-//         case *errors.NotFoundError:
-//             return fmt.Errorf("pipeline not found: %w", err)
-//         case *errors.ValidationError:
-//             if strings.Contains(err.Error(), "cron") {
-//                 return fmt.Errorf("invalid cron expression: %w", err)
-//             }
-//             if strings.Contains(err.Error(), "timezone") {
-//                 return fmt.Errorf("invalid timezone: %w", err)
-//             }
-//             return fmt.Errorf("schedule validation failed: %w", err)
-//         default:
-//             return fmt.Errorf("schedule configuration failed: %w", err)
-//         }
-//     }
-//     
-//     schedule := result.Value().(*entities.PipelineSchedule)
-//     log.Info("Pipeline schedule configured successfully",
-//         "pipeline_id", command.PipelineID,
-//         "expression", schedule.CronExpression,
-//         "timezone", schedule.Timezone,
-//         "next_run", schedule.NextExecutionTime())
+//	Command execution flow:
+//
+//	  handler := &SetPipelineScheduleCommandHandler{
+//	      repository: pipelineRepo,
+//	      eventBus:   eventBus,
+//	  }
+//
+//	  command := SetPipelineScheduleCommand{
+//	      PipelineID:     entities.PipelineID("pipeline-789"),
+//	      CronExpression: "0 2 * * *",        // Daily at 2 AM
+//	      Timezone:       "America/New_York", // Eastern timezone
+//	  }
+//
+//	  result := handler.Handle(ctx, command)
+//	  if result.IsFailure() {
+//	      switch err := result.Error().(type) {
+//	      case *errors.NotFoundError:
+//	          return fmt.Errorf("pipeline not found: %w", err)
+//	      case *errors.ValidationError:
+//	          if strings.Contains(err.Error(), "cron") {
+//	              return fmt.Errorf("invalid cron expression: %w", err)
+//	          }
+//	          if strings.Contains(err.Error(), "timezone") {
+//	              return fmt.Errorf("invalid timezone: %w", err)
+//	          }
+//	          return fmt.Errorf("schedule validation failed: %w", err)
+//	      default:
+//	          return fmt.Errorf("schedule configuration failed: %w", err)
+//	      }
+//	  }
+//
+//	  schedule := result.Value().(*entities.PipelineSchedule)
+//	  log.Info("Pipeline schedule configured successfully",
+//	      "pipeline_id", command.PipelineID,
+//	      "expression", schedule.CronExpression,
+//	      "timezone", schedule.Timezone,
+//	      "next_run", schedule.NextExecutionTime())
 //
 // Business Rules Enforced:
 //   - Pipeline must exist and be in an active state

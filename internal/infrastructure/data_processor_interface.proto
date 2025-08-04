@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package flexcore.plugins;
 
-option go_package = "github.com/flext/flexcore/plugins";
+option go_package = "github.com/flext-sh/flexcore/plugins";
 
 // DataProcessor service definition
 service DataProcessor {

@@ -66,7 +66,7 @@ func (es *EnrichmentService) computeField(record map[string]interface{}, computa
 	if computer, exists := computers[computeStr]; exists {
 		return computer(record)
 	}
-	
+
 	return computation
 }
 

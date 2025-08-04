@@ -6,8 +6,8 @@ import (
 	"context"
 	"fmt"
 	"time"
-	
-	"github.com/flext/flexcore/pkg/result"
+
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // PipelineOrchestratorConfig contains dependencies for PipelineExecutionOrchestrator
@@ -34,12 +34,12 @@ func (config *PipelineOrchestratorConfig) Validate() error {
 // SOLID SRP: Single responsibility for validation logic with centralized error handling
 func (config *PipelineOrchestratorConfig) performValidationChecks() result.Result[bool] {
 	validationErrors := config.collectValidationErrors()
-	
+
 	if len(validationErrors) > 0 {
 		// Return first validation error (maintains original behavior)
 		return result.Failure[bool](fmt.Errorf("%s", validationErrors[0]))
 	}
-	
+
 	return result.Success(true)
 }
 
@@ -47,14 +47,14 @@ func (config *PipelineOrchestratorConfig) performValidationChecks() result.Resul
 // SOLID SRP: Single responsibility for collecting validation errors
 func (config *PipelineOrchestratorConfig) collectValidationErrors() []string {
 	var errors []string
-	
+
 	validationRules := config.getValidationRules()
 	for _, rule := range validationRules {
 		if rule.validator(config) {
 			errors = append(errors, rule.errorMessage)
 		}
 	}
-	
+
 	return errors
 }
 
@@ -106,7 +106,7 @@ func NewPipelineExecutionOrchestrator(config *PipelineOrchestratorConfig) (*Pipe
 	if config == nil {
 		return nil, fmt.Errorf("PipelineOrchestratorConfig cannot be nil")
 	}
-	
+
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid orchestrator configuration: %w", err)
 	}
@@ -121,7 +121,7 @@ func NewPipelineExecutionOrchestrator(config *PipelineOrchestratorConfig) (*Pipe
 }
 
 // NewPipelineExecutionOrchestratorLegacy maintains backward compatibility with 5-parameter constructor
-// BACKWARD COMPATIBILITY: Delegates to Parameter Object Pattern implementation  
+// BACKWARD COMPATIBILITY: Delegates to Parameter Object Pattern implementation
 func NewPipelineExecutionOrchestratorLegacy(
 	eventBus EventBus,
 	commandBus CommandBus,
@@ -136,7 +136,7 @@ func NewPipelineExecutionOrchestratorLegacy(
 		Cluster:      cluster,
 		Repository:   repository,
 	}
-	
+
 	orchestrator, err := NewPipelineExecutionOrchestrator(config)
 	if err != nil {
 		// For backward compatibility, create without validation on error
@@ -148,7 +148,7 @@ func NewPipelineExecutionOrchestratorLegacy(
 			resultHandler:   NewPipelineResultHandler(repository),
 		}
 	}
-	
+
 	return orchestrator
 }
 

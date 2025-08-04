@@ -7,7 +7,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/flext/flexcore/pkg/result"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // EventStore provides event sourcing capabilities using composition
