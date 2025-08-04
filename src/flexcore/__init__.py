@@ -14,4 +14,4 @@ __author__ = "FLEXT Team"
 __email__ = "team@flext.dev"
 
 
-__all__ = ["FlexCore", "__version__"]
+__all__: list[str] = ["FlexCore", "__version__"]

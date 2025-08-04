@@ -11,10 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	httpcontrollers "github.com/flext-sh/flexcore/internal/adapters/primary/http"
 	"github.com/flext-sh/flexcore/pkg/config"
 	"github.com/flext-sh/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/orchestrator"
 )
 
 // Version information (set by build flags)
@@ -48,6 +51,53 @@ func parseFlags() CommandLineFlags {
 
 	flag.Parse()
 	return flags
+}
+
+// setupBasicRoutes sets up basic health and info routes
+func setupBasicRoutes(router *gin.Engine) {
+	// Health check endpoint
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "ok",
+			"timestamp": time.Now().Format(time.RFC3339),
+			"service":   "flexcore",
+			"version":   Version,
+		})
+	})
+
+	// Info endpoint
+	router.GET("/info", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"service":     "flexcore",
+			"version":     Version,
+			"build_time":  BuildTime,
+			"commit":      CommitHash,
+			"environment": config.Current.App.Environment,
+			"debug":       config.Current.App.Debug,
+			"port":        config.Current.App.Port,
+			"timestamp":   time.Now().Format(time.RFC3339),
+			"features": []string{
+				"runtime_orchestration",
+				"windmill_workflows",
+				"multi_runtime_support",
+				"real_time_monitoring",
+				"distributed_execution",
+			},
+		})
+	})
+
+	// API version info
+	router.GET("/api/v1", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"api_version": "v1",
+			"service":     "flexcore",
+			"endpoints": gin.H{
+				"orchestration": "/api/v1/orchestration",
+				"workflows":     "/api/v1/workflows",
+				"runtimes":      "/api/v1/runtimes",
+			},
+		})
+	})
 }
 
 // initializeApplication creates and configures the application
@@ -123,18 +173,54 @@ func main() {
 		zap.Int("port", config.Current.App.Port),
 	)
 
-	// Create simple HTTP server
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
-	})
+	// Initialize runtime orchestrator
+	orchestratorConfig := &orchestrator.OrchestratorConfig{
+		WindmillURL:           "http://localhost:8000",
+		WindmillToken:         os.Getenv("WINDMILL_TOKEN"),
+		DefaultTimeout:        300 * time.Second,
+		MaxConcurrentJobs:     10,
+		HealthCheckInterval:   30 * time.Second,
+		MetricsUpdateInterval: 60 * time.Second,
+		EnabledRuntimes:       []string{"meltano"},
+	}
+
+	runtimeOrchestrator, err := orchestrator.NewRuntimeOrchestrator(orchestratorConfig)
+	if err != nil {
+		logging.Logger.Fatal("Failed to create runtime orchestrator", zap.Error(err))
+	}
+
+	// Initialize orchestrator
+	if err := runtimeOrchestrator.Initialize(ctx); err != nil {
+		logging.Logger.Fatal("Failed to initialize runtime orchestrator", zap.Error(err))
+	}
+
+	// Set Gin mode based on environment
+	if config.Current.App.Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
+	// Create Gin router
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+
+	// Setup basic routes
+	setupBasicRoutes(router)
+
+	// Setup orchestrator routes
+	orchestratorController := httpcontrollers.NewOrchestratorController(runtimeOrchestrator)
+	v1 := router.Group("/api/v1")
+	orchestratorController.RegisterRoutes(v1)
 
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", config.Current.App.Port),
-		Handler:           mux,
+		Handler:           router,
 		ReadHeaderTimeout: 10 * time.Second, // Prevent Slowloris attacks
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	// Start server in goroutine
