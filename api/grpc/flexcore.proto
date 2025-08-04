@@ -1,0 +1,294 @@
+// FlexCore gRPC Protocol Definition
+// Communication protocol between FLEXT Control Panel and FlexCore Runtime
+
+syntax = "proto3";
+
+package flexcore.v1;
+
+option go_package = "github.com/flext-sh/flexcore/api/grpc/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+
+// FlexCoreManagement service provides control plane operations for FlexCore runtime
+service FlexCoreManagement {
+  // Runtime Management
+  rpc StartRuntime(StartRuntimeRequest) returns (RuntimeResponse);
+  rpc StopRuntime(StopRuntimeRequest) returns (RuntimeResponse);
+  rpc GetRuntimeStatus(RuntimeStatusRequest) returns (RuntimeStatusResponse);
+  rpc ListRuntimes(ListRuntimesRequest) returns (ListRuntimesResponse);
+  
+  // Workflow Management  
+  rpc ExecuteWorkflow(WorkflowExecutionRequest) returns (WorkflowExecutionResponse);
+  rpc GetWorkflowStatus(WorkflowStatusRequest) returns (WorkflowStatusResponse);
+  rpc ListWorkflows(ListWorkflowsRequest) returns (ListWorkflowsResponse);
+  rpc CancelWorkflow(CancelWorkflowRequest) returns (CancelWorkflowResponse);
+  
+  // Health and Monitoring
+  rpc GetHealthStatus(HealthStatusRequest) returns (HealthStatusResponse);
+  rpc GetMetrics(MetricsRequest) returns (MetricsResponse);
+  rpc StreamLogs(LogStreamRequest) returns (stream LogEntry);
+  
+  // Configuration Management
+  rpc GetConfiguration(ConfigurationRequest) returns (ConfigurationResponse);
+  rpc UpdateConfiguration(UpdateConfigurationRequest) returns (ConfigurationResponse);
+  
+  // Instance Management (for distributed FlexCore)
+  rpc RegisterInstance(RegisterInstanceRequest) returns (RegisterInstanceResponse);
+  rpc DeregisterInstance(DeregisterInstanceRequest) returns (google.protobuf.Empty);
+  rpc GetInstanceInfo(InstanceInfoRequest) returns (InstanceInfoResponse);
+}
+
+// Runtime Management Messages
+
+message StartRuntimeRequest {
+  string runtime_type = 1; // meltano, ray, kubernetes, etc.
+  map<string, string> config = 2;
+  repeated string capabilities = 3;
+}
+
+message StopRuntimeRequest {
+  string runtime_type = 1;
+  bool force = 2;
+  int32 timeout_seconds = 3;
+}
+
+message RuntimeResponse {
+  bool success = 1;
+  string message = 2;
+  string error = 3;
+  RuntimeStatus status = 4;
+}
+
+message RuntimeStatusRequest {
+  string runtime_type = 1;
+}
+
+message RuntimeStatusResponse {
+  RuntimeStatus status = 1;
+}
+
+message ListRuntimesRequest {
+  bool include_inactive = 1;
+}
+
+message ListRuntimesResponse {
+  repeated RuntimeStatus runtimes = 1;
+}
+
+message RuntimeStatus {
+  string runtime_type = 1;
+  string status = 2; // starting, running, stopping, stopped, error
+  string health = 3; // healthy, unhealthy, unknown
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Duration uptime = 5;
+  google.protobuf.Timestamp last_check = 6;
+  string version = 7;
+  map<string, string> metadata = 8;
+  ResourceUsage resource_usage = 9;
+}
+
+message ResourceUsage {
+  double cpu_percent = 1;
+  int64 memory_bytes = 2;
+  int64 disk_bytes = 3;
+  int32 active_jobs = 4;
+  int32 queued_jobs = 5;
+}
+
+// Workflow Management Messages
+
+message WorkflowExecutionRequest {
+  string workflow_id = 1;
+  string runtime_type = 2;
+  string command = 3;
+  repeated string args = 4;
+  map<string, string> config = 5;
+  int32 priority = 6;
+  google.protobuf.Duration timeout = 7;
+  repeated string tags = 8;
+}
+
+message WorkflowExecutionResponse {
+  bool success = 1;
+  string job_id = 2;
+  string message = 3;
+  string error = 4;
+  WorkflowStatus status = 5;
+}
+
+message WorkflowStatusRequest {
+  string job_id = 1;
+  bool include_logs = 2;
+}
+
+message WorkflowStatusResponse {
+  WorkflowStatus status = 1;
+}
+
+message ListWorkflowsRequest {
+  string runtime_type = 1; // filter by runtime type
+  string status_filter = 2; // pending, running, completed, failed
+  int32 limit = 3;
+  int32 offset = 4;
+  bool include_completed = 5;
+}
+
+message ListWorkflowsResponse {
+  repeated WorkflowStatus workflows = 1;
+  int32 total_count = 2;
+}
+
+message CancelWorkflowRequest {
+  string job_id = 1;
+  string reason = 2;
+}
+
+message CancelWorkflowResponse {
+  bool success = 1;
+  string message = 2;
+  string error = 3;
+}
+
+message WorkflowStatus {
+  string job_id = 1;
+  string workflow_id = 2;
+  string status = 3; // pending, running, completed, failed, cancelled
+  double progress = 4; // 0.0 to 1.0
+  string runtime_type = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+  google.protobuf.Duration duration = 8;
+  string result = 9; // JSON-encoded result
+  string error = 10;
+  repeated string logs = 11;
+  map<string, string> metadata = 12;
+  repeated string tags = 13;
+}
+
+// Health and Monitoring Messages
+
+message HealthStatusRequest {
+  bool include_runtimes = 1;
+  bool include_windmill = 2;
+}
+
+message HealthStatusResponse {
+  string overall_status = 1; // healthy, degraded, unhealthy
+  string flexcore_status = 2;
+  string windmill_status = 3;
+  repeated RuntimeHealthStatus runtime_health = 4;
+  google.protobuf.Timestamp check_time = 5;
+  repeated string warnings = 6;
+  repeated string errors = 7;
+}
+
+message RuntimeHealthStatus {
+  string runtime_type = 1;
+  string status = 2;
+  string message = 3;
+  google.protobuf.Timestamp last_check = 4;
+}
+
+message MetricsRequest {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp end_time = 2;
+  repeated string metric_names = 3;
+}
+
+message MetricsResponse {
+  repeated Metric metrics = 1;
+  google.protobuf.Timestamp collection_time = 2;
+}
+
+message Metric {
+  string name = 1;
+  string type = 2; // counter, gauge, histogram
+  double value = 3;
+  string unit = 4;
+  map<string, string> labels = 5;
+  google.protobuf.Timestamp timestamp = 6;
+}
+
+message LogStreamRequest {
+  string level_filter = 1; // debug, info, warn, error
+  string component_filter = 2; // runtime type or component name
+  google.protobuf.Timestamp start_time = 3;
+  bool follow = 4; // stream new logs
+}
+
+message LogEntry {
+  google.protobuf.Timestamp timestamp = 1;
+  string level = 2;
+  string component = 3;
+  string message = 4;
+  map<string, string> fields = 5;
+  string job_id = 6;
+  string runtime_type = 7;
+}
+
+// Configuration Management Messages
+
+message ConfigurationRequest {
+  string component = 1; // flexcore, windmill, runtime_type
+}
+
+message ConfigurationResponse {
+  string component = 1;
+  map<string, string> configuration = 2;
+  string version = 3;
+  google.protobuf.Timestamp last_updated = 4;
+}
+
+message UpdateConfigurationRequest {
+  string component = 1;
+  map<string, string> configuration = 2;
+  bool validate_only = 3;
+}
+
+// Instance Management Messages (for distributed FlexCore)
+
+message RegisterInstanceRequest {
+  string instance_id = 1;
+  string hostname = 2;
+  string grpc_address = 3;
+  repeated string capabilities = 4;
+  map<string, string> metadata = 5;
+}
+
+message RegisterInstanceResponse {
+  bool success = 1;
+  string message = 2;
+  string assigned_id = 3;
+}
+
+message DeregisterInstanceRequest {
+  string instance_id = 1;
+  string reason = 2;
+}
+
+message InstanceInfoRequest {
+  string instance_id = 1;
+}
+
+message InstanceInfoResponse {
+  string instance_id = 1;
+  string hostname = 2;
+  string grpc_address = 3;
+  string status = 4; // active, inactive, draining
+  repeated string capabilities = 5;
+  google.protobuf.Timestamp registered_at = 6;
+  google.protobuf.Timestamp last_heartbeat = 7;
+  map<string, string> metadata = 8;
+  InstanceStats stats = 9;
+}
+
+message InstanceStats {
+  int32 active_workflows = 1;
+  int32 completed_workflows = 2;
+  int32 failed_workflows = 3;
+  double cpu_utilization = 4;
+  double memory_utilization = 5;
+  google.protobuf.Duration uptime = 6;
+}
