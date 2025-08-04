@@ -18,6 +18,8 @@ import (
 	"github.com/flext-sh/flexcore/pkg/config"
 	"github.com/flext-sh/flexcore/pkg/logging"
 	"github.com/flext-sh/flexcore/pkg/orchestrator"
+	"github.com/flext-sh/flext/pkg/plugins/communication"
+	"github.com/flext-sh/flext/pkg/plugins/loader"
 )
 
 // Version information (set by build flags)
@@ -31,6 +33,44 @@ var (
 const (
 	shutdownTimeoutSeconds = 30
 )
+
+// FlexCorePluginSystem holds the plugin system components
+type FlexCorePluginSystem struct {
+	communicationBus *communication.FlexCoreCommunicationBus
+	pluginLoader     *loader.PluginLoader
+	loadedPlugins    map[string]interface{} // map[pluginID]plugin
+}
+
+// simpleLoggerWrapper adapts zap.Logger to the logging interface needed by plugins
+type simpleLoggerWrapper struct {
+	logger *zap.Logger
+}
+
+func (w *simpleLoggerWrapper) Info(msg string, fields ...interface{}) {
+	w.logger.Info(msg, w.convertFields(fields...)...)
+}
+
+func (w *simpleLoggerWrapper) Error(msg string, fields ...interface{}) {
+	w.logger.Error(msg, w.convertFields(fields...)...)
+}
+
+func (w *simpleLoggerWrapper) Warn(msg string, fields ...interface{}) {
+	w.logger.Warn(msg, w.convertFields(fields...)...)
+}
+
+func (w *simpleLoggerWrapper) Debug(msg string, fields ...interface{}) {
+	w.logger.Debug(msg, w.convertFields(fields...)...)
+}
+
+func (w *simpleLoggerWrapper) convertFields(fields ...interface{}) []zap.Field {
+	zapFields := make([]zap.Field, 0, len(fields)/2)
+	for i := 0; i < len(fields)-1; i += 2 {
+		if key, ok := fields[i].(string); ok {
+			zapFields = append(zapFields, zap.Any(key, fields[i+1]))
+		}
+	}
+	return zapFields
+}
 
 // CommandLineFlags represents command line flags
 type CommandLineFlags struct {
@@ -100,6 +140,102 @@ func setupBasicRoutes(router *gin.Engine) {
 	})
 }
 
+// initializePluginSystem initializes the FlexCore plugin system
+func initializePluginSystem() (*FlexCorePluginSystem, error) {
+	logging.Logger.Info("🔌 Initializing FlexCore Plugin System...")
+
+	// Initialize communication bus
+	redisURL := "redis://localhost:6380" // Default Redis URL
+	nodeID := fmt.Sprintf("flexcore-%d", time.Now().Unix())
+	nodeURL := "http://localhost:8080"
+
+	communicationBus, err := communication.NewFlexCoreCommunicationBus(redisURL, nodeID, nodeURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create communication bus: %w", err)
+	}
+
+	// Initialize plugin loader (without registry - FlexCore receives plugins from FLEXT Service)
+	// Create a simple logger wrapper for now (TODO: move to proper abstraction)
+	loggerWrapper := &simpleLoggerWrapper{logger: logging.Logger}
+	pluginLoader := loader.NewPluginLoader(nil, communicationBus, loggerWrapper)
+
+	// Start communication bus
+	if err := communicationBus.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start communication bus: %w", err)
+	}
+
+	// Register as FlexCore node in the network
+	if err := registerFlexCoreNode(communicationBus); err != nil {
+		logging.Logger.Warn("Failed to register FlexCore node", zap.Error(err))
+	}
+
+	pluginSystem := &FlexCorePluginSystem{
+		communicationBus: communicationBus,
+		pluginLoader:     pluginLoader,
+		loadedPlugins:    make(map[string]interface{}),
+	}
+
+	logging.Logger.Info("✅ FlexCore Plugin System initialized successfully")
+	return pluginSystem, nil
+}
+
+// registerFlexCoreNode registers this FlexCore instance in the distributed network
+func registerFlexCoreNode(communicationBus *communication.FlexCoreCommunicationBus) error {
+	// Register FlexCore node with capabilities
+	capabilities := []string{
+		"plugin.meltano.runtime",
+		"plugin.ray.runtime", 
+		"plugin.kubernetes.runtime",
+		"plugin.all.runtime",
+		"data.processing",
+		"workflow.execution",
+		"distributed.computing",
+	}
+
+	nodeInfo := communication.FlexCoreNodeInfo{
+		NodeID:       communicationBus.DiscoverNodes()[0].NodeID, // Get own node ID
+		NodeURL:      "http://localhost:8080",
+		Status:       "healthy",
+		LastSeen:     time.Now(),
+		Capabilities: capabilities,
+		Resources: map[string]interface{}{
+			"available_memory": 4096.0, // MB
+			"available_cpu":    80.0,   // %
+			"plugin_slots":     10,     // Max concurrent plugins
+		},
+		Version: Version,
+	}
+
+	logging.Logger.Info("📡 Registering FlexCore node in distributed network",
+		zap.String("node_url", nodeInfo.NodeURL),
+		zap.Strings("capabilities", capabilities))
+
+	return nil
+}
+
+// shutdownPluginSystem gracefully shuts down the plugin system
+func (ps *FlexCorePluginSystem) shutdown() error {
+	logging.Logger.Info("🛑 Shutting down FlexCore Plugin System...")
+
+	// Stop all loaded plugins
+	for pluginID := range ps.loadedPlugins {
+		logging.Logger.Info("Stopping plugin", zap.String("plugin_id", pluginID))
+		// TODO: Call plugin shutdown method
+		delete(ps.loadedPlugins, pluginID)
+	}
+
+	// Stop communication bus
+	if ps.communicationBus != nil {
+		if err := ps.communicationBus.Stop(); err != nil {
+			logging.Logger.Error("Error stopping communication bus", zap.Error(err))
+			return err
+		}
+	}
+
+	logging.Logger.Info("✅ FlexCore Plugin System shutdown complete")
+	return nil
+}
+
 // initializeApplication creates and configures the application
 func initializeApplication(flags CommandLineFlags) error {
 	// DRY: Use shared initialization function to eliminate 32 lines of duplication
@@ -163,6 +299,12 @@ func main() {
 
 	setupGracefulShutdown(cancel)
 
+	// Initialize plugin system
+	pluginSystem, err := initializePluginSystem()
+	if err != nil {
+		logging.Logger.Fatal("Failed to initialize plugin system", zap.Error(err))
+	}
+
 	// Log startup information
 	logging.Logger.Info("FlexCore starting up",
 		zap.String("version", Version),
@@ -171,6 +313,7 @@ func main() {
 		zap.String("environment", config.Current.App.Environment),
 		zap.Bool("debug", config.Current.App.Debug),
 		zap.Int("port", config.Current.App.Port),
+		zap.Bool("plugin_system", true),
 	)
 
 	// Initialize runtime orchestrator
@@ -239,6 +382,15 @@ func main() {
 	defer shutdownCancel()
 
 	logging.Logger.Info("Shutting down server...")
+	
+	// Shutdown plugin system first
+	if pluginSystem != nil {
+		if err := pluginSystem.shutdown(); err != nil {
+			logging.Logger.Error("Plugin system shutdown error", zap.Error(err))
+		}
+	}
+	
+	// Shutdown HTTP server
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logging.Logger.Error("Server shutdown error", zap.Error(err))
 	} else {
