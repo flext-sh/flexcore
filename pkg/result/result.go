@@ -577,7 +577,7 @@ func Filter[T any](r Result[T], predicate func(T) bool) Result[T] {
 // Thread Safety:
 //
 //	Safe for concurrent use as it doesn't modify the original Results.
-func OrElse[T any](r Result[T], alternative Result[T]) Result[T] {
+func OrElse[T any](r, alternative Result[T]) Result[T] {
 	if r.IsSuccess() {
 		return r
 	}
@@ -1572,10 +1572,11 @@ func (a *Async[T]) Await() Result[T] {
 // Thread Safety:
 //
 //	Safe for concurrent use. Each call operates independently with its own panic recovery.
-func Try[T any](fn func() T) Result[T] {
+func Try[T any](fn func() T) (result Result[T]) {
 	defer func() {
 		if r := recover(); r != nil {
-			// This will be handled by the calling code
+			// Convert panic to failure result
+			result = Failure[T](fmt.Errorf("panic recovered: %v", r))
 		}
 	}()
 

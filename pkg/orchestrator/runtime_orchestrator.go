@@ -13,6 +13,14 @@ import (
 	"github.com/flext-sh/flexcore/pkg/windmill/engine"
 )
 
+// Status constants for orchestration
+const (
+	StatusFailed    = "failed"
+	StatusSubmitted = "submitted"
+	StatusRunning   = "running"
+	StatusCompleted = "completed"
+)
+
 // RuntimeOrchestrator coordinates multiple runtimes through Windmill workflows
 type RuntimeOrchestrator struct {
 	mu             sync.RWMutex
@@ -112,7 +120,10 @@ func NewRuntimeOrchestrator(config *OrchestratorConfig) (*RuntimeOrchestrator, e
 		runtimeManager,
 	)
 
-	logger, _ := zap.NewProduction()
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create logger: %w", err)
+	}
 	orchestrator := &RuntimeOrchestrator{
 		logger:         logger,
 		runtimeManager: runtimeManager,
@@ -152,7 +163,7 @@ func (ro *RuntimeOrchestrator) Initialize(ctx context.Context) error {
 }
 
 // ExecuteOrchestration executes a workflow orchestration
-func (ro *RuntimeOrchestrator) ExecuteOrchestration(ctx context.Context, req OrchestrationRequest) (*OrchestrationResult, error) {
+func (ro *RuntimeOrchestrator) ExecuteOrchestration(ctx context.Context, req *OrchestrationRequest) (*OrchestrationResult, error) {
 	ro.mu.Lock()
 	defer ro.mu.Unlock()
 
@@ -198,7 +209,7 @@ func (ro *RuntimeOrchestrator) ExecuteOrchestration(ctx context.Context, req Orc
 	// Execute workflow through Windmill
 	response, err := ro.windmillEngine.ExecuteWorkflowWithRuntime(ctx, workflowReq)
 	if err != nil {
-		orchestration.Status = "failed"
+		orchestration.Status = StatusFailed
 		orchestration.Error = err.Error()
 		endTime := time.Now()
 		orchestration.EndTime = &endTime
@@ -218,7 +229,7 @@ func (ro *RuntimeOrchestrator) ExecuteOrchestration(ctx context.Context, req Orc
 	// Update orchestration with job information
 	orchestration.JobID = response.JobID
 	orchestration.WorkflowID = workflowReq.WorkflowID
-	orchestration.Status = "submitted"
+	orchestration.Status = StatusSubmitted
 	orchestration.Progress = 0.1
 
 	// Store orchestration
@@ -260,7 +271,7 @@ func (ro *RuntimeOrchestrator) GetOrchestration(orchestrationID string) (*Orches
 }
 
 // ListOrchestrations returns all orchestrations with optional filtering
-func (ro *RuntimeOrchestrator) ListOrchestrations(status string, runtimeType string, limit int) ([]*Orchestration, error) {
+func (ro *RuntimeOrchestrator) ListOrchestrations(status, runtimeType string, limit int) ([]*Orchestration, error) {
 	ro.mu.RLock()
 	defer ro.mu.RUnlock()
 
@@ -300,8 +311,8 @@ func (ro *RuntimeOrchestrator) CancelOrchestration(ctx context.Context, orchestr
 		return fmt.Errorf("orchestration %s not found", orchestrationID)
 	}
 
-	if orchestration.Status != "running" && orchestration.Status != "submitted" {
-		return fmt.Errorf("orchestration %s cannot be cancelled (status: %s)", 
+	if orchestration.Status != StatusRunning && orchestration.Status != StatusSubmitted {
+		return fmt.Errorf("orchestration %s cannot be canceled (status: %s)", 
 			orchestrationID, orchestration.Status)
 	}
 
@@ -315,15 +326,15 @@ func (ro *RuntimeOrchestrator) CancelOrchestration(ctx context.Context, orchestr
 	}
 
 	// Update orchestration status
-	orchestration.Status = "cancelled"
+	orchestration.Status = "canceled"
 	endTime := time.Now()
 	orchestration.EndTime = &endTime
 	orchestration.Duration = time.Since(orchestration.StartTime)
-	orchestration.Logs = append(orchestration.Logs, "Orchestration cancelled")
+	orchestration.Logs = append(orchestration.Logs, "Orchestration canceled")
 
-	ro.updateMetrics("cancelled", orchestration.RuntimeType)
+	ro.updateMetrics("canceled", orchestration.RuntimeType)
 
-	ro.logger.Info("Orchestration cancelled",
+	ro.logger.Info("Orchestration canceled",
 		zap.String("orchestration_id", orchestrationID))
 
 	return nil
@@ -499,7 +510,7 @@ func (ro *RuntimeOrchestrator) updateOrchestrationStatus(ctx context.Context, or
 	}
 
 	// Check if completed
-	if status.Status == "completed" || status.Status == "failed" {
+	if status.Status == StatusCompleted || status.Status == StatusFailed {
 		endTime := time.Now()
 		orchestration.EndTime = &endTime
 		ro.updateMetrics(status.Status, orchestration.RuntimeType)
@@ -544,12 +555,12 @@ func (ro *RuntimeOrchestrator) updateMetrics(status string, runtimeType string) 
 		ro.metrics.TotalOrchestrations++
 		ro.metrics.ActiveOrchestrations++
 		ro.metrics.RuntimeDistribution[runtimeType]++
-	case "completed":
+	case StatusCompleted:
 		ro.metrics.CompletedOrchestrations++
 		if ro.metrics.ActiveOrchestrations > 0 {
 			ro.metrics.ActiveOrchestrations--
 		}
-	case "failed", "cancelled", "timeout":
+	case "failed", "canceled", "timeout":
 		ro.metrics.FailedOrchestrations++
 		if ro.metrics.ActiveOrchestrations > 0 {
 			ro.metrics.ActiveOrchestrations--

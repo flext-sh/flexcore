@@ -76,14 +76,15 @@ func ServePluginWithHandshake(pluginMap map[string]hashicorpPlugin.Plugin, hands
 
 // RunPluginMain executes the complete plugin main flow with standard configuration
 // DRY PRINCIPLE: Eliminates complete main() function duplication between plugins
-func RunPluginMain(config PluginMainConfig, pluginFactory func() hashicorpPlugin.Plugin) {
+// PERFORMANCE: Pass config by pointer to avoid copying 96 bytes
+func RunPluginMain(config *PluginMainConfig, pluginFactory func() hashicorpPlugin.Plugin) {
 	// Handle version flag first (exits if found)
 	if config.Version != "" {
-		HandleVersionFlag(&config)
+		HandleVersionFlag(config)
 	}
 
 	// Setup logging
-	SetupPluginLogging(&config)
+	SetupPluginLogging(config)
 
 	// Create plugin map
 	pluginMap := map[string]hashicorpPlugin.Plugin{

@@ -12,6 +12,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// Constants for FlextHttpAdapter
+const (
+	FlextServiceVersion = "2.0.0"
+	DefaultOperation    = "health"
+)
+
 // FlextHTTPAdapter implements HTTP communication with FLEXT service
 type FlextHTTPAdapter struct {
 	flextBaseURL string
@@ -53,7 +59,7 @@ func (fha *FlextHTTPAdapter) Name() string {
 
 // Version returns the adapter version
 func (fha *FlextHTTPAdapter) Version() string {
-	return "2.0.0"
+	return FlextServiceVersion
 }
 
 // Execute executes FLEXT operations via HTTP API
@@ -65,11 +71,11 @@ func (fha *FlextHTTPAdapter) Execute(ctx context.Context, params map[string]inte
 	// Determine operation type from parameters
 	operation, ok := params["operation"].(string)
 	if !ok {
-		operation = "health" // Default operation
+		operation = DefaultOperation // Default operation
 	}
 
 	switch operation {
-	case "health":
+	case DefaultOperation:
 		return fha.checkHealth(ctx)
 	case "list_plugins":
 		return fha.listPlugins(ctx)

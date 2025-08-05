@@ -825,7 +825,7 @@ func (h *AddPipelineStepCommandHandler) Handle(ctx context.Context, command AddP
 	step.Timeout = command.Timeout
 
 	// Add step to pipeline
-	addResult := pipeline.AddStep(step)
+	addResult := pipeline.AddStep(&step)
 	if addResult.IsFailure() {
 		return result.Failure[interface{}](addResult.Error())
 	}

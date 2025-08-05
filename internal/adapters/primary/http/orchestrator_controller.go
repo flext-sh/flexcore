@@ -20,7 +20,11 @@ type OrchestratorController struct {
 
 // NewOrchestratorController creates a new orchestrator controller
 func NewOrchestratorController(orch *orchestrator.RuntimeOrchestrator) *OrchestratorController {
-	logger, _ := zap.NewProduction()
+	logger, err := zap.NewProduction()
+	if err != nil {
+		// Fallback to no-op logger if production logger fails
+		logger = zap.NewNop()
+	}
 	return &OrchestratorController{
 		orchestrator: orch,
 		logger:       logger,
@@ -94,7 +98,7 @@ func (oc *OrchestratorController) executeOrchestration(c *gin.Context) {
 	defer cancel()
 
 	// Execute orchestration
-	result, err := oc.orchestrator.ExecuteOrchestration(ctx, request)
+	result, err := oc.orchestrator.ExecuteOrchestration(ctx, &request)
 	if err != nil {
 		oc.logger.Error("Failed to execute orchestration",
 			zap.Error(err),

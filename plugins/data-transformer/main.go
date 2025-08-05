@@ -191,7 +191,7 @@ func main() {
 	}
 
 	// Use shared main function eliminating duplication
-	plugin.RunPluginMain(config, func() hashicorpPlugin.Plugin {
+	plugin.RunPluginMain(&config, func() hashicorpPlugin.Plugin {
 		return &FlexCorePlugin{}
 	})
 }

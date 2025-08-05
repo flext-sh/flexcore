@@ -129,7 +129,7 @@ func (j *JoinClauseBuilder) buildClause(ctx *BuildContext) string {
 	if len(j.joins) == 0 {
 		return ""
 	}
-	var parts []string
+	parts := make([]string, 0, len(j.joins))
 	for _, join := range j.joins {
 		parts = append(parts, fmt.Sprintf(" %s JOIN %s ON %s", join.Type, join.Table, join.Condition))
 	}

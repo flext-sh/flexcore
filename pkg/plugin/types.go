@@ -9,16 +9,19 @@ import (
 )
 
 // ProcessingStats represents plugin processing statistics
+// PERFORMANCE: Field alignment optimized - all 8-byte fields grouped together
 type ProcessingStats struct {
-	TotalRecords    int64     `json:"total_records"`
-	ProcessedOK     int64     `json:"processed_ok"`
-	ProcessedError  int64     `json:"processed_error"`
-	StartTime       time.Time `json:"start_time"`
-	EndTime         time.Time `json:"end_time"`
-	DurationMs      int64     `json:"duration_ms"`
-	RecordsPerSec   float64   `json:"records_per_sec"`
-	ErrorRate       float64   `json:"error_rate"`
-	MemoryUsedBytes int64     `json:"memory_used_bytes"`
+	// Group all 8-byte aligned fields together for optimal memory layout
+	TotalRecords    int64   `json:"total_records"`
+	ProcessedOK     int64   `json:"processed_ok"`
+	ProcessedError  int64   `json:"processed_error"`
+	DurationMs      int64   `json:"duration_ms"`
+	MemoryUsedBytes int64   `json:"memory_used_bytes"`
+	RecordsPerSec   float64 `json:"records_per_sec"`
+	ErrorRate       float64 `json:"error_rate"`
+	// time.Time is 3 int64 values (wall, ext, loc pointer) = 24 bytes on 64-bit
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
 }
 
 // PluginInfo represents plugin information
