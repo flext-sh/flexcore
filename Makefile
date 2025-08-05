@@ -2,7 +2,8 @@
 PROJECT_NAME := flexcore
 GO_VERSION := 1.24
 BINARY_NAME := flexcore
-BUILD_DIR := bin
+BUILD_DIR := ../bin
+LOCAL_BUILD_DIR := bin
 
 # Quality standards
 MIN_COVERAGE := 80
@@ -69,20 +70,25 @@ coverage-html: ## Generate HTML coverage report
 	go tool cover -html=coverage.out -o coverage.html
 
 # Build
-build: ## Build the application
+build: ## Build the application (workspace bin/)
 	mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(BINARY_NAME) .
+	go build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/flexcore
+	chmod +x $(BUILD_DIR)/$(BINARY_NAME)
+
+build-local: ## Build locally (flexcore/bin/)
+	mkdir -p $(LOCAL_BUILD_DIR)
+	go build -o $(LOCAL_BUILD_DIR)/$(BINARY_NAME) ./cmd/flexcore
 
 build-release: ## Build release version
 	mkdir -p $(BUILD_DIR)
-	go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME) .
+	go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/flexcore
 
 install: ## Install the application
-	go install .
+	go install ./cmd/flexcore
 
 # Service operations
 run: ## Run the service
-	go run .
+	go run ./cmd/flexcore
 
 service-start: ## Start service
 	./$(BUILD_DIR)/$(BINARY_NAME) -port=$(SERVICE_PORT) -host=$(SERVICE_HOST)
@@ -122,7 +128,8 @@ deps-check: ## Check for dependency updates
 
 # Maintenance
 clean: ## Clean build artifacts
-	rm -rf $(BUILD_DIR)
+	rm -f $(BUILD_DIR)/$(BINARY_NAME)
+	rm -rf $(LOCAL_BUILD_DIR)
 	rm -f coverage.out coverage.html
 	rm -rf plugins/*.so
 	go clean
