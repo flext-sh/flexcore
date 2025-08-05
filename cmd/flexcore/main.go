@@ -286,53 +286,98 @@ func setupGracefulShutdown(cancel context.CancelFunc) {
 	}()
 }
 
-func main() {
-	flags := parseFlags()
-
+// handleCommandLineFlags processes command line flags and returns true if execution should stop
+func handleCommandLineFlags(flags CommandLineFlags) bool {
 	if flags.help {
 		flag.Usage()
-		return
+		return true
 	}
 
 	if flags.version {
-		// Initialize basic logging for version output
-		if err := logging.Initialize("flexcore", "info"); err == nil {
-			logging.Logger.Info("FlexCore version info",
-				zap.String("version", Version),
-				zap.String("build_time", BuildTime),
-				zap.String("commit", CommitHash),
-			)
-		}
-		return
+		showVersionInfo()
+		return true
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	return false
+}
 
-	if err := initializeApplication(flags); err != nil {
-		// Try to log error properly, fallback to stderr if logging not initialized
-		if logging.Logger != nil {
-			logging.Logger.Fatal("Failed to initialize application", zap.Error(err))
-		} else {
-			// Use os.Stderr for critical error output
-			if _, writeErr := os.Stderr.WriteString("Failed to initialize application: " + err.Error() + "\n"); writeErr != nil {
-				// If we can't even write to stderr, there's nothing more we can do
-				panic("Failed to write error to stderr: " + writeErr.Error())
-			}
-			cancel()
-			return
+// showVersionInfo displays version information
+func showVersionInfo() {
+	// Initialize basic logging for version output
+	if err := logging.Initialize("flexcore", "info"); err == nil {
+		logging.Logger.Info("FlexCore version info",
+			zap.String("version", Version),
+			zap.String("build_time", BuildTime),
+			zap.String("commit", CommitHash),
+		)
+	}
+}
+
+// handleFatalError handles application fatal errors
+func handleFatalError(err error, cancel context.CancelFunc) {
+	// Try to log error properly, fallback to stderr if logging not initialized
+	if logging.Logger != nil {
+		logging.Logger.Fatal("Failed to initialize application", zap.Error(err))
+	} else {
+		// Use os.Stderr for critical error output
+		if _, writeErr := os.Stderr.WriteString("Failed to initialize application: " + err.Error() + "\n"); writeErr != nil {
+			// If we can't even write to stderr, there's nothing more we can do
+			panic("Failed to write error to stderr: " + writeErr.Error())
 		}
+		cancel()
+	}
+}
+
+// runApplication runs the main application logic
+func runApplication(ctx context.Context, cancel context.CancelFunc, flags CommandLineFlags) error {
+	// Initialize application
+	if err := initializeApplication(flags); err != nil {
+		return err
 	}
 
 	setupGracefulShutdown(cancel)
 
+	// Initialize components
+	pluginSystem, runtimeOrchestrator, err := initializeComponents(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Create and configure server
+	server := createServer(pluginSystem, runtimeOrchestrator)
+
+	// Start server
+	startServer(server)
+
+	// Wait for shutdown signal and perform graceful shutdown
+	<-ctx.Done()
+	performGracefulShutdown(server, pluginSystem)
+
+	return nil
+}
+
+// initializeComponents initializes plugin system and runtime orchestrator
+func initializeComponents(ctx context.Context) (*FlexCorePluginSystem, *orchestrator.RuntimeOrchestrator, error) {
 	// Initialize plugin system
 	pluginSystem, err := initializePluginSystem()
 	if err != nil {
-		logging.Logger.Fatal("Failed to initialize plugin system", zap.Error(err))
+		return nil, nil, fmt.Errorf("failed to initialize plugin system: %w", err)
 	}
 
 	// Log startup information
+	logStartupInfo()
+
+	// Initialize runtime orchestrator
+	runtimeOrchestrator, err := createRuntimeOrchestrator(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create runtime orchestrator: %w", err)
+	}
+
+	return pluginSystem, runtimeOrchestrator, nil
+}
+
+// logStartupInfo logs application startup information
+func logStartupInfo() {
 	logging.Logger.Info("FlexCore starting up",
 		zap.String("version", Version),
 		zap.String("build_time", BuildTime),
@@ -342,8 +387,10 @@ func main() {
 		zap.Int("port", config.Current.App.Port),
 		zap.Bool("plugin_system", true),
 	)
+}
 
-	// Initialize runtime orchestrator
+// createRuntimeOrchestrator creates and initializes the runtime orchestrator
+func createRuntimeOrchestrator(ctx context.Context) (*orchestrator.RuntimeOrchestrator, error) {
 	orchestratorConfig := &orchestrator.OrchestratorConfig{
 		WindmillURL:           "http://localhost:8000",
 		WindmillToken:         os.Getenv("WINDMILL_TOKEN"),
@@ -356,14 +403,19 @@ func main() {
 
 	runtimeOrchestrator, err := orchestrator.NewRuntimeOrchestrator(orchestratorConfig)
 	if err != nil {
-		logging.Logger.Fatal("Failed to create runtime orchestrator", zap.Error(err))
+		return nil, err
 	}
 
 	// Initialize orchestrator
 	if err := runtimeOrchestrator.Initialize(ctx); err != nil {
-		logging.Logger.Fatal("Failed to initialize runtime orchestrator", zap.Error(err))
+		return nil, fmt.Errorf("failed to initialize runtime orchestrator: %w", err)
 	}
 
+	return runtimeOrchestrator, nil
+}
+
+// createServer creates and configures the HTTP server
+func createServer(pluginSystem *FlexCorePluginSystem, runtimeOrchestrator *orchestrator.RuntimeOrchestrator) *http.Server {
 	// Set Gin mode based on environment
 	if config.Current.App.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -376,19 +428,10 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	// Setup basic routes
-	setupBasicRoutes(router)
+	// Setup routes
+	setupRoutes(router, pluginSystem, runtimeOrchestrator)
 
-	// Setup orchestrator routes
-	orchestratorController := httpcontrollers.NewOrchestratorController(runtimeOrchestrator)
-	v1 := router.Group("/api/v1")
-	orchestratorController.RegisterRoutes(v1)
-	
-	// Setup plugin management routes
-	pluginController := httpcontrollers.NewPluginController(pluginSystem.pluginLoader, pluginSystem.communicationBus)
-	pluginController.RegisterRoutes(v1)
-
-	server := &http.Server{
+	return &http.Server{
 		Addr:              fmt.Sprintf(":%d", config.Current.App.Port),
 		Handler:           router,
 		ReadHeaderTimeout: 10 * time.Second, // Prevent Slowloris attacks
@@ -396,35 +439,70 @@ func main() {
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
+}
 
-	// Start server in goroutine
+// setupRoutes sets up all HTTP routes
+func setupRoutes(router *gin.Engine, pluginSystem *FlexCorePluginSystem, runtimeOrchestrator *orchestrator.RuntimeOrchestrator) {
+	// Setup basic routes
+	setupBasicRoutes(router)
+
+	// Setup API routes
+	v1 := router.Group("/api/v1")
+
+	// Setup orchestrator routes
+	orchestratorController := httpcontrollers.NewOrchestratorController(runtimeOrchestrator)
+	orchestratorController.RegisterRoutes(v1)
+
+	// Setup plugin management routes
+	pluginController := httpcontrollers.NewPluginController(pluginSystem.pluginLoader, pluginSystem.communicationBus)
+	pluginController.RegisterRoutes(v1)
+}
+
+// startServer starts the HTTP server in a goroutine
+func startServer(server *http.Server) {
 	go func() {
 		logging.Logger.Info("Server starting", zap.String("address", server.Addr))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logging.Logger.Fatal("Server failed", zap.Error(err))
 		}
 	}()
+}
 
-	// Wait for shutdown signal
-	<-ctx.Done()
-
-	// Graceful shutdown
+// performGracefulShutdown performs graceful shutdown of all components
+func performGracefulShutdown(server *http.Server, pluginSystem *FlexCorePluginSystem) {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeoutSeconds*time.Second)
 	defer shutdownCancel()
 
 	logging.Logger.Info("Shutting down server...")
-	
+
 	// Shutdown plugin system first
 	if pluginSystem != nil {
 		if err := pluginSystem.shutdown(); err != nil {
 			logging.Logger.Error("Plugin system shutdown error", zap.Error(err))
 		}
 	}
-	
+
 	// Shutdown HTTP server
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logging.Logger.Error("Server shutdown error", zap.Error(err))
 	} else {
 		logging.Logger.Info("Server shut down gracefully")
+	}
+}
+
+func main() {
+	flags := parseFlags()
+
+	// Handle command line flags
+	if handleCommandLineFlags(flags) {
+		return
+	}
+
+	// Start application
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := runApplication(ctx, cancel, flags); err != nil {
+		handleFatalError(err, cancel)
 	}
 }

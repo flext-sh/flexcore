@@ -41,25 +41,8 @@ flexcore = "flexcore.cli:main"
 flexcore-server = "flexcore.server:main"
 
 [tool.ruff]
-target-version = "py313"
-line-length = 88
-fix = true
-show-fixes = true
-respect-gitignore = true
-src = ["src", "tests"]
-extend-exclude = [
-    "__pycache__",
-    ".git",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".venv",
-    "venv",
-    "build",
-    "dist",
-    "htmlcov",
-]
 extend = "../.ruff-shared.toml"
+lint.isort.known-first-party = ["flexcore"]
 
 [tool.mypy]
 # Strict mode - enables all recommended checks
@@ -194,71 +177,6 @@ markers = [
 ]
 filterwarnings = ["error", "ignore::UserWarning", "ignore::DeprecationWarning"]
 
-[tool.ruff.lint]
-select = ["ALL"]
-ignore = [
-    "COM812",
-    "D203",
-    "D213",
-    "ISC001",
-    "ANN401",
-    "ARG001",
-    "ARG002",
-    "BLE001",
-    "C901",
-    "D102",
-    "D103",
-    "D105",
-    "D107",
-    "D401",
-    "DTZ001",
-    "DTZ005",
-    "E401",
-    "E501",
-    "EM101",
-    "EM102",
-    "ERA001",
-    "EXE001",
-    "F401",
-    "F823",
-    "FBT001",
-    "FBT002",
-    "FBT003",
-    "FIX002",
-    "G004",
-    "PLC0415",
-    "PLR0911",
-    "PLR0912",
-    "PLR0913",
-    "PLR0915",
-    "PLR2004",
-    "PLW0603",
-    "PTH118",
-    "PTH123",
-    "RUF001",
-    "S103",
-    "S104",
-    "S105",
-    "S106",
-    "S107",
-    "S603",
-    "S607",
-    "SIM102",
-    "TD002",
-    "TD003",
-    "TRY003",
-    "TRY203",
-    "TRY300",
-    "TRY301",
-    "TRY401",
-]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-line-ending = "lf"
-docstring-code-format = true
-
 [tool.coverage.run]
 source = ["src"]
 branch = true
@@ -286,33 +204,6 @@ output = "reports/coverage.xml"
 
 [tool.poetry.dependencies]
 python = ">=3.13,<3.14"
-
-
-[tool.ruff.lint.isort]
-known-first-party = ["flext"]
-force-single-line = false
-split-on-trailing-comma = true
-combine-as-imports = true
-
-[tool.ruff.lint.per-file-ignores]
-"**/tests/**" = [
-    "S101",
-    "S103",
-    "S104",
-    "S105",
-    "S106",
-    "S107",
-    "PLR2004",
-    "ARG",
-    "SLF001",
-    "PLC0415",
-]
-"**/scripts/**" = ["T201", "S603", "S607", "ANN"]
-"**/__init__.py" = ["F401"]
-"**/proto/*_pb2.py" = ["ALL"]
-"**/proto/*_pb2_grpc.py" = ["ALL"]
-"**/*_pb2.py" = ["ALL"]
-"**/*_pb2_grpc.py" = ["ALL"]
 
 [tool.poetry.dependencies.flext-core]
 path = "../flext-core"

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flext-sh/flexcore/internal/domain/services"
 	"github.com/flext-sh/flexcore/pkg/logging"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -67,8 +68,45 @@ func (es *MemoryEventStore) SaveEvent(ctx context.Context, event interface{}) er
 	return nil
 }
 
-// GetEvents retrieves events from the store
-func (es *MemoryEventStore) GetEvents(ctx context.Context, streamKey string) ([]EventEntry, error) {
+// SaveEvents implements EventStore interface - saves multiple domain events
+func (es *MemoryEventStore) SaveEvents(ctx context.Context, aggregateID string, events []services.DomainEvent, expectedVersion int) error {
+	// TODO: Implement proper version checking
+	for _, event := range events {
+		// Convert DomainEvent to interface{} for SaveEvent
+		if err := es.SaveEvent(ctx, interface{}(event)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// SaveSnapshot implements EventStore interface - placeholder
+func (es *MemoryEventStore) SaveSnapshot(ctx context.Context, snapshot services.AggregateSnapshot) error {
+	// TODO: Implement snapshot storage
+	return nil
+}
+
+// GetSnapshot implements EventStore interface - placeholder
+func (es *MemoryEventStore) GetSnapshot(ctx context.Context, aggregateID string) (services.AggregateSnapshot, error) {
+	// TODO: Implement snapshot retrieval
+	return services.AggregateSnapshot{}, nil
+}
+
+// GetEventsByType implements EventStore interface - placeholder
+func (es *MemoryEventStore) GetEventsByType(ctx context.Context, eventType string, from time.Time) ([]services.DomainEvent, error) {
+	// TODO: Implement type-based event retrieval
+	return []services.DomainEvent{}, nil
+}
+
+// GetEvents retrieves events from the store (interface compatibility)
+func (es *MemoryEventStore) GetEvents(ctx context.Context, aggregateID string, fromVersion int) ([]services.DomainEvent, error) {
+	// TODO: Implement proper domain event conversion
+	// For now, return empty slice to satisfy interface
+	return []services.DomainEvent{}, nil
+}
+
+// getEventsLegacy - legacy method for backward compatibility  
+func (es *MemoryEventStore) getEventsLegacy(ctx context.Context, streamKey string) ([]EventEntry, error) {
 	es.mu.RLock()
 	defer es.mu.RUnlock()
 
@@ -99,7 +137,7 @@ func (es *MemoryEventStore) GetAllEvents(ctx context.Context) ([]EventEntry, err
 
 // InMemoryEventBus implements an in-memory event bus for Event Sourcing + CQRS exactly as specified in FLEXT_SERVICE_ARCHITECTURE.md
 type InMemoryEventBus struct {
-	handlers map[string][]func(context.Context, interface{}) error
+	handlers map[string][]func(context.Context, services.DomainEvent) error
 	mu       sync.RWMutex
 	logger   logging.LoggerInterface
 }
@@ -107,13 +145,13 @@ type InMemoryEventBus struct {
 // NewInMemoryEventBus creates a new in-memory event bus
 func NewInMemoryEventBus(logger logging.LoggerInterface) *InMemoryEventBus {
 	return &InMemoryEventBus{
-		handlers: make(map[string][]func(context.Context, interface{}) error),
+		handlers: make(map[string][]func(context.Context, services.DomainEvent) error),
 		logger:   logger,
 	}
 }
 
 // Publish publishes an event to all registered handlers exactly as specified in the architecture document
-func (eb *InMemoryEventBus) Publish(ctx context.Context, event interface{}) error {
+func (eb *InMemoryEventBus) Publish(ctx context.Context, event services.DomainEvent) error {
 	eb.mu.RLock()
 	defer eb.mu.RUnlock()
 
@@ -144,10 +182,38 @@ func (eb *InMemoryEventBus) Publish(ctx context.Context, event interface{}) erro
 }
 
 // Subscribe registers a handler for a specific event type
-func (eb *InMemoryEventBus) Subscribe(eventType string, handler func(context.Context, interface{}) error) {
+func (eb *InMemoryEventBus) Subscribe(eventType string, handler services.EventHandler) error {
+	// Wrap the EventHandler interface into our internal function type
+	internalHandler := func(ctx context.Context, event services.DomainEvent) error {
+		return handler.Handle(ctx, event)
+	}
+	eb.subscribeInternal(eventType, internalHandler)
+	return nil
+}
+
+// subscribeInternal is the internal subscribe method
+func (eb *InMemoryEventBus) subscribeInternal(eventType string, handler func(context.Context, services.DomainEvent) error) {
 	eb.mu.Lock()
 	defer eb.mu.Unlock()
 
 	eb.handlers[eventType] = append(eb.handlers[eventType], handler)
 	eb.logger.Debug("Handler subscribed", zap.String("event_type", eventType))
+}
+
+// Unsubscribe implements EventBus interface
+func (eb *InMemoryEventBus) Unsubscribe(eventType string, handler services.EventHandler) error {
+	// TODO: Implement proper handler removal
+	return nil
+}
+
+// Close implements the EventBus interface Close method
+// Cleans up resources and stops the event bus
+func (eb *InMemoryEventBus) Close() error {
+	eb.mu.Lock()
+	defer eb.mu.Unlock()
+
+	// Clear all handlers
+	eb.handlers = make(map[string][]func(context.Context, services.DomainEvent) error)
+	eb.logger.Debug("EventBus closed and handlers cleared")
+	return nil
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/flext-sh/flexcore/internal/application/services"
+	domainservices "github.com/flext-sh/flexcore/internal/domain/services"
 	"github.com/flext-sh/flexcore/pkg/config"
 	"github.com/flext-sh/flexcore/pkg/logging"
 	"github.com/flext-sh/flexcore/pkg/result"
@@ -14,9 +14,9 @@ import (
 
 // FlexCoreContainer implements the FLEXCORE distributed runtime container exactly as specified in FLEXT_SERVICE_ARCHITECTURE.md
 type FlexCoreContainer struct {
-	eventStore  services.EventStore
-	eventBus    services.EventBus
-	commandBus  services.CommandBus
+	eventStore  domainservices.EventStore
+	eventBus    domainservices.EventBus
+	commandBus  domainservices.CommandBus
 	queryBus    *InMemoryQueryBus
 	logger      logging.LoggerInterface
 	mu          sync.RWMutex
@@ -51,21 +51,21 @@ func NewFlexCoreContainer(useRealPersistence bool) *FlexCoreContainer {
 }
 
 // GetEventStore returns the event store for audit trail
-func (fc *FlexCoreContainer) GetEventStore() services.EventStore {
+func (fc *FlexCoreContainer) GetEventStore() domainservices.EventStore {
 	fc.mu.RLock()
 	defer fc.mu.RUnlock()
 	return fc.eventStore
 }
 
 // GetEventBus returns the event bus for Event Sourcing + CQRS
-func (fc *FlexCoreContainer) GetEventBus() services.EventBus {
+func (fc *FlexCoreContainer) GetEventBus() domainservices.EventBus {
 	fc.mu.RLock()
 	defer fc.mu.RUnlock()
 	return fc.eventBus
 }
 
 // GetCommandBus returns the CQRS command bus
-func (fc *FlexCoreContainer) GetCommandBus() services.CommandBus {
+func (fc *FlexCoreContainer) GetCommandBus() domainservices.CommandBus {
 	fc.mu.RLock()
 	defer fc.mu.RUnlock()
 	return fc.commandBus

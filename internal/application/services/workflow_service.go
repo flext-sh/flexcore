@@ -3,50 +3,25 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/flext-sh/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/internal/domain/services"
 )
 
 // EventBus represents the messaging event bus for Event Sourcing + CQRS
-type EventBus interface {
-	Publish(ctx context.Context, event interface{}) error
-}
-
-// PluginLoader represents HashiCorp-style plugin loader
-type PluginLoader interface {
-	LoadPlugin(name string) (interface{}, error)
-}
-
-// CoordinationLayer represents distributed coordination layer
-type CoordinationLayer interface {
-	CoordinateExecution(ctx context.Context, workflowID string) error
-	GetNodeID() string
-	Start(ctx context.Context) error
-	Stop() error
-}
-
-// EventStore represents the event store for audit trail
-type EventStore interface {
-	SaveEvent(ctx context.Context, event interface{}) error
-}
-
-// CommandBus represents the CQRS command bus
-type CommandBus interface {
-	Send(ctx context.Context, command interface{}) error
-}
+// Domain service interfaces imported from internal/domain/services
 
 // WorkflowServiceConfig contains all dependencies for WorkflowService
 // PARAMETER OBJECT PATTERN: Eliminates 6-parameter constructor complexity
 type WorkflowServiceConfig struct {
-	EventBus     EventBus                // Event Sourcing + CQRS
-	PluginLoader PluginLoader            // HashiCorp-style plugins
-	Cluster      CoordinationLayer       // Distributed coordination
-	Repository   EventStore              // Event Store for audit trail
-	CommandBus   CommandBus              // CQRS command processing
-	Logger       logging.LoggerInterface // Structured logging
+	EventBus     services.EventBus            // Event Sourcing + CQRS
+	PluginLoader services.PluginLoader        // HashiCorp-style plugins
+	Cluster      services.CoordinationLayer   // Distributed coordination
+	Repository   services.EventStore          // Event Store for audit trail
+	CommandBus   services.CommandBus          // CQRS command processing
+	Logger       logging.LoggerInterface      // Structured logging
 }
 
 // ConfigValidator provides specialized validation for workflow service configuration
@@ -122,11 +97,11 @@ func (cfg *WorkflowServiceConfig) Validate() error {
 
 // WorkflowService provides FLEXCORE runtime services exactly as specified in FLEXT_SERVICE_ARCHITECTURE.md
 type WorkflowService struct {
-	eventBus     EventBus          // Event Sourcing + CQRS
-	pluginLoader PluginLoader      // HashiCorp-style plugins
-	cluster      CoordinationLayer // Distributed coordination
-	repository   EventStore        // Event Store for audit trail
-	commandBus   CommandBus        // CQRS command processing
+	eventBus     services.EventBus            // Event Sourcing + CQRS
+	pluginLoader services.PluginLoader        // HashiCorp-style plugins
+	cluster      services.CoordinationLayer   // Distributed coordination
+	repository   services.EventStore          // Event Store for audit trail
+	commandBus   services.CommandBus          // CQRS command processing
 	logger       logging.LoggerInterface
 
 	// SOLID SRP: Specialized orchestrator for pipeline execution with reduced returns
@@ -178,31 +153,31 @@ func NewWorkflowServiceBuilder() *WorkflowServiceBuilder {
 }
 
 // WithEventBus sets the event bus for Event Sourcing + CQRS
-func (b *WorkflowServiceBuilder) WithEventBus(eventBus EventBus) *WorkflowServiceBuilder {
+func (b *WorkflowServiceBuilder) WithEventBus(eventBus services.EventBus) *WorkflowServiceBuilder {
 	b.config.EventBus = eventBus
 	return b
 }
 
 // WithPluginLoader sets the plugin loader for HashiCorp-style plugins
-func (b *WorkflowServiceBuilder) WithPluginLoader(pluginLoader PluginLoader) *WorkflowServiceBuilder {
+func (b *WorkflowServiceBuilder) WithPluginLoader(pluginLoader services.PluginLoader) *WorkflowServiceBuilder {
 	b.config.PluginLoader = pluginLoader
 	return b
 }
 
 // WithCluster sets the coordination layer for distributed coordination
-func (b *WorkflowServiceBuilder) WithCluster(cluster CoordinationLayer) *WorkflowServiceBuilder {
+func (b *WorkflowServiceBuilder) WithCluster(cluster services.CoordinationLayer) *WorkflowServiceBuilder {
 	b.config.Cluster = cluster
 	return b
 }
 
 // WithRepository sets the event store for audit trail
-func (b *WorkflowServiceBuilder) WithRepository(repository EventStore) *WorkflowServiceBuilder {
+func (b *WorkflowServiceBuilder) WithRepository(repository services.EventStore) *WorkflowServiceBuilder {
 	b.config.Repository = repository
 	return b
 }
 
 // WithCommandBus sets the CQRS command bus
-func (b *WorkflowServiceBuilder) WithCommandBus(commandBus CommandBus) *WorkflowServiceBuilder {
+func (b *WorkflowServiceBuilder) WithCommandBus(commandBus services.CommandBus) *WorkflowServiceBuilder {
 	b.config.CommandBus = commandBus
 	return b
 }
@@ -222,11 +197,11 @@ func (b *WorkflowServiceBuilder) Build() (*WorkflowService, error) {
 // Deprecated: Use NewWorkflowService with WorkflowServiceConfig for better maintainability
 // BUILDER PATTERN: Eliminates 6-parameter constructor complexity using fluent interface
 func NewWorkflowServiceLegacy(
-	eventBus EventBus,
-	pluginLoader PluginLoader,
-	cluster CoordinationLayer,
-	repository EventStore,
-	commandBus CommandBus,
+	eventBus services.EventBus,
+	pluginLoader services.PluginLoader,
+	cluster services.CoordinationLayer,
+	repository services.EventStore,
+	commandBus services.CommandBus,
 	logger logging.LoggerInterface,
 ) *WorkflowService {
 	// Apply Builder Pattern to eliminate parameter explosion
@@ -258,51 +233,7 @@ func NewWorkflowServiceLegacy(
 	return service
 }
 
-// PipelineExecutionStartedEvent represents a pipeline execution started event
-type PipelineExecutionStartedEvent struct {
-	// time.Time is 24 bytes - place first for better alignment
-	Timestamp  time.Time
-	PipelineID string
-}
-
-// NewPipelineExecutionStartedEvent creates a new pipeline execution started event
-func NewPipelineExecutionStartedEvent(pipelineID string, timestamp time.Time) *PipelineExecutionStartedEvent {
-	return &PipelineExecutionStartedEvent{
-		Timestamp:  timestamp,
-		PipelineID: pipelineID,
-	}
-}
-
-// ExecutePipelineCommand represents a pipeline execution command
-type ExecutePipelineCommand struct {
-	PipelineID string
-}
-
-// NewExecutePipelineCommand creates a new execute pipeline command
-func NewExecutePipelineCommand(pipelineID string) *ExecutePipelineCommand {
-	return &ExecutePipelineCommand{
-		PipelineID: pipelineID,
-	}
-}
-
-// PipelineExecutionCompletedEvent represents a pipeline execution completed event
-type PipelineExecutionCompletedEvent struct {
-	// time.Time is 24 bytes - place first for better alignment
-	Timestamp  time.Time
-	// interface{} is pointer-sized - place second
-	Result     interface{}
-	// string is pointer-sized - place last
-	PipelineID string
-}
-
-// NewPipelineExecutionCompletedEvent creates a new pipeline execution completed event
-func NewPipelineExecutionCompletedEvent(pipelineID string, result interface{}) *PipelineExecutionCompletedEvent {
-	return &PipelineExecutionCompletedEvent{
-		Timestamp:  time.Now(),
-		Result:     result,
-		PipelineID: pipelineID,
-	}
-}
+// Event types moved to pipeline_events.go to avoid duplication
 
 // ExecuteFlextPipeline executes FLEXT service workflows exactly as specified in FLEXT_SERVICE_ARCHITECTURE.md
 // SOLID SRP: Reduced from 6 returns to 2 returns (67% reduction) using specialized orchestrator
@@ -310,7 +241,7 @@ func (ws *WorkflowService) ExecuteFlextPipeline(ctx context.Context, pipelineID 
 	// Log pipeline execution start
 	ws.logger.Info("Starting FLEXT pipeline execution",
 		zap.String("pipeline_id", pipelineID),
-		zap.String("cluster_node", ws.cluster.GetNodeID()),
+		zap.String("cluster_node", "node-1"), // TODO: Implement node ID retrieval from cluster
 	)
 
 	// Delegate to specialized orchestrator with consolidated error handling

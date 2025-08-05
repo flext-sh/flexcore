@@ -53,7 +53,7 @@ func (e *FlexError) Location() string {
 
 // New creates a new FlexError
 func New(message string) *FlexError {
-	file, line := getCaller(callerDepth)
+	file, line := getCaller()
 	return &FlexError{
 		message: message,
 		file:    file,
@@ -63,7 +63,7 @@ func New(message string) *FlexError {
 
 // Newf creates a new FlexError with formatted message
 func Newf(format string, args ...interface{}) *FlexError {
-	file, line := getCaller(callerDepth)
+	file, line := getCaller()
 	return &FlexError{
 		message: fmt.Sprintf(format, args...),
 		file:    file,
@@ -77,7 +77,7 @@ func Wrap(err error, message string) *FlexError {
 		return nil
 	}
 
-	file, line := getCaller(callerDepth)
+	file, line := getCaller()
 	return &FlexError{
 		message: message,
 		cause:   err,
@@ -92,7 +92,7 @@ func Wrapf(err error, format string, args ...interface{}) *FlexError {
 		return nil
 	}
 
-	file, line := getCaller(callerDepth)
+	file, line := getCaller()
 	return &FlexError{
 		message: fmt.Sprintf(format, args...),
 		cause:   err,
@@ -113,9 +113,10 @@ func (e *FlexError) WithOperation(operation string) *FlexError {
 	return e
 }
 
-// getCaller returns the file and line of the caller
-func getCaller(skip int) (file string, line int) {
-	_, file, line, ok := runtime.Caller(skip)
+// getCaller returns the file and line of the caller at the standard depth
+// SOLID SRP: Single responsibility for getting caller info with constant depth
+func getCaller() (file string, line int) {
+	_, file, line, ok := runtime.Caller(callerDepth)
 	if !ok {
 		return unknownFile, 0
 	}

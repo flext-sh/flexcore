@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/flext-sh/flexcore/internal/domain/services"
 	"github.com/flext-sh/flexcore/pkg/logging"
 	"go.uber.org/zap"
 )
@@ -28,7 +29,13 @@ func NewInMemoryCommandBus(logger logging.LoggerInterface) *InMemoryCommandBus {
 }
 
 // Send sends a command to its registered handler exactly as specified in the architecture document
-func (cb *InMemoryCommandBus) Send(ctx context.Context, command interface{}) error {
+func (cb *InMemoryCommandBus) Send(ctx context.Context, command services.Command) error {
+	// Convert services.Command to interface{} for internal processing
+	return cb.sendInternal(ctx, interface{}(command))
+}
+
+// sendInternal handles internal command processing
+func (cb *InMemoryCommandBus) sendInternal(ctx context.Context, command interface{}) error {
 	cb.mu.RLock()
 	defer cb.mu.RUnlock()
 
@@ -65,6 +72,30 @@ func (cb *InMemoryCommandBus) RegisterHandler(commandType string, handler Comman
 
 	cb.handlers[commandType] = handler
 	cb.logger.Debug("Command handler registered", zap.String("command_type", commandType))
+}
+
+// Register implements the CommandBus interface Register method
+func (cb *InMemoryCommandBus) Register(commandType string, handler services.CommandHandler) error {
+	// Convert services.CommandHandler to internal CommandHandler
+	internalHandler := func(ctx context.Context, cmd interface{}) error {
+		// Convert interface{} to services.Command
+		if command, ok := cmd.(services.Command); ok {
+			return handler.Handle(ctx, command)
+		}
+		return fmt.Errorf("invalid command type")
+	}
+	cb.RegisterHandler(commandType, internalHandler)
+	return nil
+}
+
+// Unregister implements the CommandBus interface Unregister method
+func (cb *InMemoryCommandBus) Unregister(commandType string) error {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+
+	delete(cb.handlers, commandType)
+	cb.logger.Debug("Command handler unregistered", zap.String("command_type", commandType))
+	return nil
 }
 
 // QueryHandler represents a function that handles a specific query

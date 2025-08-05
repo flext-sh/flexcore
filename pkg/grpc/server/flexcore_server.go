@@ -19,6 +19,13 @@ import (
 	"github.com/flext-sh/flexcore/pkg/runtimes"
 )
 
+// Health status constants
+const (
+	HealthStatusHealthy  = "healthy"
+	HealthStatusDegraded = "degraded"
+	HealthStatusUnhealthy = "unhealthy"
+)
+
 // FlexCoreServer implements the FlexCore gRPC service
 type FlexCoreServer struct {
 	pb.UnimplementedFlexCoreManagementServer
@@ -131,7 +138,7 @@ func (s *FlexCoreServer) ListRuntimes(ctx context.Context, req *pb.ListRuntimesR
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to list runtimes: %v", err))
 	}
 
-	var pbStatuses []*pb.RuntimeStatus
+	pbStatuses := make([]*pb.RuntimeStatus, 0, len(runtimeStatuses))
 	for _, runtimeStatus := range runtimeStatuses {
 		pbStatuses = append(pbStatuses, convertRuntimeStatus(runtimeStatus))
 	}
@@ -209,7 +216,7 @@ func (s *FlexCoreServer) ListWorkflows(ctx context.Context, req *pb.ListWorkflow
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to list workflows: %v", err))
 	}
 
-	var pbWorkflows []*pb.WorkflowStatus
+	pbWorkflows := make([]*pb.WorkflowStatus, 0, len(workflows))
 	for _, workflow := range workflows {
 		// Apply filters
 		if req.RuntimeType != "" && workflow.RuntimeType != req.RuntimeType {
@@ -281,18 +288,18 @@ func (s *FlexCoreServer) GetHealthStatus(ctx context.Context, req *pb.HealthStat
 		logging.F("include_windmill", req.IncludeWindmill))
 
 	response := &pb.HealthStatusResponse{
-		FlexcoreStatus: "healthy",
+		FlexcoreStatus: HealthStatusHealthy,
 		CheckTime:      timestamppb.Now(),
 	}
 
 	// Check Windmill health
 	if req.IncludeWindmill {
 		if err := s.windmillEngine.HealthCheck(ctx); err != nil {
-			response.WindmillStatus = "unhealthy"
+			response.WindmillStatus = HealthStatusUnhealthy
 			response.Errors = append(response.Errors, fmt.Sprintf("Windmill health check failed: %v", err))
-			response.OverallStatus = "degraded"
+			response.OverallStatus = HealthStatusDegraded
 		} else {
-			response.WindmillStatus = "healthy"
+			response.WindmillStatus = HealthStatusHealthy
 		}
 	}
 
@@ -301,7 +308,7 @@ func (s *FlexCoreServer) GetHealthStatus(ctx context.Context, req *pb.HealthStat
 		runtimeStatuses, err := s.runtimeManager.ListRuntimes(ctx, false)
 		if err != nil {
 			response.Errors = append(response.Errors, fmt.Sprintf("Failed to get runtime status: %v", err))
-			response.OverallStatus = "degraded"
+			response.OverallStatus = HealthStatusDegraded
 		} else {
 			for _, runtimeStatus := range runtimeStatuses {
 				healthStatus := &pb.RuntimeHealthStatus{
@@ -309,9 +316,9 @@ func (s *FlexCoreServer) GetHealthStatus(ctx context.Context, req *pb.HealthStat
 					Status:      runtimeStatus.Status,
 					LastCheck:   timestamppb.New(time.Now()), // Use current time as placeholder
 				}
-				if runtimeStatus.Status != "healthy" {
+				if runtimeStatus.Status != HealthStatusHealthy {
 					healthStatus.Message = "Runtime health check failed"
-					response.OverallStatus = "degraded"
+					response.OverallStatus = HealthStatusDegraded
 				}
 				response.RuntimeHealth = append(response.RuntimeHealth, healthStatus)
 			}
@@ -321,9 +328,9 @@ func (s *FlexCoreServer) GetHealthStatus(ctx context.Context, req *pb.HealthStat
 	// Set overall status if not already set
 	if response.OverallStatus == "" {
 		if len(response.Errors) > 0 {
-			response.OverallStatus = "degraded"
+			response.OverallStatus = HealthStatusDegraded
 		} else {
-			response.OverallStatus = "healthy"
+			response.OverallStatus = HealthStatusHealthy
 		}
 	}
 

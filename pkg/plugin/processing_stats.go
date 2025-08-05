@@ -56,7 +56,7 @@ func (sm *StatisticsManager) SaveStatsToFile(filename string) error {
 		return err
 	}
 
-	return os.WriteFile(filename, statsData, 0644)
+	return os.WriteFile(filename, statsData, 0o644)
 }
 
 // CalculateFinalStatistics computes final metrics like rates and percentages

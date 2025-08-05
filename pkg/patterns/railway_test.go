@@ -282,7 +282,7 @@ func TestRailway_Validate(t *testing.T) {
 			name:    "success validate pass",
 			initial: Success("valid"),
 			predicate: func(s string) bool {
-				return len(s) > 0
+				return s != ""
 			},
 			errorMsg: "string should not be empty",
 			wantErr:  false,
@@ -292,7 +292,7 @@ func TestRailway_Validate(t *testing.T) {
 			name:    "success validate fail",
 			initial: Success(""),
 			predicate: func(s string) bool {
-				return len(s) > 0
+				return s != ""
 			},
 			errorMsg: "string should not be empty",
 			wantErr:  true,

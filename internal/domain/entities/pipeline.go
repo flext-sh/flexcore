@@ -827,14 +827,14 @@ func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
 //	Concurrent step additions should be coordinated at the application layer.
-func (p *Pipeline) AddStep(step PipelineStep) result.Result[bool] {
+func (p *Pipeline) AddStep(step *PipelineStep) result.Result[bool] {
 	if step.Name == "" {
 		return result.Failure[bool](errors.ValidationError("step name cannot be empty"))
 	}
 
 	// Check for duplicate step names
-	for _, existingStep := range p.Steps {
-		if existingStep.Name == step.Name {
+	for i := range p.Steps {
+		if p.Steps[i].Name == step.Name {
 			return result.Failure[bool](errors.AlreadyExistsError("step with name " + step.Name))
 		}
 	}
@@ -846,7 +846,7 @@ func (p *Pipeline) AddStep(step PipelineStep) result.Result[bool] {
 		}
 	}
 
-	p.Steps = append(p.Steps, step)
+	p.Steps = append(p.Steps, *step)
 	p.Touch()
 
 	// Raise domain event
