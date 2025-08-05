@@ -116,7 +116,13 @@ func NewWindmillEngine(baseURL, authToken string, runtimeMgr runtimes.RuntimeMan
 				DisableCompression:  true,
 			},
 		},
-		logger:      func() *zap.Logger { logger, _ := zap.NewProduction(); return logger }(),
+		logger:      func() *zap.Logger { 
+			logger, err := zap.NewProduction()
+			if err != nil {
+				return zap.NewNop()
+			}
+			return logger
+		}(),
 		runtimeMgr:  runtimeMgr,
 		workflows:   make(map[string]*WorkflowDefinition),
 		activeJobs:  make(map[string]*WorkflowExecution),
@@ -414,7 +420,10 @@ func (w *WindmillEngine) cancelJob(ctx context.Context, jobID string) error {
 		return fmt.Errorf("job %s not found or already completed", jobID)
 	}
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("Windmill API error (status %d): failed to read response body", resp.StatusCode)
+		}
 		return fmt.Errorf("Windmill API error (status %d): %s", resp.StatusCode, string(body))
 	}
 
@@ -443,8 +452,27 @@ func (w *WindmillEngine) HealthCheck(ctx context.Context) error {
 // GetEngineInfo returns information about the Windmill engine
 func (w *WindmillEngine) GetEngineInfo() map[string]interface{} {
 	w.metrics.mu.RLock()
-	metrics := *w.metrics
+	metrics := EngineMetrics{
+		TotalJobs:        w.metrics.TotalJobs,
+		ActiveJobs:       w.metrics.ActiveJobs,
+		CompletedJobs:    w.metrics.CompletedJobs,
+		FailedJobs:       w.metrics.FailedJobs,
+		AverageExecution: w.metrics.AverageExecution,
+		LastJobExecution: w.metrics.LastJobExecution,
+		EngineStartTime:  w.metrics.EngineStartTime,
+	}
 	w.metrics.mu.RUnlock()
+
+	// Create a metrics copy without the mutex for safe serialization
+	metricsMap := map[string]interface{}{
+		"total_jobs":         metrics.TotalJobs,
+		"active_jobs":        metrics.ActiveJobs,
+		"completed_jobs":     metrics.CompletedJobs,
+		"failed_jobs":        metrics.FailedJobs,
+		"average_execution":  metrics.AverageExecution,
+		"last_job_execution": metrics.LastJobExecution,
+		"engine_start_time":  metrics.EngineStartTime,
+	}
 
 	return map[string]interface{}{
 		"engine":    "windmill",
@@ -452,7 +480,7 @@ func (w *WindmillEngine) GetEngineInfo() map[string]interface{} {
 		"version":   "2.0.0",
 		"status":    "operational",
 		"uptime":    time.Since(metrics.EngineStartTime).String(),
-		"metrics":   metrics,
+		"metrics":   metricsMap,
 		"features": []string{
 			"workflow_orchestration",
 			"job_scheduling", 
@@ -717,7 +745,14 @@ func (w *WindmillEngine) GetEngineMetrics() *EngineMetrics {
 	w.metrics.mu.RLock()
 	defer w.metrics.mu.RUnlock()
 
-	// Create a copy to avoid race conditions
-	metrics := *w.metrics
-	return &metrics
+	// Create a copy to avoid race conditions, excluding the mutex
+	return &EngineMetrics{
+		TotalJobs:        w.metrics.TotalJobs,
+		ActiveJobs:       w.metrics.ActiveJobs,
+		CompletedJobs:    w.metrics.CompletedJobs,
+		FailedJobs:       w.metrics.FailedJobs,
+		AverageExecution: w.metrics.AverageExecution,
+		LastJobExecution: w.metrics.LastJobExecution,
+		EngineStartTime:  w.metrics.EngineStartTime,
+	}
 }

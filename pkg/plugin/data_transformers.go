@@ -34,7 +34,7 @@ func NewDataTransformationService(config map[string]interface{}) *DataTransforma
 
 // ProcessArray processes array data with filtering and enrichment
 // DRY PRINCIPLE: Eliminates 49-line duplication (mass=207) between two main.go files
-func (dts *DataTransformationService) ProcessArray(data []interface{}) ([]interface{}, map[string]interface{}) {
+func (dts *DataTransformationService) ProcessArray(data []interface{}) (processedData []interface{}, metadata map[string]interface{}) {
 	processed := make([]interface{}, 0, len(data))
 	filtered := 0
 	enriched := 0
@@ -64,7 +64,9 @@ func (dts *DataTransformationService) ProcessArray(data []interface{}) ([]interf
 		"success_rate":   float64(len(processed)) / float64(len(data)),
 	}
 
-	return processed, stats
+	processedData = processed
+	metadata = stats
+	return
 }
 
 // ProcessMap processes map data with field transformations
@@ -78,13 +80,14 @@ func (dts *DataTransformationService) ProcessMap(data map[string]interface{}) ma
 			continue
 		}
 
-		// Apply field transformations
-		if stringValue, ok := value.(string); ok {
-			processed[key] = dts.ProcessString(stringValue)
-		} else if arrayValue, ok := value.([]interface{}); ok {
-			processedArray, _ := dts.ProcessArray(arrayValue)
+		// Apply field transformations using type switch
+		switch v := value.(type) {
+		case string:
+			processed[key] = dts.ProcessString(v)
+		case []interface{}:
+			processedArray, _ := dts.ProcessArray(v)
 			processed[key] = processedArray
-		} else {
+		default:
 			processed[key] = value
 		}
 	}

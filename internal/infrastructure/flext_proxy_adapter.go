@@ -108,8 +108,15 @@ func (fpa *FlextProxyAdapter) simulatePluginList(ctx context.Context) (interface
 
 // simulatePluginExecution simulates FLEXT plugin execution
 func (fpa *FlextProxyAdapter) simulatePluginExecution(ctx context.Context, params map[string]interface{}) (interface{}, error) {
-	pluginName, _ := params["plugin_name"].(string)
-	command, _ := params["command"].(string)
+	pluginName, ok := params["plugin_name"].(string)
+	if !ok {
+		pluginName = "default-plugin"
+	}
+	
+	command, ok := params["command"].(string)
+	if !ok {
+		command = "default-command"
+	}
 
 	if pluginName == "" {
 		pluginName = "meltano"

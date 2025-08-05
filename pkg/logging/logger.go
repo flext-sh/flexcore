@@ -57,6 +57,36 @@ func Initialize(environment, level string) error {
 	return nil
 }
 
+// GetLogger returns the global logger instance
+func GetLogger() *zap.Logger {
+	if Logger == nil {
+		// Initialize with default config if not already initialized
+		if err := Initialize("development", "info"); err != nil {
+			// Fallback to no-op logger if initialization fails
+			Logger = zap.NewNop()
+		}
+	}
+	return Logger
+}
+
+// F creates a zap.Field for logging (compatibility helper)
+func F(key string, value interface{}) zap.Field {
+	switch v := value.(type) {
+	case string:
+		return zap.String(key, v)
+	case int:
+		return zap.Int(key, v)
+	case int64:
+		return zap.Int64(key, v)
+	case bool:
+		return zap.Bool(key, v)
+	case error:
+		return zap.Error(v)
+	default:
+		return zap.Any(key, v)
+	}
+}
+
 // Close flushes and closes the logger
 func Close() error {
 	if Logger != nil {

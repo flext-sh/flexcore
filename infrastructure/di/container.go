@@ -12,9 +12,10 @@ import (
 
 // Container represents a dependency injection container
 type Container struct {
-	mu        sync.RWMutex
+	// Maps should be placed first for better memory alignment
 	services  map[string]*serviceDescriptor
 	instances map[string]interface{}
+	mu        sync.RWMutex
 }
 
 // serviceDescriptor describes how to create a service

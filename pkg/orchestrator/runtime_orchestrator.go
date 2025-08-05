@@ -332,18 +332,43 @@ func (ro *RuntimeOrchestrator) CancelOrchestration(ctx context.Context, orchestr
 // GetOrchestratorInfo returns orchestrator information and metrics
 func (ro *RuntimeOrchestrator) GetOrchestratorInfo() map[string]interface{} {
 	ro.metrics.mu.RLock()
-	metrics := *ro.metrics
+	metrics := OrchestratorMetrics{
+		TotalOrchestrations:     ro.metrics.TotalOrchestrations,
+		ActiveOrchestrations:    ro.metrics.ActiveOrchestrations,
+		CompletedOrchestrations: ro.metrics.CompletedOrchestrations,
+		FailedOrchestrations:    ro.metrics.FailedOrchestrations,
+		AverageExecution:        ro.metrics.AverageExecution,
+		RuntimeDistribution:     make(map[string]int64),
+		LastOrchestration:       ro.metrics.LastOrchestration,
+		OrchestratorStartTime:   ro.metrics.OrchestratorStartTime,
+	}
+	// Copy the map to avoid mutex issues
+	for k, v := range ro.metrics.RuntimeDistribution {
+		metrics.RuntimeDistribution[k] = v
+	}
 	ro.metrics.mu.RUnlock()
 
 	windmillInfo := ro.windmillEngine.GetEngineInfo()
 	runtimeTypes := ro.runtimeManager.GetRuntimeTypes()
+
+	// Create a metrics copy without the mutex for safe serialization
+	metricsMap := map[string]interface{}{
+		"total_orchestrations":     metrics.TotalOrchestrations,
+		"active_orchestrations":    metrics.ActiveOrchestrations,
+		"completed_orchestrations": metrics.CompletedOrchestrations,
+		"failed_orchestrations":    metrics.FailedOrchestrations,
+		"average_execution":        metrics.AverageExecution,
+		"runtime_distribution":     metrics.RuntimeDistribution,
+		"last_orchestration":       metrics.LastOrchestration,
+		"orchestrator_start_time":  metrics.OrchestratorStartTime,
+	}
 
 	return map[string]interface{}{
 		"orchestrator": "FlexCore Runtime Orchestrator",
 		"version":      "2.0.0",
 		"status":       "operational",
 		"uptime":       time.Since(metrics.OrchestratorStartTime).String(),
-		"metrics":      metrics,
+		"metrics":      metricsMap,
 		"windmill":     windmillInfo,
 		"runtimes":     runtimeTypes,
 		"config": map[string]interface{}{

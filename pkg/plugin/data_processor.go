@@ -64,7 +64,7 @@ func (dp *BaseDataProcessor) createBaseResult() map[string]interface{} {
 }
 
 // processInputData processes input data based on type - Strategy pattern
-func (dp *BaseDataProcessor) processInputData(input map[string]interface{}, result map[string]interface{}) {
+func (dp *BaseDataProcessor) processInputData(input, result map[string]interface{}) {
 	data, ok := input["data"]
 	if !ok {
 		return

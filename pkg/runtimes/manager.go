@@ -12,14 +12,21 @@ import (
 
 // DefaultRuntimeManager is the default implementation of RuntimeManager
 type DefaultRuntimeManager struct {
-	mu       sync.RWMutex
-	runtimes map[string]Runtime
+	// Pointer fields first
 	logger   *zap.Logger
+	// Map field after (pointer-sized)
+	runtimes map[string]Runtime
+	// Mutex last (larger struct)
+	mu       sync.RWMutex
 }
 
 // NewDefaultRuntimeManager creates a new default runtime manager
 func NewDefaultRuntimeManager() *DefaultRuntimeManager {
-	logger, _ := zap.NewProduction()
+	logger, err := zap.NewProduction()
+	if err != nil {
+		// Fallback to no-op logger if production logger fails
+		logger = zap.NewNop()
+	}
 	return &DefaultRuntimeManager{
 		runtimes: make(map[string]Runtime),
 		logger:   logger,
@@ -68,7 +75,12 @@ func (rm *DefaultRuntimeManager) GetRuntimeTypes() []string {
 }
 
 // StartRuntime starts a runtime
-func (rm *DefaultRuntimeManager) StartRuntime(ctx context.Context, runtimeType string, config map[string]string, capabilities []string) (*RuntimeStatus, error) {
+func (rm *DefaultRuntimeManager) StartRuntime(
+	ctx context.Context,
+	runtimeType string,
+	config map[string]string,
+	capabilities []string,
+) (*RuntimeStatus, error) {
 	runtime, err := rm.GetRuntime(runtimeType)
 	if err != nil {
 		return nil, err
@@ -82,7 +94,12 @@ func (rm *DefaultRuntimeManager) StartRuntime(ctx context.Context, runtimeType s
 }
 
 // StopRuntime stops a runtime
-func (rm *DefaultRuntimeManager) StopRuntime(ctx context.Context, runtimeType string, force bool, timeout time.Duration) error {
+func (rm *DefaultRuntimeManager) StopRuntime(
+	ctx context.Context,
+	runtimeType string,
+	force bool,
+	timeout time.Duration,
+) error {
 	runtime, err := rm.GetRuntime(runtimeType)
 	if err != nil {
 		return err

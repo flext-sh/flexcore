@@ -21,7 +21,7 @@ type PluginMainConfig struct {
 
 // SetupPluginLogging configures logging for a plugin with consistent format
 // DRY PRINCIPLE: Eliminates 26-line duplication (mass=110) in main() functions
-func SetupPluginLogging(config PluginMainConfig) {
+func SetupPluginLogging(config *PluginMainConfig) {
 	log.SetPrefix(config.LogPrefix)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 	log.Println(config.StartMsg)
@@ -29,7 +29,7 @@ func SetupPluginLogging(config PluginMainConfig) {
 
 // HandleVersionFlag checks for --version flag and exits if found
 // DRY PRINCIPLE: Eliminates version handling duplication across plugins
-func HandleVersionFlag(config PluginMainConfig) {
+func HandleVersionFlag(config *PluginMainConfig) {
 	if len(os.Args) > 1 && os.Args[1] == "--version" {
 		log.Printf("%s %s", config.PluginName, config.Version)
 		os.Exit(0)
@@ -79,11 +79,11 @@ func ServePluginWithHandshake(pluginMap map[string]hashicorpPlugin.Plugin, hands
 func RunPluginMain(config PluginMainConfig, pluginFactory func() hashicorpPlugin.Plugin) {
 	// Handle version flag first (exits if found)
 	if config.Version != "" {
-		HandleVersionFlag(config)
+		HandleVersionFlag(&config)
 	}
 
 	// Setup logging
-	SetupPluginLogging(config)
+	SetupPluginLogging(&config)
 
 	// Create plugin map
 	pluginMap := map[string]hashicorpPlugin.Plugin{

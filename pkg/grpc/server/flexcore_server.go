@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"go.uber.org/zap"
 
 	pb "github.com/flext-sh/flexcore/api/grpc/v1"
 	"github.com/flext-sh/flexcore/pkg/logging"
@@ -23,7 +24,7 @@ type FlexCoreServer struct {
 	pb.UnimplementedFlexCoreManagementServer
 	windmillEngine *engine.WindmillEngine
 	runtimeManager runtimes.RuntimeManager
-	logger         logging.Logger
+	logger         *zap.Logger
 	instanceID     string
 	startTime      time.Time
 }
@@ -33,7 +34,7 @@ func NewFlexCoreServer(windmillEngine *engine.WindmillEngine, runtimeManager run
 	return &FlexCoreServer{
 		windmillEngine: windmillEngine,
 		runtimeManager: runtimeManager,
-		logger:         logging.GetLogger().With(logging.F("component", "flexcore_grpc_server")),
+		logger:         logging.GetLogger().With(zap.String("component", "flexcore_grpc_server")),
 		instanceID:     instanceID,
 		startTime:      time.Now(),
 	}
@@ -111,13 +112,13 @@ func (s *FlexCoreServer) StopRuntime(ctx context.Context, req *pb.StopRuntimeReq
 func (s *FlexCoreServer) GetRuntimeStatus(ctx context.Context, req *pb.RuntimeStatusRequest) (*pb.RuntimeStatusResponse, error) {
 	s.logger.Debug("Getting runtime status", logging.F("runtime_type", req.RuntimeType))
 
-	status, err := s.runtimeManager.GetRuntimeStatus(ctx, req.RuntimeType)
+	runtimeStatus, err := s.runtimeManager.GetRuntimeStatus(ctx, req.RuntimeType)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Runtime %s not found: %v", req.RuntimeType, err))
 	}
 
 	return &pb.RuntimeStatusResponse{
-		Status: convertRuntimeStatus(status),
+		Status: convertRuntimeStatus(runtimeStatus),
 	}, nil
 }
 
@@ -187,13 +188,13 @@ func (s *FlexCoreServer) ExecuteWorkflow(ctx context.Context, req *pb.WorkflowEx
 func (s *FlexCoreServer) GetWorkflowStatus(ctx context.Context, req *pb.WorkflowStatusRequest) (*pb.WorkflowStatusResponse, error) {
 	s.logger.Debug("Getting workflow status", logging.F("job_id", req.JobId))
 
-	status, err := s.windmillEngine.GetWorkflowStatus(ctx, req.JobId)
+	workflowStatus, err := s.windmillEngine.GetWorkflowStatus(ctx, req.JobId)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Workflow %s not found: %v", req.JobId, err))
 	}
 
 	return &pb.WorkflowStatusResponse{
-		Status: convertWindmillWorkflowStatus(status),
+		Status: convertWindmillWorkflowStatus(workflowStatus),
 	}, nil
 }
 
@@ -305,10 +306,10 @@ func (s *FlexCoreServer) GetHealthStatus(ctx context.Context, req *pb.HealthStat
 			for _, runtimeStatus := range runtimeStatuses {
 				healthStatus := &pb.RuntimeHealthStatus{
 					RuntimeType: runtimeStatus.RuntimeType,
-					Status:      runtimeStatus.Health,
-					LastCheck:   timestamppb.New(runtimeStatus.LastCheck),
+					Status:      runtimeStatus.Status,
+					LastCheck:   timestamppb.New(time.Now()), // Use current time as placeholder
 				}
-				if runtimeStatus.Health != "healthy" {
+				if runtimeStatus.Status != "healthy" {
 					healthStatus.Message = "Runtime health check failed"
 					response.OverallStatus = "degraded"
 				}

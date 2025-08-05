@@ -139,11 +139,8 @@ func (pp *PostgresProcessor) Execute(ctx context.Context, input map[string]inter
 	return pp.ExecuteWithStats(ctx, input, processorType)
 }
 
-// DRY PRINCIPLE: executeQuery moved to BasePostgresProcessor.ExecuteQuery to eliminate 39-line duplication (mass=209)
-// Delegate to shared implementation
-func (pp *PostgresProcessor) executeQuery(ctx context.Context, query string) ([]map[string]interface{}, error) {
-	return pp.ExecuteQuery(ctx, query)
-}
+// Removed executeQuery - redundant wrapper eliminated (SOLID SRP + DRY principle)
+// All calls now use BasePostgresProcessor.ExecuteQuery directly
 
 // GetInfo returns plugin metadata
 func (pp *PostgresProcessor) GetInfo() plugin.PluginInfo {
@@ -222,9 +219,8 @@ func (rpc *PostgresProcessorRPC) Execute(args map[string]interface{}, resp *map[
 	return nil
 }
 
-func (rpc *PostgresProcessorRPC) GetInfo(_ interface{}, resp *plugin.PluginInfo) error {
+func (rpc *PostgresProcessorRPC) GetInfo(_ interface{}, resp *plugin.PluginInfo) {
 	*resp = rpc.Impl.GetInfo()
-	return nil
 }
 
 func (rpc *PostgresProcessorRPC) HealthCheck(args interface{}, resp *error) error {

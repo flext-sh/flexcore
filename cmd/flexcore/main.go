@@ -20,6 +20,7 @@ import (
 	"github.com/flext-sh/flexcore/pkg/orchestrator"
 	"github.com/flext-sh/flext/pkg/plugins/communication"
 	"github.com/flext-sh/flext/pkg/plugins/loader"
+	flextlogging "github.com/flext-sh/flext/pkg/logging"
 )
 
 // Version information (set by build flags)
@@ -41,35 +42,45 @@ type FlexCorePluginSystem struct {
 	loadedPlugins    map[string]interface{} // map[pluginID]plugin
 }
 
-// simpleLoggerWrapper adapts zap.Logger to the logging interface needed by plugins
+// simpleLoggerWrapper adapts zap.Logger to the FLEXT logging interface
 type simpleLoggerWrapper struct {
 	logger *zap.Logger
 }
 
-func (w *simpleLoggerWrapper) Info(msg string, fields ...interface{}) {
-	w.logger.Info(msg, w.convertFields(fields...)...)
+func (w *simpleLoggerWrapper) Debug(msg string) {
+	w.logger.Debug(msg)
 }
 
-func (w *simpleLoggerWrapper) Error(msg string, fields ...interface{}) {
-	w.logger.Error(msg, w.convertFields(fields...)...)
-}
-
-func (w *simpleLoggerWrapper) Warn(msg string, fields ...interface{}) {
-	w.logger.Warn(msg, w.convertFields(fields...)...)
-}
-
-func (w *simpleLoggerWrapper) Debug(msg string, fields ...interface{}) {
-	w.logger.Debug(msg, w.convertFields(fields...)...)
-}
-
-func (w *simpleLoggerWrapper) convertFields(fields ...interface{}) []zap.Field {
-	zapFields := make([]zap.Field, 0, len(fields)/2)
-	for i := 0; i < len(fields)-1; i += 2 {
-		if key, ok := fields[i].(string); ok {
-			zapFields = append(zapFields, zap.Any(key, fields[i+1]))
-		}
+func (w *simpleLoggerWrapper) Info(msg string, fields ...flextlogging.Field) {
+	zapFields := make([]zap.Field, len(fields))
+	for i, field := range fields {
+		zapFields[i] = zap.Any(field.Key, field.Value)
 	}
-	return zapFields
+	w.logger.Info(msg, zapFields...)
+}
+
+func (w *simpleLoggerWrapper) Warn(msg string, fields ...flextlogging.Field) {
+	zapFields := make([]zap.Field, len(fields))
+	for i, field := range fields {
+		zapFields[i] = zap.Any(field.Key, field.Value)
+	}
+	w.logger.Warn(msg, zapFields...)
+}
+
+func (w *simpleLoggerWrapper) Error(msg string, fields ...flextlogging.Field) {
+	zapFields := make([]zap.Field, len(fields))
+	for i, field := range fields {
+		zapFields[i] = zap.Any(field.Key, field.Value)
+	}
+	w.logger.Error(msg, zapFields...)
+}
+
+func (w *simpleLoggerWrapper) Fatal(msg string, fields ...flextlogging.Field) {
+	zapFields := make([]zap.Field, len(fields))
+	for i, field := range fields {
+		zapFields[i] = zap.Any(field.Key, field.Value)
+	}
+	w.logger.Fatal(msg, zapFields...)
 }
 
 // CommandLineFlags represents command line flags
@@ -151,7 +162,8 @@ func initializePluginSystem() (*FlexCorePluginSystem, error) {
 
 	communicationBus, err := communication.NewFlexCoreCommunicationBus(redisURL, nodeID, nodeURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create communication bus: %w", err)
+		logging.Logger.Warn("Failed to create communication bus - running in standalone mode", zap.Error(err))
+		communicationBus = nil
 	}
 
 	// Initialize plugin loader (without registry - FlexCore receives plugins from FLEXT Service)
@@ -159,9 +171,13 @@ func initializePluginSystem() (*FlexCorePluginSystem, error) {
 	loggerWrapper := &simpleLoggerWrapper{logger: logging.Logger}
 	pluginLoader := loader.NewPluginLoader(nil, communicationBus, loggerWrapper)
 
-	// Start communication bus
-	if err := communicationBus.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start communication bus: %w", err)
+	// Start communication bus (optional - graceful degradation if Redis unavailable)  
+	if communicationBus != nil {
+		if err := communicationBus.Start(); err != nil {
+			logging.Logger.Warn("Communication bus failed to start - running in standalone mode", zap.Error(err))
+			// Continue without communication bus for standalone operation
+			communicationBus = nil
+		}
 	}
 
 	// Register as FlexCore node in the network
@@ -181,6 +197,11 @@ func initializePluginSystem() (*FlexCorePluginSystem, error) {
 
 // registerFlexCoreNode registers this FlexCore instance in the distributed network
 func registerFlexCoreNode(communicationBus *communication.FlexCoreCommunicationBus) error {
+	if communicationBus == nil {
+		logging.Logger.Info("📡 Running in standalone mode - no distributed network registration")
+		return nil
+	}
+	
 	// Register FlexCore node with capabilities
 	capabilities := []string{
 		"plugin.meltano.runtime",
@@ -192,8 +213,14 @@ func registerFlexCoreNode(communicationBus *communication.FlexCoreCommunicationB
 		"distributed.computing",
 	}
 
+	nodes := communicationBus.DiscoverNodes()
+	nodeID := "flexcore-standalone"
+	if len(nodes) > 0 {
+		nodeID = nodes[0].NodeID
+	}
+
 	nodeInfo := communication.FlexCoreNodeInfo{
-		NodeID:       communicationBus.DiscoverNodes()[0].NodeID, // Get own node ID
+		NodeID:       nodeID,
 		NodeURL:      "http://localhost:8080",
 		Status:       "healthy",
 		LastSeen:     time.Now(),
@@ -356,6 +383,10 @@ func main() {
 	orchestratorController := httpcontrollers.NewOrchestratorController(runtimeOrchestrator)
 	v1 := router.Group("/api/v1")
 	orchestratorController.RegisterRoutes(v1)
+	
+	// Setup plugin management routes
+	pluginController := httpcontrollers.NewPluginController(pluginSystem.pluginLoader, pluginSystem.communicationBus)
+	pluginController.RegisterRoutes(v1)
 
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", config.Current.App.Port),
