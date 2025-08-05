@@ -10,6 +10,13 @@ import (
 	"github.com/flext-sh/flexcore/pkg/result"
 )
 
+const (
+	// EntityTypeCommand represents command entity type
+	EntityTypeCommand = "command"
+	// EntityTypeQuery represents query entity type
+	EntityTypeQuery = "query"
+)
+
 // BusValidationUtilities provides shared validation logic for CQRS buses
 // DRY PRINCIPLE: Eliminates massive duplication between command and query buses
 type BusValidationUtilities struct{}
@@ -54,7 +61,10 @@ type HandlerValidationOrchestrator struct {
 
 // createValidationOrchestrator creates a specialized validation orchestrator
 // SOLID SRP: Factory method for creating specialized orchestrators
-func (utils *BusValidationUtilities) createValidationOrchestrator(handlerType reflect.Type, interfaceType string) *HandlerValidationOrchestrator {
+func (utils *BusValidationUtilities) createValidationOrchestrator(
+	handlerType reflect.Type,
+	interfaceType string,
+) *HandlerValidationOrchestrator {
 	return &HandlerValidationOrchestrator{
 		handlerType:   handlerType,
 		interfaceType: interfaceType,
@@ -107,9 +117,13 @@ func (orchestrator *HandlerValidationOrchestrator) validateHandleMethodExists() 
 
 // validateMethodSignature validates method signature correctness
 // SOLID SRP: Single responsibility for method signature validation
-func (orchestrator *HandlerValidationOrchestrator) validateMethodSignature(methodType reflect.Type) result.Result[bool] {
+func (orchestrator *HandlerValidationOrchestrator) validateMethodSignature(
+	methodType reflect.Type,
+) result.Result[bool] {
 	if methodType.NumIn() != 3 || methodType.NumOut() != 1 {
-		return result.Failure[bool](errors.ValidationError("Handle method must have signature: Handle(ctx context.Context, cmd/query T) result.Result[R]"))
+		errMsg := "Handle method must have signature: " +
+			"Handle(ctx context.Context, cmd/query T) result.Result[R]"
+		return result.Failure[bool](errors.ValidationError(errMsg))
 	}
 	return result.Success(true)
 }
@@ -172,7 +186,7 @@ func (utils *BusValidationUtilities) ValidateHandlerRegistration(
 
 	// Validate entity type name
 	switch entityTypeName {
-	case "command", "query":
+	case EntityTypeCommand, EntityTypeQuery:
 		// Valid entity types
 	default:
 		return errors.ValidationError("unsupported entity type: " + entityTypeName)
@@ -182,9 +196,9 @@ func (utils *BusValidationUtilities) ValidateHandlerRegistration(
 	handlerType := reflect.TypeOf(handler)
 	var isValid bool
 	switch entityTypeName {
-	case "command":
+	case EntityTypeCommand:
 		isValid = utils.IsValidCommandHandler(handlerType)
-	case "query":
+	case EntityTypeQuery:
 		isValid = utils.IsValidQueryHandler(handlerType)
 	}
 
@@ -262,16 +276,20 @@ func (utils *BusValidationUtilities) CheckHandlerExists(
 
 // BusRegistrationResult represents result of handler registration
 type BusRegistrationResult struct {
+	// Pointer-sized fields first for better memory alignment
 	EntityType string
-	Success    bool
 	Error      error
+	// Smaller fields last
+	Success    bool
 }
 
 // BusExecutionContext provides context for bus operations
 type BusExecutionContext struct {
-	EntityType string
+	// Interface{} fields are pointer-sized, place first for better alignment
 	Handler    interface{}
 	Entity     interface{}
+	// String field last
+	EntityType string
 }
 
 // CreateExecutionContext creates execution context for bus operations

@@ -238,7 +238,7 @@ func Failure[T any](err error) Result[T] {
 //
 //	Safe for concurrent use as it creates new Result instances.
 func FailureWithMessage[T any](message string) Result[T] {
-	return Failure[T](fmt.Errorf(message))
+	return Failure[T](fmt.Errorf("%s", message))
 }
 
 // IsSuccess returns true if the Result represents a successful operation.

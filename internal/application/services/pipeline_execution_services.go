@@ -296,7 +296,11 @@ func NewPipelineResultHandler(repository EventStore) *PipelineResultHandler {
 }
 
 // StoreExecutionResult stores pipeline execution completion event
-func (prh *PipelineResultHandler) StoreExecutionResult(ctx context.Context, pipelineID string, result interface{}) error {
+func (prh *PipelineResultHandler) StoreExecutionResult(
+	ctx context.Context,
+	pipelineID string,
+	result interface{},
+) error {
 	completionEvent := NewPipelineExecutionCompletedEvent(pipelineID, result)
 	return prh.repository.SaveEvent(ctx, completionEvent)
 }

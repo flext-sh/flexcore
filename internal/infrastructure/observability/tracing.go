@@ -296,14 +296,24 @@ func (t *Tracer) exportSpan(span *Span) {
 // generateTraceID generates a new trace ID
 func (t *Tracer) generateTraceID() string {
 	bytes := make([]byte, traceIDBytes)
-	rand.Read(bytes)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to deterministic bytes on crypto failure
+		for i := range bytes {
+			bytes[i] = byte(i)
+		}
+	}
 	return hex.EncodeToString(bytes)
 }
 
 // generateSpanID generates a new span ID
 func (t *Tracer) generateSpanID() string {
 	bytes := make([]byte, spanIDBytes)
-	rand.Read(bytes)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to deterministic bytes on crypto failure
+		for i := range bytes {
+			bytes[i] = byte(i)
+		}
+	}
 	return hex.EncodeToString(bytes)
 }
 

@@ -29,7 +29,11 @@ func NewFlextHTTPAdapter(flextBaseURL string, logger logging.LoggerInterface) *F
 	}
 
 	// Create zap logger for the orchestrator (since LoggerInterface doesn't expose the underlying zap logger)
-	zapLogger, _ := zap.NewProduction()
+	zapLogger, err := zap.NewProduction()
+	if err != nil {
+		// Fallback to no-op logger if production logger fails
+		zapLogger = zap.NewNop()
+	}
 
 	// Create specialized plugin orchestrator with SOLID SRP principles
 	orchestrator := NewPluginExecutionOrchestrator(flextBaseURL, httpClient, zapLogger)

@@ -39,7 +39,9 @@ import (
 
 	"github.com/flext-sh/flexcore/internal/domain/entities"
 	"github.com/flext-sh/flexcore/pkg/errors"
+	"github.com/flext-sh/flexcore/pkg/logging"
 	"github.com/flext-sh/flexcore/pkg/result"
+	"go.uber.org/zap"
 )
 
 // CreatePipelineCommand represents a command to create a new data processing pipeline.
@@ -437,7 +439,11 @@ func NewCreatePipelineCommandHandler(repository PipelineRepository, eventBus Eve
 //   - Result Pattern: Explicit error handling with typed results
 func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command CreatePipelineCommand) result.Result[interface{}] {
 	// Check if pipeline with same name already exists
-	if existingPipeline, _ := h.repository.FindByName(ctx, command.Name); existingPipeline != nil {
+	existingPipeline, err := h.repository.FindByName(ctx, command.Name)
+	if err != nil {
+		return result.Failure[interface{}](errors.Wrap(err, "failed to check for existing pipeline"))
+	}
+	if existingPipeline != nil {
 		return result.Failure[interface{}](errors.AlreadyExistsError("pipeline with name " + command.Name))
 	}
 
@@ -1147,6 +1153,7 @@ type PipelineExecutionOrchestrator struct {
 	repository     PipelineRepository // Data access for pipeline loading and state persistence
 	eventBus       EventBus           // Event publishing for execution lifecycle events
 	workflowEngine WorkflowEngine     // External workflow system for actual execution
+	logger         *zap.Logger        // Structured logging for pipeline execution tracking
 }
 
 // NewPipelineExecutionOrchestrator creates a new execution orchestrator with dependencies.
@@ -1204,6 +1211,7 @@ func NewPipelineExecutionOrchestrator(repository PipelineRepository, eventBus Ev
 		repository:     repository,
 		eventBus:       eventBus,
 		workflowEngine: workflowEngine,
+		logger:         logging.GetLogger(),
 	}
 }
 
@@ -1523,7 +1531,10 @@ func (o *PipelineExecutionOrchestrator) startWorkflowWithRecovery(ctx context.Co
 	if err != nil {
 		// Recovery: Mark pipeline as failed and save state
 		execCtx.Pipeline.Fail("failed to start workflow: " + err.Error())
-		o.repository.Save(ctx, execCtx.Pipeline)
+		if saveErr := o.repository.Save(ctx, execCtx.Pipeline); saveErr != nil {
+			// Log save error but don't override original error
+			o.logger.Error("Failed to save pipeline during recovery", zap.Error(saveErr))
+		}
 		return "", errors.Wrap(err, "failed to start workflow")
 	}
 
@@ -1535,7 +1546,11 @@ func (o *PipelineExecutionOrchestrator) startWorkflowWithRecovery(ctx context.Co
 func (o *PipelineExecutionOrchestrator) publishDomainEvents(ctx context.Context, pipeline *entities.Pipeline) {
 	for _, event := range pipeline.DomainEvents() {
 		if err := o.eventBus.Publish(ctx, event); err != nil {
-			// Log error but don't fail the command
+			// Log error but don't fail the command - events are eventually consistent
+			o.logger.Error("Failed to publish domain event", 
+				zap.String("event_type", event.EventType()),
+				zap.String("pipeline_id", pipeline.ID.String()),
+				zap.Error(err))
 		}
 	}
 }

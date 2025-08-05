@@ -47,6 +47,15 @@ func handlePagedPipelineQuery(ctx context.Context, repository PipelineRepository
 	return result.Success(pagedResult)
 }
 
+// handleParameterizedPipelineQuery handles parameterized pipeline queries with validation (eliminates duplication)
+func handleParameterizedPipelineQuery(ctx context.Context, repository PipelineRepository, pagedQuery PagedQuery, parameter, parameterName string, queryFunc PipelineQueryFunc, errorMsg string) result.Result[PagedResult[*entities.Pipeline]] {
+	if parameter == "" {
+		return result.Failure[PagedResult[*entities.Pipeline]](errors.ValidationError(parameterName + " cannot be empty"))
+	}
+
+	return handlePagedPipelineQuery(ctx, repository, pagedQuery, queryFunc, errorMsg)
+}
+
 // GetPipelineQuery represents a query to get a pipeline by ID
 type GetPipelineQuery struct {
 	BaseQuery
@@ -205,13 +214,11 @@ func NewListPipelinesByOwnerQueryHandler(repository PipelineRepository) *ListPip
 
 // Handle handles the query
 func (h *ListPipelinesByOwnerQueryHandler) Handle(ctx context.Context, query ListPipelinesByOwnerQuery) result.Result[PagedResult[*entities.Pipeline]] {
-	if query.Owner == "" {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.ValidationError("owner cannot be empty"))
-	}
-
-	return handlePagedPipelineQuery(ctx, h.repository, query.PagedQuery, func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error) {
-		return h.repository.FindByOwner(ctx, query.Owner, pageSize, offset)
-	}, "failed to list pipelines by owner")
+	return handleParameterizedPipelineQuery(ctx, h.repository, query.PagedQuery, 
+		query.Owner, "owner", 
+		func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error) {
+			return h.repository.FindByOwner(ctx, query.Owner, pageSize, offset)
+		}, "failed to list pipelines by owner")
 }
 
 // ListPipelinesByTagQuery represents a query to list pipelines by tag
@@ -242,13 +249,11 @@ func NewListPipelinesByTagQueryHandler(repository PipelineRepository) *ListPipel
 
 // Handle handles the query
 func (h *ListPipelinesByTagQueryHandler) Handle(ctx context.Context, query ListPipelinesByTagQuery) result.Result[PagedResult[*entities.Pipeline]] {
-	if query.Tag == "" {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.ValidationError("tag cannot be empty"))
-	}
-
-	return handlePagedPipelineQuery(ctx, h.repository, query.PagedQuery, func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error) {
-		return h.repository.FindByTag(ctx, query.Tag, pageSize, offset)
-	}, "failed to list pipelines by tag")
+	return handleParameterizedPipelineQuery(ctx, h.repository, query.PagedQuery, 
+		query.Tag, "tag", 
+		func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error) {
+			return h.repository.FindByTag(ctx, query.Tag, pageSize, offset)
+		}, "failed to list pipelines by tag")
 }
 
 // ListPipelinesByStatusQuery represents a query to list pipelines by status
@@ -340,11 +345,26 @@ func (h *GetPipelineStatisticsQueryHandler) Handle(ctx context.Context, query Ge
 		return result.Failure[PipelineStatistics](errors.Wrap(err, "failed to get pipeline count"))
 	}
 
-	// Get counts by status
-	activePipelines, _ := h.repository.FindByStatus(ctx, entities.PipelineStatusActive, 1000, 0)
-	runningPipelines, _ := h.repository.FindByStatus(ctx, entities.PipelineStatusRunning, 1000, 0)
-	failedPipelines, _ := h.repository.FindByStatus(ctx, entities.PipelineStatusFailed, 1000, 0)
-	completedPipelines, _ := h.repository.FindByStatus(ctx, entities.PipelineStatusCompleted, 1000, 0)
+	// Get counts by status - fallback to 0 on error for statistics
+	activePipelines, err := h.repository.FindByStatus(ctx, entities.PipelineStatusActive, 1000, 0)
+	if err != nil {
+		activePipelines = []*entities.Pipeline{}
+	}
+	
+	runningPipelines, err := h.repository.FindByStatus(ctx, entities.PipelineStatusRunning, 1000, 0)
+	if err != nil {
+		runningPipelines = []*entities.Pipeline{}
+	}
+	
+	failedPipelines, err := h.repository.FindByStatus(ctx, entities.PipelineStatusFailed, 1000, 0)
+	if err != nil {
+		failedPipelines = []*entities.Pipeline{}
+	}
+	
+	completedPipelines, err := h.repository.FindByStatus(ctx, entities.PipelineStatusCompleted, 1000, 0)
+	if err != nil {
+		completedPipelines = []*entities.Pipeline{}
+	}
 
 	stats := PipelineStatistics{
 		TotalPipelines:       totalCount,

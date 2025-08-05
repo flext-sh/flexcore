@@ -74,7 +74,7 @@ func TestSetDefaults(t *testing.T) {
 
 		// Test app defaults
 		assert.Equal(t, "flexcore", V.GetString("app.name"))
-		assert.Equal(t, "0.9.0", V.GetString("app.version"))
+		assert.Equal(t, "1.0.0", V.GetString("app.version"))
 		assert.Equal(t, "development", V.GetString("app.environment"))
 		assert.True(t, V.GetBool("app.debug"))
 		assert.Equal(t, 8080, V.GetInt("app.port"))
@@ -292,14 +292,14 @@ func TestConfigStructure(t *testing.T) {
 		assert.NotEmpty(t, Current.Database.SSLMode)
 		assert.Greater(t, Current.Database.MaxOpenConns, 0)
 		assert.Greater(t, Current.Database.MaxIdleConns, 0)
-		assert.Greater(t, Current.Database.MaxLifetime, 0)
+		assert.Greater(t, Current.Database.MaxLifetime, time.Duration(0))
 
 		// Test Server section
 		assert.NotEmpty(t, Current.Server.Host)
 		assert.Greater(t, Current.Server.Port, 0)
-		assert.Greater(t, Current.Server.ReadTimeout, 0)
-		assert.Greater(t, Current.Server.WriteTimeout, 0)
-		assert.Greater(t, Current.Server.IdleTimeout, 0)
+		assert.Greater(t, Current.Server.ReadTimeout, time.Duration(0))
+		assert.Greater(t, Current.Server.WriteTimeout, time.Duration(0))
+		assert.Greater(t, Current.Server.IdleTimeout, time.Duration(0))
 
 		// Test Logging section
 		assert.NotEmpty(t, Current.Logging.Level)

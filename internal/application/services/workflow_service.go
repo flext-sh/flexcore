@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/flext-sh/flexcore/pkg/logging"
 	"go.uber.org/zap"
+
+	"github.com/flext-sh/flexcore/pkg/logging"
 )
 
 // EventBus represents the messaging event bus for Event Sourcing + CQRS
@@ -68,12 +69,36 @@ type ValidationRule struct {
 // SOLID OCP: Open for extension with new validation rules
 func (v *ConfigValidator) getValidationRules() []ValidationRule {
 	return []ValidationRule{
-		{"EventBus", func(cfg *WorkflowServiceConfig) bool { return cfg.EventBus != nil }, "EventBus is required"},
-		{"PluginLoader", func(cfg *WorkflowServiceConfig) bool { return cfg.PluginLoader != nil }, "PluginLoader is required"},
-		{"Cluster", func(cfg *WorkflowServiceConfig) bool { return cfg.Cluster != nil }, "Cluster coordination layer is required"},
-		{"Repository", func(cfg *WorkflowServiceConfig) bool { return cfg.Repository != nil }, "Repository (EventStore) is required"},
-		{"CommandBus", func(cfg *WorkflowServiceConfig) bool { return cfg.CommandBus != nil }, "CommandBus is required"},
-		{"Logger", func(cfg *WorkflowServiceConfig) bool { return cfg.Logger != nil }, "Logger is required"},
+		{
+			"EventBus",
+			func(cfg *WorkflowServiceConfig) bool { return cfg.EventBus != nil },
+			"EventBus is required",
+		},
+		{
+			"PluginLoader",
+			func(cfg *WorkflowServiceConfig) bool { return cfg.PluginLoader != nil },
+			"PluginLoader is required",
+		},
+		{
+			"Cluster",
+			func(cfg *WorkflowServiceConfig) bool { return cfg.Cluster != nil },
+			"Cluster coordination layer is required",
+		},
+		{
+			"Repository",
+			func(cfg *WorkflowServiceConfig) bool { return cfg.Repository != nil },
+			"Repository (EventStore) is required",
+		},
+		{
+			"CommandBus",
+			func(cfg *WorkflowServiceConfig) bool { return cfg.CommandBus != nil },
+			"CommandBus is required",
+		},
+		{
+			"Logger",
+			func(cfg *WorkflowServiceConfig) bool { return cfg.Logger != nil },
+			"Logger is required",
+		},
 	}
 }
 
@@ -82,7 +107,7 @@ func (v *ConfigValidator) getValidationRules() []ValidationRule {
 func (v *ConfigValidator) ValidateConfig(cfg *WorkflowServiceConfig) error {
 	for _, rule := range v.getValidationRules() {
 		if !rule.Check(cfg) {
-			return fmt.Errorf(rule.Message)
+			return fmt.Errorf("%s", rule.Message)
 		}
 	}
 	return nil
@@ -194,7 +219,7 @@ func (b *WorkflowServiceBuilder) Build() (*WorkflowService, error) {
 }
 
 // NewWorkflowServiceLegacy maintains backward compatibility using Builder Pattern
-// DEPRECATED: Use NewWorkflowService with WorkflowServiceConfig for better maintainability
+// Deprecated: Use NewWorkflowService with WorkflowServiceConfig for better maintainability
 // BUILDER PATTERN: Eliminates 6-parameter constructor complexity using fluent interface
 func NewWorkflowServiceLegacy(
 	eventBus EventBus,
@@ -235,15 +260,16 @@ func NewWorkflowServiceLegacy(
 
 // PipelineExecutionStartedEvent represents a pipeline execution started event
 type PipelineExecutionStartedEvent struct {
-	PipelineID string
+	// time.Time is 24 bytes - place first for better alignment
 	Timestamp  time.Time
+	PipelineID string
 }
 
 // NewPipelineExecutionStartedEvent creates a new pipeline execution started event
 func NewPipelineExecutionStartedEvent(pipelineID string, timestamp time.Time) *PipelineExecutionStartedEvent {
 	return &PipelineExecutionStartedEvent{
-		PipelineID: pipelineID,
 		Timestamp:  timestamp,
+		PipelineID: pipelineID,
 	}
 }
 
@@ -261,17 +287,20 @@ func NewExecutePipelineCommand(pipelineID string) *ExecutePipelineCommand {
 
 // PipelineExecutionCompletedEvent represents a pipeline execution completed event
 type PipelineExecutionCompletedEvent struct {
-	PipelineID string
-	Result     interface{}
+	// time.Time is 24 bytes - place first for better alignment
 	Timestamp  time.Time
+	// interface{} is pointer-sized - place second
+	Result     interface{}
+	// string is pointer-sized - place last
+	PipelineID string
 }
 
 // NewPipelineExecutionCompletedEvent creates a new pipeline execution completed event
 func NewPipelineExecutionCompletedEvent(pipelineID string, result interface{}) *PipelineExecutionCompletedEvent {
 	return &PipelineExecutionCompletedEvent{
-		PipelineID: pipelineID,
-		Result:     result,
 		Timestamp:  time.Now(),
+		Result:     result,
+		PipelineID: pipelineID,
 	}
 }
 
@@ -300,18 +329,3 @@ func (ws *WorkflowService) ExecuteFlextPipeline(ctx context.Context, pipelineID 
 	return nil
 }
 
-// executeFlextPlugin executes a FLEXT plugin with the given parameters
-func (ws *WorkflowService) executeFlextPlugin(ctx context.Context, plugin interface{}, params map[string]interface{}) (interface{}, error) {
-	// Implementation placeholder - would call the actual plugin execution
-	ws.logger.Info("Executing FLEXT service plugin",
-		zap.Any("pipeline_id", params["pipeline_id"]),
-		zap.Any("environment", params["environment"]),
-		zap.Any("cluster_node", params["cluster_node"]))
-
-	// Return success result
-	return map[string]interface{}{
-		"status":    "completed",
-		"timestamp": time.Now(),
-		"node":      params["cluster_node"],
-	}, nil
-}

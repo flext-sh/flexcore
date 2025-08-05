@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/flext-sh/flexcore/pkg/logging"
@@ -30,6 +31,9 @@ var V *viper.Viper
 
 // Global configuration instance
 var Current *Config
+
+// Mutex for thread-safe configuration operations
+var configMutex sync.RWMutex
 
 // Config structure for type-safe access
 type Config struct {
@@ -167,23 +171,31 @@ func Get(key string) interface{} {
 	return V.Get(key)
 }
 
-// GetString returns a string configuration value
+// GetString returns a string configuration value (thread-safe)
 func GetString(key string) string {
+	configMutex.RLock()
+	defer configMutex.RUnlock()
 	return V.GetString(key)
 }
 
-// GetInt returns an integer configuration value
+// GetInt returns an integer configuration value (thread-safe)
 func GetInt(key string) int {
+	configMutex.RLock()
+	defer configMutex.RUnlock()
 	return V.GetInt(key)
 }
 
-// GetBool returns a boolean configuration value
+// GetBool returns a boolean configuration value (thread-safe)
 func GetBool(key string) bool {
+	configMutex.RLock()
+	defer configMutex.RUnlock()
 	return V.GetBool(key)
 }
 
-// Set sets a configuration value
+// Set sets a configuration value (thread-safe)
 func Set(key string, value interface{}) {
+	configMutex.Lock()
+	defer configMutex.Unlock()
 	V.Set(key, value)
 }
 

@@ -558,7 +558,14 @@ func (mr *MeltanoRuntime) GetMetrics() *MeltanoMetrics {
 	mr.metrics.mu.RLock()
 	defer mr.metrics.mu.RUnlock()
 
-	// Create a copy to avoid race conditions
-	metrics := *mr.metrics
-	return &metrics
+	// Create a copy to avoid race conditions, excluding the mutex
+	return &MeltanoMetrics{
+		TotalJobs:        mr.metrics.TotalJobs,
+		ActiveJobs:       mr.metrics.ActiveJobs,
+		CompletedJobs:    mr.metrics.CompletedJobs,
+		FailedJobs:       mr.metrics.FailedJobs,
+		AverageExecution: mr.metrics.AverageExecution,
+		LastJobExecution: mr.metrics.LastJobExecution,
+		RuntimeStartTime: mr.metrics.RuntimeStartTime,
+	}
 }
