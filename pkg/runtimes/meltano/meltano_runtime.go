@@ -10,23 +10,23 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
 	"github.com/flext-sh/flexcore/pkg/runtimes"
+	"go.uber.org/zap"
 )
 
 // MeltanoRuntime implements the Runtime interface for Meltano integration
 type MeltanoRuntime struct {
-	mu               sync.RWMutex
-	config           *MeltanoConfig
-	logger           *zap.Logger
-	status           string
-	lastSeen         time.Time
-	pythonPath       string
-	meltanoProject   string
-	virtualEnv       string
-	activeJobs       map[string]*MeltanoJob
-	capabilities     []string
-	metrics          *MeltanoMetrics
+	mu             sync.RWMutex
+	config         *MeltanoConfig
+	logger         *zap.Logger
+	status         string
+	lastSeen       time.Time
+	pythonPath     string
+	meltanoProject string
+	virtualEnv     string
+	activeJobs     map[string]*MeltanoJob
+	capabilities   []string
+	metrics        *MeltanoMetrics
 }
 
 // MeltanoConfig holds Meltano runtime configuration
@@ -42,29 +42,29 @@ type MeltanoConfig struct {
 
 // MeltanoJob represents a running Meltano job
 type MeltanoJob struct {
-	ID          string                 `json:"id"`
-	Command     string                 `json:"command"`
-	Args        []string               `json:"args"`
-	Config      map[string]interface{} `json:"config"`
-	Status      string                 `json:"status"`
-	StartTime   time.Time              `json:"start_time"`
-	EndTime     *time.Time             `json:"end_time,omitempty"`
-	Output      string                 `json:"output"`
-	Error       string                 `json:"error,omitempty"`
-	PID         int                    `json:"pid,omitempty"`
-	ExitCode    int                    `json:"exit_code,omitempty"`
+	ID        string                 `json:"id"`
+	Command   string                 `json:"command"`
+	Args      []string               `json:"args"`
+	Config    map[string]interface{} `json:"config"`
+	Status    string                 `json:"status"`
+	StartTime time.Time              `json:"start_time"`
+	EndTime   *time.Time             `json:"end_time,omitempty"`
+	Output    string                 `json:"output"`
+	Error     string                 `json:"error,omitempty"`
+	PID       int                    `json:"pid,omitempty"`
+	ExitCode  int                    `json:"exit_code,omitempty"`
 }
 
 // MeltanoMetrics tracks Meltano runtime performance
 type MeltanoMetrics struct {
-	mu                sync.RWMutex
-	TotalJobs         int64     `json:"total_jobs"`
-	ActiveJobs        int64     `json:"active_jobs"`
-	CompletedJobs     int64     `json:"completed_jobs"`
-	FailedJobs        int64     `json:"failed_jobs"`
-	AverageExecution  float64   `json:"average_execution_ms"`
-	LastJobExecution  time.Time `json:"last_job_execution"`
-	RuntimeStartTime  time.Time `json:"runtime_start_time"`
+	mu               sync.RWMutex
+	TotalJobs        int64     `json:"total_jobs"`
+	ActiveJobs       int64     `json:"active_jobs"`
+	CompletedJobs    int64     `json:"completed_jobs"`
+	FailedJobs       int64     `json:"failed_jobs"`
+	AverageExecution float64   `json:"average_execution_ms"`
+	LastJobExecution time.Time `json:"last_job_execution"`
+	RuntimeStartTime time.Time `json:"runtime_start_time"`
 }
 
 // NewMeltanoRuntime creates a new Meltano runtime instance
@@ -89,7 +89,7 @@ func NewMeltanoRuntime(config *MeltanoConfig) *MeltanoRuntime {
 		activeJobs: make(map[string]*MeltanoJob),
 		capabilities: []string{
 			"singer_taps",
-			"singer_targets", 
+			"singer_targets",
 			"dbt_models",
 			"meltano_pipelines",
 			"data_extraction",
@@ -136,7 +136,7 @@ func (mr *MeltanoRuntime) Start(ctx context.Context, config map[string]string, c
 
 	// Initialize flext-core integration
 	if err := mr.initializeFlextCoreIntegration(); err != nil {
-		mr.logger.Warn("FlextCore integration initialization failed", 
+		mr.logger.Warn("FlextCore integration initialization failed",
 			zap.Error(err))
 		// Continue without flext-core integration
 	}
@@ -259,11 +259,11 @@ func (mr *MeltanoRuntime) GetStatus(ctx context.Context) (*runtimes.RuntimeStatu
 		LastSeen:     mr.lastSeen,
 		Capabilities: mr.capabilities,
 		Config: map[string]string{
-			"python_path":       mr.pythonPath,
-			"meltano_project":   mr.meltanoProject,
-			"virtual_env":       mr.virtualEnv,
-			"active_jobs":       fmt.Sprintf("%d", mr.countActiveJobs()),
-			"max_concurrency":   fmt.Sprintf("%d", mr.config.MaxConcurrency),
+			"python_path":     mr.pythonPath,
+			"meltano_project": mr.meltanoProject,
+			"virtual_env":     mr.virtualEnv,
+			"active_jobs":     fmt.Sprintf("%d", mr.countActiveJobs()),
+			"max_concurrency": fmt.Sprintf("%d", mr.config.MaxConcurrency),
 		},
 	}, nil
 }
@@ -280,7 +280,7 @@ func (mr *MeltanoRuntime) HealthCheck(ctx context.Context) error {
 	// Test Meltano installation
 	cmd := exec.CommandContext(ctx, mr.pythonPath, "-m", "meltano", "--version")
 	cmd.Dir = mr.meltanoProject
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("Meltano health check failed: %w", err)
 	}
@@ -292,9 +292,9 @@ func (mr *MeltanoRuntime) HealthCheck(ctx context.Context) error {
 // GetMetadata returns runtime metadata
 func (mr *MeltanoRuntime) GetMetadata() runtimes.RuntimeMetadata {
 	return runtimes.RuntimeMetadata{
-		Name:        "Meltano Data Platform Runtime",
-		Version:     "3.8.0+flext",
-		Description: "Singer/DBT orchestration runtime with FlextCore integration",
+		Name:         "Meltano Data Platform Runtime",
+		Version:      "3.8.0+flext",
+		Description:  "Singer/DBT orchestration runtime with FlextCore integration",
 		Capabilities: mr.capabilities,
 	}
 }
@@ -304,7 +304,7 @@ func (mr *MeltanoRuntime) GetMetadata() runtimes.RuntimeMetadata {
 // validateMeltanoProject validates the Meltano project structure
 func (mr *MeltanoRuntime) validateMeltanoProject() error {
 	projectPath := mr.meltanoProject
-	
+
 	// Check if directory exists
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return fmt.Errorf("Meltano project directory does not exist: %s", projectPath)
@@ -316,7 +316,7 @@ func (mr *MeltanoRuntime) validateMeltanoProject() error {
 		return fmt.Errorf("meltano.yml not found in project directory: %s", projectPath)
 	}
 
-	mr.logger.Debug("Meltano project validated", 
+	mr.logger.Debug("Meltano project validated",
 		zap.String("project_path", projectPath))
 
 	return nil
@@ -333,7 +333,7 @@ func (mr *MeltanoRuntime) validatePythonEnvironment() error {
 	// Check Meltano installation
 	cmd = exec.Command(mr.pythonPath, "-m", "meltano", "--version")
 	cmd.Dir = mr.meltanoProject
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("Meltano not installed or not accessible: %w", err)
 	}
@@ -347,7 +347,7 @@ func (mr *MeltanoRuntime) validatePythonEnvironment() error {
 // initializeFlextCoreIntegration sets up flext-core integration
 func (mr *MeltanoRuntime) initializeFlextCoreIntegration() error {
 	flextCorePath := mr.config.FlextCoreProject
-	
+
 	// Check if flext-core project exists
 	if _, err := os.Stat(flextCorePath); os.IsNotExist(err) {
 		return fmt.Errorf("flext-core project not found: %s", flextCorePath)
@@ -378,7 +378,7 @@ func (mr *MeltanoRuntime) applyConfigurationOverrides(config map[string]string) 
 			mr.virtualEnv = value
 		case "max_concurrency":
 			if concurrency, err := fmt.Sscanf(value, "%d", &mr.config.MaxConcurrency); err == nil && concurrency == 1 {
-				mr.logger.Info("Max concurrency updated", 
+				mr.logger.Info("Max concurrency updated",
 					zap.Int("max_concurrency", mr.config.MaxConcurrency))
 			}
 		}
@@ -388,7 +388,7 @@ func (mr *MeltanoRuntime) applyConfigurationOverrides(config map[string]string) 
 // filterCapabilities filters capabilities based on provided list
 func (mr *MeltanoRuntime) filterCapabilities(requested []string) {
 	filteredCapabilities := []string{}
-	
+
 	for _, requested := range requested {
 		for _, available := range mr.capabilities {
 			if requested == available {
@@ -397,7 +397,7 @@ func (mr *MeltanoRuntime) filterCapabilities(requested []string) {
 			}
 		}
 	}
-	
+
 	mr.capabilities = filteredCapabilities
 }
 
@@ -408,7 +408,7 @@ func (mr *MeltanoRuntime) executeJob(ctx context.Context, job *MeltanoJob) {
 		endTime := time.Now()
 		job.EndTime = &endTime
 		mr.mu.Unlock()
-		
+
 		if job.Status == "running" {
 			job.Status = "completed"
 			mr.updateMetrics("completed")
@@ -419,11 +419,11 @@ func (mr *MeltanoRuntime) executeJob(ctx context.Context, job *MeltanoJob) {
 
 	// Build Meltano command
 	meltanoCmd := mr.buildMeltanoCommand(job)
-	
+
 	// Execute command
 	cmd := exec.CommandContext(ctx, mr.pythonPath, meltanoCmd...)
 	cmd.Dir = mr.meltanoProject
-	
+
 	// Set environment variables
 	cmd.Env = os.Environ()
 	for key, value := range mr.config.Environment {
@@ -433,7 +433,7 @@ func (mr *MeltanoRuntime) executeJob(ctx context.Context, job *MeltanoJob) {
 	// Capture output
 	output, err := cmd.CombinedOutput()
 	job.Output = string(output)
-	
+
 	if err != nil {
 		job.Status = "failed"
 		job.Error = err.Error()
@@ -441,7 +441,7 @@ func (mr *MeltanoRuntime) executeJob(ctx context.Context, job *MeltanoJob) {
 			job.ExitCode = exitError.ExitCode()
 		}
 		mr.updateMetrics("failed")
-		
+
 		mr.logger.Error("Meltano job failed",
 			zap.String("job_id", job.ID),
 			zap.Error(err),
@@ -449,7 +449,7 @@ func (mr *MeltanoRuntime) executeJob(ctx context.Context, job *MeltanoJob) {
 	} else {
 		job.Status = "completed"
 		job.ExitCode = 0
-		
+
 		mr.logger.Info("Meltano job completed",
 			zap.String("job_id", job.ID),
 			zap.Duration("duration", time.Since(job.StartTime)))
@@ -459,13 +459,13 @@ func (mr *MeltanoRuntime) executeJob(ctx context.Context, job *MeltanoJob) {
 // buildMeltanoCommand builds the Meltano command from job specification
 func (mr *MeltanoRuntime) buildMeltanoCommand(job *MeltanoJob) []string {
 	cmd := []string{"-m", "meltano"}
-	
+
 	// Add command
 	cmd = append(cmd, job.Command)
-	
+
 	// Add arguments
 	cmd = append(cmd, job.Args...)
-	
+
 	// Add configuration flags if provided
 	if job.Config != nil {
 		for key, value := range job.Config {
@@ -485,7 +485,7 @@ func (mr *MeltanoRuntime) buildMeltanoCommand(job *MeltanoJob) []string {
 			}
 		}
 	}
-	
+
 	return cmd
 }
 

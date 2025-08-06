@@ -1,8 +1,6 @@
 // Package patterns provides advanced functional patterns for FlexCore
 package patterns
 
-import ()
-
 // Option represents a functional option pattern
 type Option[T any] func(*T) error
 

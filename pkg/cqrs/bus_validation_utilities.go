@@ -280,14 +280,14 @@ type BusRegistrationResult struct {
 	EntityType string
 	Error      error
 	// Smaller fields last
-	Success    bool
+	Success bool
 }
 
 // BusExecutionContext provides context for bus operations
 type BusExecutionContext struct {
 	// Interface{} fields are pointer-sized, place first for better alignment
-	Handler    interface{}
-	Entity     interface{}
+	Handler interface{}
+	Entity  interface{}
 	// String field last
 	EntityType string
 }

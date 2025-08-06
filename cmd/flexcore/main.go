@@ -18,9 +18,9 @@ import (
 	"github.com/flext-sh/flexcore/pkg/config"
 	"github.com/flext-sh/flexcore/pkg/logging"
 	"github.com/flext-sh/flexcore/pkg/orchestrator"
+	flextlogging "github.com/flext-sh/flext/pkg/logging"
 	"github.com/flext-sh/flext/pkg/plugins/communication"
 	"github.com/flext-sh/flext/pkg/plugins/loader"
-	flextlogging "github.com/flext-sh/flext/pkg/logging"
 )
 
 // Version information (set by build flags)
@@ -171,7 +171,7 @@ func initializePluginSystem() (*FlexCorePluginSystem, error) {
 	loggerWrapper := &simpleLoggerWrapper{logger: logging.Logger}
 	pluginLoader := loader.NewPluginLoader(nil, communicationBus, loggerWrapper)
 
-	// Start communication bus (optional - graceful degradation if Redis unavailable)  
+	// Start communication bus (optional - graceful degradation if Redis unavailable)
 	if communicationBus != nil {
 		if err := communicationBus.Start(); err != nil {
 			logging.Logger.Warn("Communication bus failed to start - running in standalone mode", zap.Error(err))
@@ -201,11 +201,11 @@ func registerFlexCoreNode(communicationBus *communication.FlexCoreCommunicationB
 		logging.Logger.Info("📡 Running in standalone mode - no distributed network registration")
 		return nil
 	}
-	
+
 	// Register FlexCore node with capabilities
 	capabilities := []string{
 		"plugin.meltano.runtime",
-		"plugin.ray.runtime", 
+		"plugin.ray.runtime",
 		"plugin.kubernetes.runtime",
 		"plugin.all.runtime",
 		"data.processing",

@@ -58,7 +58,7 @@ func (s *MeltanoService) GetProjectInfo(ctx context.Context) (*Result, error) {
 
 // AddPlugin adds a plugin to the project
 func (s *MeltanoService) AddPlugin(ctx context.Context, pluginType, name, variant string) (*Result, error) {
-	s.logger.Info("Adding plugin (stub)", 
+	s.logger.Info("Adding plugin (stub)",
 		zap.String("type", pluginType),
 		zap.String("name", name),
 		zap.String("variant", variant))
@@ -146,7 +146,7 @@ func (s *MeltanoService) GetStateStats() (*Result, error) {
 	return &Result{
 		Success: true,
 		Data: map[string]interface{}{
-			"total_states": 0,
+			"total_states":  0,
 			"active_states": 0,
 		},
 	}, nil

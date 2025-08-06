@@ -101,7 +101,7 @@ func (es *PostgreSQLEventStore) GetEvents(ctx context.Context, aggregateID strin
 	return []services.DomainEvent{}, nil
 }
 
-// getEventsLegacy - legacy method for backward compatibility 
+// getEventsLegacy - legacy method for backward compatibility
 // DRY PRINCIPLE: Uses shared query execution eliminating 32-line duplication (mass=186)
 func (es *PostgreSQLEventStore) getEventsLegacy(ctx context.Context, streamID string) ([]EventEntry, error) {
 	queryBuilder := es.createEventQueryBuilder(ctx)
@@ -290,7 +290,6 @@ func (es *PostgreSQLEventStore) Close() error {
 		return db.Close()
 	}
 }
-
 
 // Interface compliance methods - TODO: Implement properly
 func (es *PostgreSQLEventStore) SaveEvents(ctx context.Context, aggregateID string, events []services.DomainEvent, expectedVersion int) error {

@@ -105,7 +105,7 @@ func (es *MemoryEventStore) GetEvents(ctx context.Context, aggregateID string, f
 	return []services.DomainEvent{}, nil
 }
 
-// getEventsLegacy - legacy method for backward compatibility  
+// getEventsLegacy - legacy method for backward compatibility
 func (es *MemoryEventStore) getEventsLegacy(ctx context.Context, streamKey string) ([]EventEntry, error) {
 	es.mu.RLock()
 	defer es.mu.RUnlock()

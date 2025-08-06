@@ -214,8 +214,8 @@ func NewListPipelinesByOwnerQueryHandler(repository PipelineRepository) *ListPip
 
 // Handle handles the query
 func (h *ListPipelinesByOwnerQueryHandler) Handle(ctx context.Context, query ListPipelinesByOwnerQuery) result.Result[PagedResult[*entities.Pipeline]] {
-	return handleParameterizedPipelineQuery(ctx, h.repository, query.PagedQuery, 
-		query.Owner, "owner", 
+	return handleParameterizedPipelineQuery(ctx, h.repository, query.PagedQuery,
+		query.Owner, "owner",
 		func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error) {
 			return h.repository.FindByOwner(ctx, query.Owner, pageSize, offset)
 		}, "failed to list pipelines by owner")
@@ -249,8 +249,8 @@ func NewListPipelinesByTagQueryHandler(repository PipelineRepository) *ListPipel
 
 // Handle handles the query
 func (h *ListPipelinesByTagQueryHandler) Handle(ctx context.Context, query ListPipelinesByTagQuery) result.Result[PagedResult[*entities.Pipeline]] {
-	return handleParameterizedPipelineQuery(ctx, h.repository, query.PagedQuery, 
-		query.Tag, "tag", 
+	return handleParameterizedPipelineQuery(ctx, h.repository, query.PagedQuery,
+		query.Tag, "tag",
 		func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error) {
 			return h.repository.FindByTag(ctx, query.Tag, pageSize, offset)
 		}, "failed to list pipelines by tag")
@@ -350,17 +350,17 @@ func (h *GetPipelineStatisticsQueryHandler) Handle(ctx context.Context, query Ge
 	if err != nil {
 		activePipelines = []*entities.Pipeline{}
 	}
-	
+
 	runningPipelines, err := h.repository.FindByStatus(ctx, entities.PipelineStatusRunning, 1000, 0)
 	if err != nil {
 		runningPipelines = []*entities.Pipeline{}
 	}
-	
+
 	failedPipelines, err := h.repository.FindByStatus(ctx, entities.PipelineStatusFailed, 1000, 0)
 	if err != nil {
 		failedPipelines = []*entities.Pipeline{}
 	}
-	
+
 	completedPipelines, err := h.repository.FindByStatus(ctx, entities.PipelineStatusCompleted, 1000, 0)
 	if err != nil {
 		completedPipelines = []*entities.Pipeline{}

@@ -13,11 +13,11 @@ import (
 // DefaultRuntimeManager is the default implementation of RuntimeManager
 type DefaultRuntimeManager struct {
 	// Pointer fields first
-	logger   *zap.Logger
+	logger *zap.Logger
 	// Map field after (pointer-sized)
 	runtimes map[string]Runtime
 	// Mutex last (larger struct)
-	mu       sync.RWMutex
+	mu sync.RWMutex
 }
 
 // NewDefaultRuntimeManager creates a new default runtime manager

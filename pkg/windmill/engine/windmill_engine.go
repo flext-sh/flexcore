@@ -12,21 +12,21 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
 	"github.com/flext-sh/flexcore/pkg/runtimes"
+	"go.uber.org/zap"
 )
 
 // WindmillEngine integrates with Windmill workflow orchestration for FlexCore
 type WindmillEngine struct {
-	mu           sync.RWMutex
-	baseURL      string
-	authToken    string
-	httpClient   *http.Client
-	logger       *zap.Logger
-	runtimeMgr   runtimes.RuntimeManager
-	workflows    map[string]*WorkflowDefinition
-	activeJobs   map[string]*WorkflowExecution
-	metrics      *EngineMetrics
+	mu         sync.RWMutex
+	baseURL    string
+	authToken  string
+	httpClient *http.Client
+	logger     *zap.Logger
+	runtimeMgr runtimes.RuntimeManager
+	workflows  map[string]*WorkflowDefinition
+	activeJobs map[string]*WorkflowExecution
+	metrics    *EngineMetrics
 }
 
 // WorkflowDefinition represents a Windmill workflow definition
@@ -57,14 +57,14 @@ type WorkflowExecution struct {
 
 // EngineMetrics tracks Windmill engine performance metrics
 type EngineMetrics struct {
-	mu                sync.RWMutex
-	TotalJobs         int64     `json:"total_jobs"`
-	ActiveJobs        int64     `json:"active_jobs"`
-	CompletedJobs     int64     `json:"completed_jobs"`
-	FailedJobs        int64     `json:"failed_jobs"`
-	AverageExecution  float64   `json:"average_execution_ms"`
-	LastJobExecution  time.Time `json:"last_job_execution"`
-	EngineStartTime   time.Time `json:"engine_start_time"`
+	mu               sync.RWMutex
+	TotalJobs        int64     `json:"total_jobs"`
+	ActiveJobs       int64     `json:"active_jobs"`
+	CompletedJobs    int64     `json:"completed_jobs"`
+	FailedJobs       int64     `json:"failed_jobs"`
+	AverageExecution float64   `json:"average_execution_ms"`
+	LastJobExecution time.Time `json:"last_job_execution"`
+	EngineStartTime  time.Time `json:"engine_start_time"`
 }
 
 // WorkflowRequest represents a workflow execution request
@@ -111,22 +111,22 @@ func NewWindmillEngine(baseURL, authToken string, runtimeMgr runtimes.RuntimeMan
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 			Transport: &http.Transport{
-				MaxIdleConns:        10,
-				IdleConnTimeout:     90 * time.Second,
-				DisableCompression:  true,
+				MaxIdleConns:       10,
+				IdleConnTimeout:    90 * time.Second,
+				DisableCompression: true,
 			},
 		},
-		logger:      func() *zap.Logger { 
+		logger: func() *zap.Logger {
 			logger, err := zap.NewProduction()
 			if err != nil {
 				return zap.NewNop()
 			}
 			return logger
 		}(),
-		runtimeMgr:  runtimeMgr,
-		workflows:   make(map[string]*WorkflowDefinition),
-		activeJobs:  make(map[string]*WorkflowExecution),
-		metrics:     &EngineMetrics{
+		runtimeMgr: runtimeMgr,
+		workflows:  make(map[string]*WorkflowDefinition),
+		activeJobs: make(map[string]*WorkflowExecution),
+		metrics: &EngineMetrics{
 			EngineStartTime: time.Now(),
 		},
 	}
@@ -335,14 +335,14 @@ func (w *WindmillEngine) queryJobStatus(ctx context.Context, jobID string) (*Wor
 
 	// Parse response
 	var windmillJob struct {
-		ID       string      `json:"id"`
-		Type     string      `json:"type"`
-		Running  bool        `json:"running_state"`
-		Success  bool        `json:"success"`
-		Result   interface{} `json:"result"`
-		Logs     string      `json:"logs"`
-		StartedAt time.Time  `json:"started_at"`
-		CompletedAt *time.Time `json:"completed_at"`
+		ID          string      `json:"id"`
+		Type        string      `json:"type"`
+		Running     bool        `json:"running_state"`
+		Success     bool        `json:"success"`
+		Result      interface{} `json:"result"`
+		Logs        string      `json:"logs"`
+		StartedAt   time.Time   `json:"started_at"`
+		CompletedAt *time.Time  `json:"completed_at"`
 	}
 	if err := json.Unmarshal(body, &windmillJob); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
@@ -475,15 +475,15 @@ func (w *WindmillEngine) GetEngineInfo() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"engine":    "windmill",
-		"base_url":  w.baseURL,
-		"version":   "2.0.0",
-		"status":    "operational",
-		"uptime":    time.Since(metrics.EngineStartTime).String(),
-		"metrics":   metricsMap,
+		"engine":   "windmill",
+		"base_url": w.baseURL,
+		"version":  "2.0.0",
+		"status":   "operational",
+		"uptime":   time.Since(metrics.EngineStartTime).String(),
+		"metrics":  metricsMap,
 		"features": []string{
 			"workflow_orchestration",
-			"job_scheduling", 
+			"job_scheduling",
 			"runtime_coordination",
 			"distributed_execution",
 			"multi_runtime_support",
@@ -517,9 +517,9 @@ func (w *WindmillEngine) initializeBuiltinWorkflows() {
 			Path:        "f/flexcore/ray_execution",
 			RuntimeType: "ray",
 			Schema: map[string]interface{}{
-				"script":     "string",
-				"resources":  "object",
-				"cluster":    "string",
+				"script":    "string",
+				"resources": "object",
+				"cluster":   "string",
 			},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -660,7 +660,7 @@ func (w *WindmillEngine) ExecuteWorkflowWithRuntime(ctx context.Context, request
 
 		// Update metrics
 		w.updateMetrics("failed")
-		
+
 		return nil, err
 	}
 

@@ -18,10 +18,10 @@ type RuntimeStatus struct {
 	ResourceUsage ResourceUsage     `json:"resource_usage"`
 	Uptime        time.Duration     `json:"uptime"`
 	// String fields (pointer-sized)
-	RuntimeType   string            `json:"runtime_type"`
-	Status        string            `json:"status"`
-	Health        string            `json:"health"`
-	Version       string            `json:"version"`
+	RuntimeType string `json:"runtime_type"`
+	Status      string `json:"status"`
+	Health      string `json:"health"`
+	Version     string `json:"version"`
 }
 
 // ResourceUsage represents runtime resource usage statistics
@@ -31,8 +31,8 @@ type ResourceUsage struct {
 	DiskBytes   int64   `json:"disk_bytes"`
 	CPUPercent  float64 `json:"cpu_percent"`
 	// 32-bit fields after
-	ActiveJobs  int     `json:"active_jobs"`
-	QueuedJobs  int     `json:"queued_jobs"`
+	ActiveJobs int `json:"active_jobs"`
+	QueuedJobs int `json:"queued_jobs"`
 }
 
 // RuntimeMetadata contains metadata about a runtime
@@ -46,21 +46,21 @@ type RuntimeMetadata struct {
 // RuntimeExecutionRequest represents a runtime execution request
 type RuntimeExecutionRequest struct {
 	// Large fields first (map, slice)
-	Config      map[string]interface{} `json:"config"`
-	Args        []string               `json:"args"`
+	Config map[string]interface{} `json:"config"`
+	Args   []string               `json:"args"`
 	// String fields after
-	RuntimeType string                 `json:"runtime_type"`
-	Command     string                 `json:"command"`
+	RuntimeType string `json:"runtime_type"`
+	Command     string `json:"command"`
 }
 
 // RuntimeExecutionResult represents the result of a runtime execution
 type RuntimeExecutionResult struct {
 	// Interface field first (pointer-sized)
-	Data    interface{} `json:"data"`
+	Data interface{} `json:"data"`
 	// String field after (pointer-sized)
-	Error   string      `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 	// Bool field last (1 byte + padding)
-	Success bool        `json:"success"`
+	Success bool `json:"success"`
 }
 
 // Runtime interface for all runtime implementations
