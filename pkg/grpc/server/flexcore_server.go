@@ -6,23 +6,23 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"go.uber.org/zap"
 
 	pb "github.com/flext-sh/flexcore/api/grpc/v1"
 	"github.com/flext-sh/flexcore/pkg/logging"
-	"github.com/flext-sh/flexcore/pkg/windmill/engine"
 	"github.com/flext-sh/flexcore/pkg/runtimes"
+	"github.com/flext-sh/flexcore/pkg/windmill/engine"
 )
 
 // Health status constants
 const (
-	HealthStatusHealthy  = "healthy"
-	HealthStatusDegraded = "degraded"
+	HealthStatusHealthy   = "healthy"
+	HealthStatusDegraded  = "degraded"
 	HealthStatusUnhealthy = "unhealthy"
 )
 
@@ -236,7 +236,7 @@ func (s *FlexCoreServer) ListWorkflows(ctx context.Context, req *pb.ListWorkflow
 	total := len(pbWorkflows)
 	start := int(req.Offset)
 	end := start + int(req.Limit)
-	
+
 	if start > total {
 		pbWorkflows = []*pb.WorkflowStatus{}
 	} else {
@@ -522,10 +522,10 @@ func convertRuntimeStatus(status *runtimes.RuntimeStatus) *pb.RuntimeStatus {
 // convertWorkflowStatus converts Windmill response to protobuf
 func convertWorkflowStatus(response *engine.WorkflowResponse) *pb.WorkflowStatus {
 	pbStatus := &pb.WorkflowStatus{
-		JobId:       response.JobID,
-		Status:      response.Status,
-		StartTime:   timestamppb.New(response.StartTime),
-		Logs:        response.Logs,
+		JobId:     response.JobID,
+		Status:    response.Status,
+		StartTime: timestamppb.New(response.StartTime),
+		Logs:      response.Logs,
 	}
 
 	if response.EndTime != nil {

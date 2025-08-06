@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/flext-sh/flexcore/pkg/orchestrator"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"github.com/flext-sh/flexcore/pkg/orchestrator"
 )
 
 // OrchestratorController handles HTTP requests for runtime orchestration
@@ -242,7 +242,7 @@ func (oc *OrchestratorController) getOrchestratorInfo(c *gin.Context) {
 // getOrchestratorMetrics handles GET /api/v1/orchestration/metrics
 func (oc *OrchestratorController) getOrchestratorMetrics(c *gin.Context) {
 	info := oc.orchestrator.GetOrchestratorInfo()
-	
+
 	// Extract metrics from info
 	metrics, exists := info["metrics"]
 	if !exists {
@@ -253,8 +253,8 @@ func (oc *OrchestratorController) getOrchestratorMetrics(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"metrics": metrics,
+		"success":          true,
+		"metrics":          metrics,
 		"windmill_metrics": info["windmill"].(map[string]interface{})["metrics"],
 	})
 }
@@ -274,7 +274,7 @@ func (oc *OrchestratorController) getWorkflowDefinitions(c *gin.Context) {
 			},
 			{
 				"id":           "ray_execution",
-				"name":         "Ray Distributed Computing Execution", 
+				"name":         "Ray Distributed Computing Execution",
 				"runtime_type": "ray",
 				"description":  "Execute distributed computing jobs on Ray cluster (future)",
 			},
@@ -348,7 +348,7 @@ func (oc *OrchestratorController) listRuntimes(c *gin.Context) {
 			},
 			{
 				"type":         "kubernetes",
-				"status":       "not_implemented", 
+				"status":       "not_implemented",
 				"capabilities": []string{"container_orchestration", "auto_scaling"},
 				"last_seen":    nil,
 			},
@@ -402,9 +402,9 @@ func (oc *OrchestratorController) checkRuntimeHealth(c *gin.Context) {
 	_ = ctx
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"runtime": runtimeType,
-		"status":  "healthy",
+		"success":    true,
+		"runtime":    runtimeType,
+		"status":     "healthy",
 		"checked_at": time.Now(),
 		"details": gin.H{
 			"response_time": "150ms",

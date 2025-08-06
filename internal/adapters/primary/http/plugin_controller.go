@@ -9,11 +9,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	
+
+	flextlogging "github.com/flext-sh/flext/pkg/logging"
 	"github.com/flext-sh/flext/pkg/plugins"
 	"github.com/flext-sh/flext/pkg/plugins/communication"
 	"github.com/flext-sh/flext/pkg/plugins/loader"
-	flextlogging "github.com/flext-sh/flext/pkg/logging"
 )
 
 // PluginController handles HTTP requests for plugin management
@@ -62,16 +62,16 @@ func (pc *PluginController) RegisterRoutes(router *gin.RouterGroup) {
 		pluginRoutes.DELETE("/:plugin_id", pc.unloadPlugin)
 		pluginRoutes.GET("/:plugin_id/health", pc.getPluginHealth)
 		pluginRoutes.GET("/:plugin_id/metadata", pc.getPluginMetadata)
-		
+
 		// Plugin execution endpoints
 		pluginRoutes.POST("/:plugin_id/execute", pc.executePlugin)
 		pluginRoutes.GET("/:plugin_id/capabilities", pc.getPluginCapabilities)
-		
+
 		// Plugin communication endpoints
 		pluginRoutes.POST("/broadcast", pc.broadcastMessage)
 		pluginRoutes.GET("/communication/status", pc.getCommunicationStatus)
 	}
-	
+
 	// FlexCore node management
 	nodeRoutes := router.Group("/node")
 	{
@@ -84,7 +84,7 @@ func (pc *PluginController) RegisterRoutes(router *gin.RouterGroup) {
 // listPlugins handles GET /api/v1/plugins/list
 func (pc *PluginController) listPlugins(c *gin.Context) {
 	pluginList := make([]gin.H, 0, len(pc.loadedPlugins))
-	
+
 	for pluginID, plugin := range pc.loadedPlugins {
 		metadata := plugin.Metadata()
 		pluginList = append(pluginList, gin.H{
@@ -100,7 +100,7 @@ func (pc *PluginController) listPlugins(c *gin.Context) {
 			"updated_at":   metadata.UpdatedAt,
 		})
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"plugins": pluginList,
@@ -120,27 +120,27 @@ func (pc *PluginController) deployPlugin(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	pc.logger.Info("Received plugin deployment request",
 		zap.String("plugin_id", request.PluginID),
 		zap.String("plugin_type", request.PluginType),
 		zap.String("source_node_id", request.SourceNodeID))
-	
+
 	// Check if plugin is already loaded
 	if _, exists := pc.loadedPlugins[request.PluginID]; exists {
 		c.JSON(http.StatusConflict, gin.H{
-			"error":   "Plugin already deployed",
+			"error":     "Plugin already deployed",
 			"plugin_id": request.PluginID,
 		})
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	
+
 	var plugin plugins.Plugin
 	var err error
-	
+
 	// Load plugin from binary data or binary path
 	if len(request.BinaryData) > 0 {
 		// For binary data, we would need to write it to a temporary file first
@@ -155,14 +155,16 @@ func (pc *PluginController) deployPlugin(c *gin.Context) {
 		plugin, err = pc.pluginLoader.CreatePluginFromFactory(plugins.PluginType(request.PluginType))
 		if err == nil && plugin != nil {
 			// Set communicator if supported
-			if communicatorSetter, ok := plugin.(interface{ SetCommunicator(plugins.PluginCommunicator) }); ok {
+			if communicatorSetter, ok := plugin.(interface {
+				SetCommunicator(plugins.PluginCommunicator)
+			}); ok {
 				communicatorSetter.SetCommunicator(pc.communicationBus)
 			}
 			// Initialize the plugin
 			err = plugin.Initialize(ctx, request.Config)
 		}
 	}
-	
+
 	if err != nil {
 		pc.logger.Error("Failed to load plugin",
 			zap.String("plugin_id", request.PluginID),
@@ -173,48 +175,48 @@ func (pc *PluginController) deployPlugin(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Store loaded plugin
 	pc.loadedPlugins[request.PluginID] = plugin
-	
+
 	// Notify FLEXT Service about successful deployment
 	if pc.communicationBus != nil {
 		message := map[string]interface{}{
-			"operation":      "plugin.deployed",
-			"plugin_id":      request.PluginID,
-			"plugin_type":    request.PluginType,
-			"flexcore_node":  pc.getNodeID(),
+			"operation":       "plugin.deployed",
+			"plugin_id":       request.PluginID,
+			"plugin_type":     request.PluginType,
+			"flexcore_node":   pc.getNodeID(),
 			"deployment_time": time.Now(),
-			"status":         "success",
+			"status":          "success",
 		}
-		
+
 		go func() {
-			err := pc.communicationBus.SendMessage(ctx, 
-				plugins.PluginID(pc.getNodeID()), 
-				plugins.PluginID(request.SourceNodeID), 
+			err := pc.communicationBus.SendMessage(ctx,
+				plugins.PluginID(pc.getNodeID()),
+				plugins.PluginID(request.SourceNodeID),
 				message)
 			if err != nil {
 				pc.logger.Warn("Failed to notify plugin deployment", zap.Error(err))
 			}
 		}()
 	}
-	
+
 	metadata := plugin.Metadata()
 	pc.logger.Info("Plugin deployed successfully",
 		zap.String("plugin_id", request.PluginID),
 		zap.String("plugin_name", metadata.Name),
 		zap.String("version", metadata.Version))
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"success":       true,
-		"plugin_id":     request.PluginID,
-		"plugin_name":   metadata.Name,
-		"plugin_type":   metadata.Type,
-		"version":       metadata.Version,
-		"capabilities":  metadata.Capabilities,
-		"deployed_at":   time.Now(),
-		"node_id":       pc.getNodeID(),
-		"message":       "Plugin deployed successfully",
+		"success":      true,
+		"plugin_id":    request.PluginID,
+		"plugin_name":  metadata.Name,
+		"plugin_type":  metadata.Type,
+		"version":      metadata.Version,
+		"capabilities": metadata.Capabilities,
+		"deployed_at":  time.Now(),
+		"node_id":      pc.getNodeID(),
+		"message":      "Plugin deployed successfully",
 	})
 }
 
@@ -227,7 +229,7 @@ func (pc *PluginController) unloadPlugin(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	plugin, exists := pc.loadedPlugins[pluginID]
 	if !exists {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -236,28 +238,28 @@ func (pc *PluginController) unloadPlugin(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	// Shutdown plugin gracefully
 	if err := plugin.Shutdown(ctx); err != nil {
 		pc.logger.Warn("Plugin shutdown error",
 			zap.String("plugin_id", pluginID),
 			zap.Error(err))
 	}
-	
+
 	// Remove from loaded plugins
 	delete(pc.loadedPlugins, pluginID)
-	
+
 	pc.logger.Info("Plugin unloaded successfully",
 		zap.String("plugin_id", pluginID))
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"plugin_id":  pluginID,
+		"success":     true,
+		"plugin_id":   pluginID,
 		"unloaded_at": time.Now(),
-		"message":    "Plugin unloaded successfully",
+		"message":     "Plugin unloaded successfully",
 	})
 }
 
@@ -272,10 +274,10 @@ func (pc *PluginController) getPluginHealth(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	health, err := plugin.Health(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -285,11 +287,11 @@ func (pc *PluginController) getPluginHealth(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"success":   true,
-		"plugin_id": pluginID,
-		"health":    health,
+		"success":    true,
+		"plugin_id":  pluginID,
+		"health":     health,
 		"checked_at": time.Now(),
 	})
 }
@@ -305,12 +307,12 @@ func (pc *PluginController) getPluginMetadata(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	metadata := plugin.Metadata()
 	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
+		"success":   true,
 		"plugin_id": pluginID,
-		"metadata": metadata,
+		"metadata":  metadata,
 	})
 }
 
@@ -325,7 +327,7 @@ func (pc *PluginController) executePlugin(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	var request PluginExecutionRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -334,14 +336,14 @@ func (pc *PluginController) executePlugin(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	
+
 	pc.logger.Info("Executing plugin operation",
 		zap.String("plugin_id", pluginID),
 		zap.String("operation", request.Operation))
-	
+
 	result, err := plugin.Execute(ctx, request.Operation, request.Params)
 	if err != nil {
 		pc.logger.Error("Plugin execution failed",
@@ -356,12 +358,12 @@ func (pc *PluginController) executePlugin(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"plugin_id":  pluginID,
-		"operation":  request.Operation,
-		"result":     result,
+		"success":     true,
+		"plugin_id":   pluginID,
+		"operation":   request.Operation,
+		"result":      result,
 		"executed_at": time.Now(),
 	})
 }
@@ -377,7 +379,7 @@ func (pc *PluginController) getPluginCapabilities(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	capabilities := plugin.GetCapabilities()
 	c.JSON(http.StatusOK, gin.H{
 		"success":      true,
@@ -393,7 +395,7 @@ func (pc *PluginController) broadcastMessage(c *gin.Context) {
 		PluginType string                 `json:"plugin_type" binding:"required"`
 		Message    map[string]interface{} `json:"message" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Invalid broadcast request",
@@ -401,20 +403,20 @@ func (pc *PluginController) broadcastMessage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	if pc.communicationBus == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": "Communication bus not available",
 		})
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
-	err := pc.communicationBus.BroadcastMessage(ctx, 
-		plugins.PluginID(pc.getNodeID()), 
-		plugins.PluginType(request.PluginType), 
+
+	err := pc.communicationBus.BroadcastMessage(ctx,
+		plugins.PluginID(pc.getNodeID()),
+		plugins.PluginType(request.PluginType),
 		request.Message)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -423,16 +425,16 @@ func (pc *PluginController) broadcastMessage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"success":     true,
-		"plugin_type": request.PluginType,
+		"success":        true,
+		"plugin_type":    request.PluginType,
 		"broadcasted_at": time.Now(),
-		"message":     "Message broadcasted successfully",
+		"message":        "Message broadcasted successfully",
 	})
 }
 
-// getCommunicationStatus handles GET /api/v1/plugins/communication/status  
+// getCommunicationStatus handles GET /api/v1/plugins/communication/status
 func (pc *PluginController) getCommunicationStatus(c *gin.Context) {
 	if pc.communicationBus == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -440,15 +442,15 @@ func (pc *PluginController) getCommunicationStatus(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	nodes := pc.communicationBus.DiscoverNodes()
 	c.JSON(http.StatusOK, gin.H{
-		"success":        true,
+		"success": true,
 		"communication_bus": gin.H{
-			"status":      "active",
-			"node_count":  len(nodes),
-			"nodes":       nodes,
-			"local_node":  pc.getNodeID(),
+			"status":     "active",
+			"node_count": len(nodes),
+			"nodes":      nodes,
+			"local_node": pc.getNodeID(),
 		},
 		"checked_at": time.Now(),
 	})
@@ -457,12 +459,12 @@ func (pc *PluginController) getCommunicationStatus(c *gin.Context) {
 // getNodeInfo handles GET /api/v1/node/info
 func (pc *PluginController) getNodeInfo(c *gin.Context) {
 	nodeInfo := gin.H{
-		"node_id":       pc.getNodeID(),
-		"node_type":     "flexcore",
-		"version":       "2.0.0",
+		"node_id":   pc.getNodeID(),
+		"node_type": "flexcore",
+		"version":   "2.0.0",
 		"capabilities": []string{
 			"plugin.deployment",
-			"plugin.execution", 
+			"plugin.execution",
 			"plugin.management",
 			"inter.flexcore.communication",
 			"distributed.coordination",
@@ -471,14 +473,14 @@ func (pc *PluginController) getNodeInfo(c *gin.Context) {
 		"status":         "healthy",
 		"uptime":         time.Now(), // Would be calculated from start time
 	}
-	
+
 	if pc.communicationBus != nil {
 		nodeInfo["communication_status"] = "connected"
 		nodeInfo["discovered_nodes"] = len(pc.communicationBus.DiscoverNodes())
 	} else {
 		nodeInfo["communication_status"] = "disconnected"
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"node":    nodeInfo,
@@ -493,7 +495,7 @@ func (pc *PluginController) getNodeStatus(c *gin.Context) {
 		"loaded_plugins": len(pc.loadedPlugins),
 		"timestamp":      time.Now(),
 	}
-	
+
 	// Add plugin health summary
 	healthySummary := gin.H{
 		"total":     len(pc.loadedPlugins),
@@ -501,12 +503,12 @@ func (pc *PluginController) getNodeStatus(c *gin.Context) {
 		"unhealthy": 0,
 		"unknown":   0,
 	}
-	
+
 	for _, plugin := range pc.loadedPlugins {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		health, err := plugin.Health(ctx)
 		cancel()
-		
+
 		if err != nil {
 			healthySummary["unknown"] = healthySummary["unknown"].(int) + 1
 		} else if status, ok := health["status"].(string); ok && status == "healthy" {
@@ -515,9 +517,9 @@ func (pc *PluginController) getNodeStatus(c *gin.Context) {
 			healthySummary["unhealthy"] = healthySummary["unhealthy"].(int) + 1
 		}
 	}
-	
+
 	status["plugin_health"] = healthySummary
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"status":  status,
@@ -532,7 +534,7 @@ func (pc *PluginController) registerNode(c *gin.Context) {
 		Capabilities []string               `json:"capabilities"`
 		Metadata     map[string]interface{} `json:"metadata"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Invalid registration request",
@@ -540,13 +542,13 @@ func (pc *PluginController) registerNode(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// This would register the node with the distributed FlexCore network
 	// For now, just return success
 	pc.logger.Info("Node registration request received",
 		zap.String("node_id", request.NodeID),
 		zap.String("node_url", request.NodeURL))
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success":       true,
 		"node_id":       request.NodeID,

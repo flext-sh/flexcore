@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/flext-sh/flexcore/pkg/logging"
 	"github.com/flext-sh/flexcore/internal/domain/services"
+	"github.com/flext-sh/flexcore/pkg/logging"
 )
 
 // EventBus represents the messaging event bus for Event Sourcing + CQRS
@@ -16,12 +16,12 @@ import (
 // WorkflowServiceConfig contains all dependencies for WorkflowService
 // PARAMETER OBJECT PATTERN: Eliminates 6-parameter constructor complexity
 type WorkflowServiceConfig struct {
-	EventBus     services.EventBus            // Event Sourcing + CQRS
-	PluginLoader services.PluginLoader        // HashiCorp-style plugins
-	Cluster      services.CoordinationLayer   // Distributed coordination
-	Repository   services.EventStore          // Event Store for audit trail
-	CommandBus   services.CommandBus          // CQRS command processing
-	Logger       logging.LoggerInterface      // Structured logging
+	EventBus     services.EventBus          // Event Sourcing + CQRS
+	PluginLoader services.PluginLoader      // HashiCorp-style plugins
+	Cluster      services.CoordinationLayer // Distributed coordination
+	Repository   services.EventStore        // Event Store for audit trail
+	CommandBus   services.CommandBus        // CQRS command processing
+	Logger       logging.LoggerInterface    // Structured logging
 }
 
 // ConfigValidator provides specialized validation for workflow service configuration
@@ -97,11 +97,11 @@ func (cfg *WorkflowServiceConfig) Validate() error {
 
 // WorkflowService provides FLEXCORE runtime services exactly as specified in FLEXT_SERVICE_ARCHITECTURE.md
 type WorkflowService struct {
-	eventBus     services.EventBus            // Event Sourcing + CQRS
-	pluginLoader services.PluginLoader        // HashiCorp-style plugins
-	cluster      services.CoordinationLayer   // Distributed coordination
-	repository   services.EventStore          // Event Store for audit trail
-	commandBus   services.CommandBus          // CQRS command processing
+	eventBus     services.EventBus          // Event Sourcing + CQRS
+	pluginLoader services.PluginLoader      // HashiCorp-style plugins
+	cluster      services.CoordinationLayer // Distributed coordination
+	repository   services.EventStore        // Event Store for audit trail
+	commandBus   services.CommandBus        // CQRS command processing
 	logger       logging.LoggerInterface
 
 	// SOLID SRP: Specialized orchestrator for pipeline execution with reduced returns
@@ -259,4 +259,3 @@ func (ws *WorkflowService) ExecuteFlextPipeline(ctx context.Context, pipelineID 
 	)
 	return nil
 }
-

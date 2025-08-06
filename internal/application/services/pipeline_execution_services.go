@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/flext-sh/flexcore/internal/domain/services"
+	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // PipelineOrchestratorConfig contains dependencies for PipelineExecutionOrchestrator

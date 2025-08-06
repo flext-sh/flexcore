@@ -1547,7 +1547,7 @@ func (o *PipelineExecutionOrchestrator) publishDomainEvents(ctx context.Context,
 	for _, event := range pipeline.DomainEvents() {
 		if err := o.eventBus.Publish(ctx, event); err != nil {
 			// Log error but don't fail the command - events are eventually consistent
-			o.logger.Error("Failed to publish domain event", 
+			o.logger.Error("Failed to publish domain event",
 				zap.String("event_type", event.EventType()),
 				zap.String("pipeline_id", pipeline.ID.String()),
 				zap.Error(err))

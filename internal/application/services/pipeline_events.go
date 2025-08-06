@@ -4,8 +4,8 @@ package services
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/flext-sh/flexcore/internal/domain/services"
+	"github.com/google/uuid"
 )
 
 // PipelineExecutionStartedEvent represents a pipeline execution started event
@@ -75,8 +75,8 @@ func NewPipelineExecutionCompletedEvent(pipelineID string, result interface{}) s
 		aggregateID: pipelineID,
 		eventType:   "pipeline.execution.completed",
 		eventData: map[string]interface{}{
-			"pipeline_id": pipelineID,
-			"result":      result,
+			"pipeline_id":  pipelineID,
+			"result":       result,
 			"completed_at": time.Now(),
 		},
 		occurredAt: time.Now(),

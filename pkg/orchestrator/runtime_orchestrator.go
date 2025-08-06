@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
 	"github.com/flext-sh/flexcore/pkg/runtimes"
 	"github.com/flext-sh/flexcore/pkg/runtimes/meltano"
 	"github.com/flext-sh/flexcore/pkg/windmill/engine"
+	"go.uber.org/zap"
 )
 
 // Status constants for orchestration
@@ -34,44 +34,44 @@ type RuntimeOrchestrator struct {
 
 // OrchestratorConfig holds orchestrator configuration
 type OrchestratorConfig struct {
-	WindmillURL          string        `json:"windmill_url"`
-	WindmillToken        string        `json:"windmill_token"`
-	DefaultTimeout       time.Duration `json:"default_timeout"`
-	MaxConcurrentJobs    int           `json:"max_concurrent_jobs"`
-	HealthCheckInterval  time.Duration `json:"health_check_interval"`
+	WindmillURL           string        `json:"windmill_url"`
+	WindmillToken         string        `json:"windmill_token"`
+	DefaultTimeout        time.Duration `json:"default_timeout"`
+	MaxConcurrentJobs     int           `json:"max_concurrent_jobs"`
+	HealthCheckInterval   time.Duration `json:"health_check_interval"`
 	MetricsUpdateInterval time.Duration `json:"metrics_update_interval"`
-	EnabledRuntimes      []string      `json:"enabled_runtimes"`
+	EnabledRuntimes       []string      `json:"enabled_runtimes"`
 }
 
 // Orchestration represents a coordinated workflow execution across runtimes
 type Orchestration struct {
-	ID              string                 `json:"id"`
-	Name            string                 `json:"name"`
-	RuntimeType     string                 `json:"runtime_type"`
-	WorkflowID      string                 `json:"workflow_id"`
-	JobID           string                 `json:"job_id"`
-	Status          string                 `json:"status"`
-	StartTime       time.Time              `json:"start_time"`
-	EndTime         *time.Time             `json:"end_time,omitempty"`
-	Duration        time.Duration          `json:"duration"`
-	Result          interface{}            `json:"result,omitempty"`
-	Error           string                 `json:"error,omitempty"`
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-	Progress        float64                `json:"progress"`
-	Logs            []string               `json:"logs,omitempty"`
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	RuntimeType string                 `json:"runtime_type"`
+	WorkflowID  string                 `json:"workflow_id"`
+	JobID       string                 `json:"job_id"`
+	Status      string                 `json:"status"`
+	StartTime   time.Time              `json:"start_time"`
+	EndTime     *time.Time             `json:"end_time,omitempty"`
+	Duration    time.Duration          `json:"duration"`
+	Result      interface{}            `json:"result,omitempty"`
+	Error       string                 `json:"error,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Progress    float64                `json:"progress"`
+	Logs        []string               `json:"logs,omitempty"`
 }
 
 // OrchestratorMetrics tracks orchestrator performance
 type OrchestratorMetrics struct {
-	mu                     sync.RWMutex
-	TotalOrchestrations    int64                  `json:"total_orchestrations"`
-	ActiveOrchestrations   int64                  `json:"active_orchestrations"`
-	CompletedOrchestrations int64                 `json:"completed_orchestrations"`
-	FailedOrchestrations   int64                  `json:"failed_orchestrations"`
-	AverageExecution       float64                `json:"average_execution_ms"`
-	RuntimeDistribution    map[string]int64       `json:"runtime_distribution"`
-	LastOrchestration      time.Time              `json:"last_orchestration"`
-	OrchestratorStartTime  time.Time              `json:"orchestrator_start_time"`
+	mu                      sync.RWMutex
+	TotalOrchestrations     int64            `json:"total_orchestrations"`
+	ActiveOrchestrations    int64            `json:"active_orchestrations"`
+	CompletedOrchestrations int64            `json:"completed_orchestrations"`
+	FailedOrchestrations    int64            `json:"failed_orchestrations"`
+	AverageExecution        float64          `json:"average_execution_ms"`
+	RuntimeDistribution     map[string]int64 `json:"runtime_distribution"`
+	LastOrchestration       time.Time        `json:"last_orchestration"`
+	OrchestratorStartTime   time.Time        `json:"orchestrator_start_time"`
 }
 
 // OrchestrationRequest represents a request for workflow orchestration
@@ -88,12 +88,12 @@ type OrchestrationRequest struct {
 
 // OrchestrationResult represents the result of workflow orchestration
 type OrchestrationResult struct {
-	OrchestrationID string      `json:"orchestration_id"`
-	JobID           string      `json:"job_id"`
-	Status          string      `json:"status"`
-	Result          interface{} `json:"result,omitempty"`
-	Error           string      `json:"error,omitempty"`
-	StartTime       time.Time   `json:"start_time"`
+	OrchestrationID string        `json:"orchestration_id"`
+	JobID           string        `json:"job_id"`
+	Status          string        `json:"status"`
+	Result          interface{}   `json:"result,omitempty"`
+	Error           string        `json:"error,omitempty"`
+	StartTime       time.Time     `json:"start_time"`
 	Duration        time.Duration `json:"duration"`
 }
 
@@ -312,7 +312,7 @@ func (ro *RuntimeOrchestrator) CancelOrchestration(ctx context.Context, orchestr
 	}
 
 	if orchestration.Status != StatusRunning && orchestration.Status != StatusSubmitted {
-		return fmt.Errorf("orchestration %s cannot be canceled (status: %s)", 
+		return fmt.Errorf("orchestration %s cannot be canceled (status: %s)",
 			orchestrationID, orchestration.Status)
 	}
 
@@ -423,13 +423,13 @@ func (ro *RuntimeOrchestrator) registerMeltanoRuntime() error {
 		Timeout:          300 * time.Second,
 		MaxConcurrency:   4,
 		Environment: map[string]string{
-			"MELTANO_ENVIRONMENT": "production",
+			"MELTANO_ENVIRONMENT":                "production",
 			"MELTANO_SEND_ANONYMOUS_USAGE_STATS": "false",
 		},
 	}
 
 	meltanoRuntime := meltano.NewMeltanoRuntime(meltanoConfig)
-	
+
 	if err := ro.runtimeManager.RegisterRuntime(meltanoRuntime); err != nil {
 		return err
 	}
@@ -569,7 +569,7 @@ func (ro *RuntimeOrchestrator) updateMetrics(status string, runtimeType string) 
 
 	// Update average execution time
 	if ro.metrics.CompletedOrchestrations > 0 {
-		ro.metrics.AverageExecution = float64(time.Since(ro.metrics.OrchestratorStartTime).Milliseconds()) / 
+		ro.metrics.AverageExecution = float64(time.Since(ro.metrics.OrchestratorStartTime).Milliseconds()) /
 			float64(ro.metrics.CompletedOrchestrations)
 	}
 }
@@ -592,7 +592,7 @@ func (ro *RuntimeOrchestrator) startHealthChecking(ctx context.Context) {
 // performHealthChecks performs health checks on all runtimes
 func (ro *RuntimeOrchestrator) performHealthChecks(ctx context.Context) {
 	runtimeTypes := ro.runtimeManager.GetRuntimeTypes()
-	
+
 	for _, runtimeType := range runtimeTypes {
 		runtime, err := ro.runtimeManager.GetRuntime(runtimeType)
 		if err != nil {
@@ -632,10 +632,10 @@ func (ro *RuntimeOrchestrator) startMetricsCollection(ctx context.Context) {
 func (ro *RuntimeOrchestrator) collectMetrics() {
 	// Collect Windmill engine metrics
 	engineMetrics := ro.windmillEngine.GetEngineMetrics()
-	
+
 	// Collect runtime metrics (can be extended)
 	runtimeTypes := ro.runtimeManager.GetRuntimeTypes()
-	
+
 	ro.logger.Debug("Metrics collected",
 		zap.Int64("total_orchestrations", ro.metrics.TotalOrchestrations),
 		zap.Int64("active_orchestrations", ro.metrics.ActiveOrchestrations),

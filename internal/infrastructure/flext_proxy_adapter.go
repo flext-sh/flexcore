@@ -112,7 +112,7 @@ func (fpa *FlextProxyAdapter) simulatePluginExecution(ctx context.Context, param
 	if !ok {
 		pluginName = "default-plugin"
 	}
-	
+
 	command, ok := params["command"].(string)
 	if !ok {
 		command = "default-command"
