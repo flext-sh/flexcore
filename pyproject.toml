@@ -43,16 +43,15 @@ flexcore-server = "flexcore.server:main"
 [tool.ruff]
 extend = "../.ruff-shared.toml"
 lint.isort.known-first-party = ["flexcore"]
-
 [tool.mypy]
 # Strict mode - enables all recommended checks
 strict = true
 
 # Additional strict checks beyond default strict mode
-disallow_any_expr = false
 check_untyped_defs = true
 disallow_any_decorated = true
 disallow_any_explicit = true
+disallow_any_expr = false          # Too restrictive for real-world usage
 disallow_any_generics = true
 disallow_any_unimported = true
 disallow_incomplete_defs = true
@@ -116,11 +115,8 @@ warn_incomplete_stub = true
 
 exclude = [
     "__pycache__/",
-    ".*/examples/",
     ".*/generate_config.py",
     ".*/manage.py",
-    ".*/scripts/",
-    ".*/tests/",
     ".coverage.*",
     ".git/",
     ".mypy_cache/",
@@ -132,7 +128,6 @@ exclude = [
     "node_modules/",
     "vendor/",
 ]
-
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true
