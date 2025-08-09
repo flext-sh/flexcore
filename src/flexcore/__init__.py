@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from flexcore.core import FlexCore
 
-__version__ = "0.9.0"
+__version__ = "0.9.0"  # TODO: Use importlib.metadata.version("flexcore")
 __author__ = "FLEXT Team"
 __email__ = "team@flext.dev"
 
