@@ -13,13 +13,13 @@ This document outlines the integration of Windmill workflow engine as the core o
 ```
 FLEXT Service (Control Panel - Port 8081)
     ↓ (coordinates and monitors)
-FlexCore (Runtime Distribuída - Port 8080)
+FlexCore (Distributed Runtime - Port 8080)
     ↓ (orchestrates via)
 Windmill Workflow Engine
     ↓ (executes on)
 ┌─────────────────┬─────────────────┬─────────────────┐
 │  Meltano        │  Ray Runtime    │  Kubernetes     │
-│  (Production)   │  (Future)       │  (Future)       │
+│  (Active Dev)   │  (Planned)      │  (Planned)      │
 │  Singer/DBT     │  ML/Analytics   │  Orchestration  │
 └─────────────────┴─────────────────┴─────────────────┘
 ```
