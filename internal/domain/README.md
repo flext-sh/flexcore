@@ -2,7 +2,7 @@
 
 **Package**: `github.com/flext-sh/flexcore/internal/domain`  
 **Version**: 0.9.0  
-**Status**: Production Ready
+**Status**: Active Development
 
 ## Overview
 

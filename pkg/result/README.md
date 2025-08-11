@@ -2,7 +2,7 @@
 
 **Package**: `github.com/flext-sh/flexcore/pkg/result`  
 **Version**: 0.9.0  
-**Status**: Production Ready
+**Status**: Active Development
 
 ## Overview
 
