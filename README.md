@@ -344,7 +344,7 @@ make coverage-html         # Generate HTML coverage report
 
 ## 📄 License
 
-This project is part of the FLEXT ecosystem. See [LICENSE](LICENSE) for details.
+See [LICENSE](LICENSE) for details.
 
 ---
 
