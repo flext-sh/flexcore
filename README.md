@@ -1,6 +1,6 @@
 # FlexCore - Enterprise Runtime Container Service
 
-**Type**: Core Service | **Status**: Development | **Dependencies**: Go 1.24+, PostgreSQL, Redis
+**Type**: Core Service | **Status**: Active Development | **Dependencies**: Go 1.24+, PostgreSQL, Redis
 
 **FlexCore** is the high-performance distributed runtime container service that serves as the **primary orchestration engine** for the entire FLEXT data integration ecosystem. Built with Go 1.24+ and implementing Clean Architecture, Domain-Driven Design (DDD), CQRS, and Event Sourcing patterns.
 
