@@ -8,12 +8,11 @@ SPDX-License-Identifier: MIT
 from __future__ import annotations
 
 from flexcore.core import FlexCore
+from importlib.metadata import version
 
-__version__ = "0.9.0"  # TODO(team): Use importlib.metadata.version("flexcore") #123
+__version__ = version("flexcore")
 __author__ = "FLEXT Team"
 __email__ = "team@flext.dev"
 
 
-__all__: list[str] = [
-    "annotations", "FlexCore", "__version__",
-] = ["FlexCore", "__version__"]
+__all__: list[str] = ["FlexCore", "__version__"]
