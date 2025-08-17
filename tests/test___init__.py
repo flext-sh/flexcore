@@ -16,8 +16,8 @@ def test_module_initialization() -> None:
     module_name = Path(__file__).stem.replace("test_", "")
 
     if module_name in sys.modules:
-        module = sys.modules[module_name]
-        assert hasattr(module, "__doc__")
+      module = sys.modules[module_name]
+      assert hasattr(module, "__doc__")
 
 
 def test_with_empty_inputs() -> None:
