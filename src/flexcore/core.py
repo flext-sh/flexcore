@@ -12,21 +12,21 @@ class FlexCore:
     """Main FlexCore class for event-driven architecture."""
 
     def __init__(self, config: dict[str, object] | None = None) -> None:
-        self.config = config or {}
-        self._initialized = False
+      self.config = config or {}
+      self._initialized = False
 
     def initialize(self) -> None:
-        """Initialize the core system components."""
-        if self._initialized:
-            return
+      """Initialize the core system components."""
+      if self._initialized:
+          return
 
-        # Initialize components here
-        self._initialized = True
+      # Initialize components here
+      self._initialized = True
 
     def is_initialized(self) -> bool:
-        """Check if system is initialized."""
-        return self._initialized
+      """Check if system is initialized."""
+      return self._initialized
 
     def shutdown(self) -> None:
-        """Shutdown the core system."""
-        self._initialized = False
+      """Shutdown the core system."""
+      self._initialized = False
