@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/flext-sh/flexcore/internal/domain/services"
-	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // PipelineOrchestratorConfig contains dependencies for PipelineExecutionOrchestrator
@@ -24,24 +23,20 @@ type PipelineOrchestratorConfig struct {
 // Validate ensures all required dependencies are provided
 // SOLID SRP: Reduced from 6 returns to 1 return using validation collection pattern
 func (config *PipelineOrchestratorConfig) Validate() error {
-	validationResult := config.performValidationChecks()
-	if validationResult.IsFailure() {
-		return validationResult.Error()
-	}
-	return nil
+	return config.performValidationChecks()
 }
 
 // performValidationChecks collects all validation errors in a single pass
 // SOLID SRP: Single responsibility for validation logic with centralized error handling
-func (config *PipelineOrchestratorConfig) performValidationChecks() result.Result[bool] {
+func (config *PipelineOrchestratorConfig) performValidationChecks() error {
 	validationErrors := config.collectValidationErrors()
 
 	if len(validationErrors) > 0 {
 		// Return first validation error (maintains original behavior)
-		return result.Failure[bool](fmt.Errorf("%s", validationErrors[0]))
+		return fmt.Errorf("%s", validationErrors[0])
 	}
 
-	return result.Success(true)
+	return nil
 }
 
 // collectValidationErrors gathers all validation issues

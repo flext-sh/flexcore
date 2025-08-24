@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/flext-sh/flexcore/pkg/result"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -54,7 +53,7 @@ func (es *EventStorage) createEventTable() error {
 
 // StoreEvent stores a single event in the database
 // SOLID SRP: Single responsibility for event storage
-func (es *EventStorage) StoreEvent(event DomainEvent) result.Result[bool] {
+func (es *EventStorage) StoreEvent(event DomainEvent) error {
 	query := `
 		INSERT INTO events 
 		(id, type, aggregate_id, aggregate_type, version, data, metadata, occurred_at, created_at) 
@@ -62,7 +61,7 @@ func (es *EventStorage) StoreEvent(event DomainEvent) result.Result[bool] {
 
 	dataBytes, err := json.Marshal(event.EventData())
 	if err != nil {
-		return result.Failure[bool](err)
+		return err
 	}
 
 	// Default metadata
@@ -71,7 +70,7 @@ func (es *EventStorage) StoreEvent(event DomainEvent) result.Result[bool] {
 	}
 	metadataBytes, err := json.Marshal(metadata)
 	if err != nil {
-		return result.Failure[bool](err)
+		return err
 	}
 
 	_, err = es.db.Exec(query,
@@ -86,11 +85,7 @@ func (es *EventStorage) StoreEvent(event DomainEvent) result.Result[bool] {
 		time.Now(),
 	)
 
-	if err != nil {
-		return result.Failure[bool](err)
-	}
-
-	return result.Success(true)
+	return err
 }
 
 // EventLoadingContext encapsulates event loading context and operations
@@ -114,73 +109,65 @@ func NewEventLoadingContext(storage *EventStorage, aggregateID string, fromVersi
 
 // LoadEvents loads events for an aggregate from a specific version
 // SOLID SRP: Single responsibility for event loading orchestration
-func (es *EventStorage) LoadEvents(aggregateID string, fromVersion int) result.Result[[]Event] {
+func (es *EventStorage) LoadEvents(aggregateID string, fromVersion int) ([]Event, error) {
 	context := NewEventLoadingContext(es, aggregateID, fromVersion)
 	return context.executeEventLoading()
 }
 
 // executeEventLoading executes the complete event loading process
 // SOLID SRP: Single responsibility for event loading execution
-func (ctx *EventLoadingContext) executeEventLoading() result.Result[[]Event] {
+func (ctx *EventLoadingContext) executeEventLoading() ([]Event, error) {
 	// Phase 1: Execute database query
-	rowsResult := ctx.executeQuery()
-	if rowsResult.IsFailure() {
-		return result.Failure[[]Event](rowsResult.Error())
+	rows, err := ctx.executeQuery()
+	if err != nil {
+		return nil, err
 	}
-
-	rows := rowsResult.Value()
 	defer rows.Close()
 
 	// Phase 2: Process all rows
-	processResult := ctx.processEventRows(rows)
-	if processResult.IsFailure() {
-		return result.Failure[[]Event](processResult.Error())
+	err = ctx.processEventRows(rows)
+	if err != nil {
+		return nil, err
 	}
 
 	// Phase 3: Validate row iteration completion
 	if err := rows.Err(); err != nil {
-		return result.Failure[[]Event](err)
+		return nil, err
 	}
 
-	return result.Success(ctx.events)
+	return ctx.events, nil
 }
 
 // executeQuery executes the database query for event loading
 // SOLID SRP: Single responsibility for database query execution
-func (ctx *EventLoadingContext) executeQuery() result.Result[*sql.Rows] {
+func (ctx *EventLoadingContext) executeQuery() (*sql.Rows, error) {
 	query := `
 		SELECT id, type, aggregate_id, aggregate_type, version, data, metadata, occurred_at, created_at 
 		FROM events 
 		WHERE aggregate_id = ? AND version >= ? 
 		ORDER BY version ASC`
 
-	rows, err := ctx.storage.db.Query(query, ctx.aggregateID, ctx.fromVersion)
-	if err != nil {
-		return result.Failure[*sql.Rows](err)
-	}
-
-	return result.Success(rows)
+	return ctx.storage.db.Query(query, ctx.aggregateID, ctx.fromVersion)
 }
 
 // processEventRows processes all event rows from the database query
 // SOLID SRP: Single responsibility for event row processing
-func (ctx *EventLoadingContext) processEventRows(rows *sql.Rows) result.Result[bool] {
+func (ctx *EventLoadingContext) processEventRows(rows *sql.Rows) error {
 	for rows.Next() {
-		eventResult := ctx.processSingleEventRow(rows)
-		if eventResult.IsFailure() {
-			return result.Failure[bool](eventResult.Error())
+		event, err := ctx.processSingleEventRow(rows)
+		if err != nil {
+			return err
 		}
 
-		event := eventResult.Value()
 		ctx.events = append(ctx.events, event)
 	}
 
-	return result.Success(true)
+	return nil
 }
 
 // processSingleEventRow processes a single event row from database
 // SOLID SRP: Single responsibility for individual event processing
-func (ctx *EventLoadingContext) processSingleEventRow(rows *sql.Rows) result.Result[Event] {
+func (ctx *EventLoadingContext) processSingleEventRow(rows *sql.Rows) (Event, error) {
 	var event Event
 	var dataStr, metadataStr string
 
@@ -197,7 +184,7 @@ func (ctx *EventLoadingContext) processSingleEventRow(rows *sql.Rows) result.Res
 		&event.CreatedAt,
 	)
 	if err != nil {
-		return result.Failure[Event](err)
+		return Event{}, err
 	}
 
 	// Process JSON data and metadata
@@ -206,28 +193,28 @@ func (ctx *EventLoadingContext) processSingleEventRow(rows *sql.Rows) result.Res
 
 // processEventJsonData processes JSON data and metadata for an event
 // SOLID SRP: Single responsibility for JSON data processing
-func (ctx *EventLoadingContext) processEventJsonData(event *Event, dataStr, metadataStr string) result.Result[Event] {
+func (ctx *EventLoadingContext) processEventJsonData(event *Event, dataStr, metadataStr string) (Event, error) {
 	// Unmarshal data
 	if err := json.Unmarshal([]byte(dataStr), &event.Data); err != nil {
-		return result.Failure[Event](err)
+		return Event{}, err
 	}
 
 	// Unmarshal metadata
 	if err := json.Unmarshal([]byte(metadataStr), &event.Metadata); err != nil {
-		return result.Failure[Event](err)
+		return Event{}, err
 	}
 
-	return result.Success(*event)
+	return *event, nil
 }
 
 // LoadAllEvents loads all events for an aggregate
-func (es *EventStorage) LoadAllEvents(aggregateID string) result.Result[[]Event] {
+func (es *EventStorage) LoadAllEvents(aggregateID string) ([]Event, error) {
 	return es.LoadEvents(aggregateID, 0)
 }
 
 // GetLatestVersion gets the latest version number for an aggregate
 // SOLID SRP: Single responsibility for version tracking
-func (es *EventStorage) GetLatestVersion(aggregateID string) result.Result[int] {
+func (es *EventStorage) GetLatestVersion(aggregateID string) (int, error) {
 	query := `
 		SELECT COALESCE(MAX(version), 0) 
 		FROM events 
@@ -236,10 +223,10 @@ func (es *EventStorage) GetLatestVersion(aggregateID string) result.Result[int] 
 	var version int
 	err := es.db.QueryRow(query, aggregateID).Scan(&version)
 	if err != nil {
-		return result.Failure[int](err)
+		return 0, err
 	}
 
-	return result.Success(version)
+	return version, nil
 }
 
 // Close closes the database connection

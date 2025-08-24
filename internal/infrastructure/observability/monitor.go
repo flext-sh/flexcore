@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/flext-sh/flexcore/pkg/errors"
-	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 const (
@@ -59,7 +58,7 @@ type AlertThresholds struct {
 
 // HealthChecker interface for health checks
 type HealthChecker interface {
-	HealthCheck(ctx context.Context) result.Result[bool]
+	HealthCheck(ctx context.Context) (bool, error)
 	Name() string
 }
 
@@ -279,8 +278,8 @@ func (m *Monitor) GetHealthStatus(ctx context.Context) HealthStatus {
 	totalCount := len(checkers)
 
 	for name, checker := range checkers {
-		result := checker.HealthCheck(ctx)
-		if result.IsSuccess() && result.Value() {
+		healthy, err := checker.HealthCheck(ctx)
+		if err == nil && healthy {
 			status.Services[name] = HealthStateHealthy
 			healthyCount++
 		} else {
@@ -288,8 +287,8 @@ func (m *Monitor) GetHealthStatus(ctx context.Context) HealthStatus {
 			if overall == HealthStateHealthy {
 				overall = HealthStateWarning
 			}
-			if result.IsFailure() {
-				status.Details[name+"_error"] = result.Error().Error()
+			if err != nil {
+				status.Details[name+"_error"] = err.Error()
 			}
 		}
 	}

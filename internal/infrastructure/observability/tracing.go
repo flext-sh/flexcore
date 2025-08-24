@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/flext-sh/flexcore/pkg/errors"
-	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 const (
@@ -391,9 +390,9 @@ func (t *Tracer) Name() string {
 }
 
 // Health check for tracer
-func (t *Tracer) HealthCheck(ctx context.Context) result.Result[bool] {
+func (t *Tracer) HealthCheck(ctx context.Context) (bool, error) {
 	if !t.IsEnabled() {
-		return result.Failure[bool](errors.ValidationError("tracer is disabled"))
+		return false, errors.ValidationError("tracer is disabled")
 	}
 
 	t.mu.RLock()
@@ -407,10 +406,10 @@ func (t *Tracer) HealthCheck(ctx context.Context) result.Result[bool] {
 	healthy := totalCount < t.maxSpans && activeCount < t.maxSpans/2
 
 	if !healthy {
-		return result.Failure[bool](errors.InternalError(
+		return false, errors.InternalError(
 			fmt.Sprintf("tracer overloaded: %d/%d spans, %d active",
-				totalCount, t.maxSpans, activeCount)))
+				totalCount, t.maxSpans, activeCount))
 	}
 
-	return result.Success(true)
+	return true, nil
 }

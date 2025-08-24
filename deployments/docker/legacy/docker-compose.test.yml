@@ -1,0 +1,120 @@
+# FlexCore Docker Compose - Testing Configuration
+# Use: docker-compose -f docker-compose.yml -f docker-compose.test.yml up
+
+version: "3.8"
+
+services:
+  # Test database with temporary data
+  postgres:
+    environment:
+      POSTGRES_DB: windmill_test
+      POSTGRES_USER: windmill_test
+      POSTGRES_PASSWORD: test_password
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./scripts/utilities/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    tmpfs:
+      - /var/lib/postgresql/data # Use tmpfs for faster test runs
+
+  # Test Redis with no persistence
+  redis:
+    command: redis-server --save ""
+    tmpfs:
+      - /data
+
+  # Test Windmill configuration
+  windmill-backend:
+    environment:
+      - DATABASE_URL=postgres://windmill_test:test_password@postgres:5432/windmill_test
+      - REDIS_URL=redis://redis:6379
+      - RUST_LOG=debug
+      - WINDMILL_WORKER_GROUPS=test
+      - WINDMILL_TEST_MODE=1
+    volumes:
+      - ./third_party/windmill/windmill-backend:/windmill/windmill-backend:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Test FlexCore API
+  flexcore-api:
+    environment:
+      - DATABASE_URL=postgres://windmill_test:test_password@postgres:5432/windmill_test
+      - REDIS_URL=redis://redis:6379
+      - WINDMILL_BASE_URL=http://windmill-backend:8000
+      - LOG_LEVEL=debug
+      - FLEXCORE_TEST_MODE=1
+    volumes:
+      - ./build/flexcore:/flexcore/flexcore:ro
+    profiles:
+      - api
+
+  # Test runner service
+  test-runner:
+    image: debian:bookworm-slim
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TEST_DATABASE_URL=postgres://windmill_test:test_password@postgres:5432/windmill_test
+      - TEST_REDIS_URL=redis://redis:6379
+      - TEST_WINDMILL_URL=http://windmill-backend:8000
+      - TEST_FLEXCORE_URL=http://flexcore-api:3001
+    depends_on:
+      windmill-backend:
+        condition: service_healthy
+    networks:
+      - flexcore-network
+    profiles:
+      - test-runner
+    command: /workspace/scripts/test/run-tests.sh full
+
+  # E2E test environment
+  selenium:
+    image: selenium/standalone-chrome:latest
+    ports:
+      - "4444:4444"
+    environment:
+      - SE_OPTS=--disable-dev-shm-usage
+    networks:
+      - flexcore-network
+    profiles:
+      - e2e
+
+  # Mock external services for testing
+  mock-services:
+    image: mockserver/mockserver:latest
+    ports:
+      - "1080:1080"
+    environment:
+      - MOCKSERVER_LOG_LEVEL=WARN
+    networks:
+      - flexcore-network
+    profiles:
+      - mocks
+
+  # Test data initialization
+  test-data-init:
+    image: curlimages/curl:latest
+    depends_on:
+      windmill-backend:
+        condition: service_healthy
+    networks:
+      - flexcore-network
+    profiles:
+      - test-data
+    command: >
+      sh -c "
+        echo 'Initializing test data...' &&
+        curl -X POST http://windmill-backend:8000/api/w/test/scripts \
+          -H 'Content-Type: application/json' \
+          -d '{\"path\": \"test/hello\", \"content\": \"print(\\\"Hello Test\\\")\", \"language\": \"python3\"}' &&
+        echo 'Test data initialized successfully'
+      "
+
+volumes:
+  postgres_test_data:
+    name: flexcore_postgres_test_data

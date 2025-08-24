@@ -16,10 +16,10 @@
 package entities
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/flext-sh/flexcore/pkg/errors"
-	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/google/uuid"
 )
 
@@ -442,7 +442,7 @@ type Plugin struct {
 //
 // Returns:
 //
-//	result.Result[*Plugin]: Success containing the new plugin, or Failure with validation error
+//	*Plugin: The new plugin aggregate, or error if validation fails
 //
 // Example:
 //
@@ -496,13 +496,13 @@ type Plugin struct {
 // Thread Safety:
 //
 //	Safe for concurrent use as each call creates an independent plugin instance.
-func NewPlugin(name, version, description string, pluginType PluginType) result.Result[*Plugin] {
+func NewPlugin(name, version, description string, pluginType PluginType) (*Plugin, error) {
 	if name == "" {
-		return result.Failure[*Plugin](errors.ValidationError("plugin name is required"))
+		return nil, errors.ValidationError("plugin name is required")
 	}
 
 	if version == "" {
-		return result.Failure[*Plugin](errors.ValidationError("plugin version is required"))
+		return nil, errors.ValidationError("plugin version is required")
 	}
 
 	now := time.Now()
@@ -530,7 +530,7 @@ func NewPlugin(name, version, description string, pluginType PluginType) result.
 	})
 	plugin.addEvent(event)
 
-	return result.Success(plugin)
+	return plugin, nil
 }
 
 // ID returns the unique identifier of the plugin aggregate.
@@ -845,7 +845,7 @@ func (p *Plugin) UpdatedAt() time.Time {
 //
 // Returns:
 //
-//	result.Result[bool]: Success(true) if activated successfully, or Failure with validation error
+//	error: nil if activated successfully, error if activation fails
 //
 // Example:
 //
@@ -886,13 +886,13 @@ func (p *Plugin) UpdatedAt() time.Time {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Plugin) Activate() result.Result[bool] {
+func (p *Plugin) Activate() error {
 	if p.status == PluginStatusActive {
-		return result.Failure[bool](errors.ValidationError("plugin is already active"))
+		return errors.ValidationError("plugin is already active")
 	}
 
 	if p.status == PluginStatusError {
-		return result.Failure[bool](errors.ValidationError("cannot activate plugin in error status"))
+		return errors.ValidationError("cannot activate plugin in error status")
 	}
 
 	p.status = PluginStatusActive
@@ -906,7 +906,7 @@ func (p *Plugin) Activate() result.Result[bool] {
 	})
 	p.addEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // Deactivate transitions the plugin to inactive status, removing it from execution availability.
@@ -923,7 +923,7 @@ func (p *Plugin) Activate() result.Result[bool] {
 //
 // Returns:
 //
-//	result.Result[bool]: Success(true) if deactivated successfully, or Failure with validation error
+//	error: nil if deactivated successfully, error if deactivation fails
 //
 // Example:
 //
@@ -964,9 +964,9 @@ func (p *Plugin) Activate() result.Result[bool] {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Plugin) Deactivate() result.Result[bool] {
+func (p *Plugin) Deactivate() error {
 	if p.status == PluginStatusInactive {
-		return result.Failure[bool](errors.ValidationError("plugin is already inactive"))
+		return errors.ValidationError("plugin is already inactive")
 	}
 
 	p.status = PluginStatusInactive
@@ -980,7 +980,7 @@ func (p *Plugin) Deactivate() result.Result[bool] {
 	})
 	p.addEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // SetError transitions the plugin to error status with detailed error information.
@@ -1074,7 +1074,7 @@ func (p *Plugin) SetError(errorMessage string) {
 //
 // Returns:
 //
-//	result.Result[bool]: Success(true) if configuration updated, or Failure with validation error
+//	error: nil if configuration updated successfully, error if update fails
 //
 // Example:
 //
@@ -1124,9 +1124,9 @@ func (p *Plugin) SetError(errorMessage string) {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Plugin) UpdateConfig(config map[string]interface{}) result.Result[bool] {
+func (p *Plugin) UpdateConfig(config map[string]interface{}) error {
 	if config == nil {
-		return result.Failure[bool](errors.ValidationError("config cannot be nil"))
+		return errors.ValidationError("config cannot be nil")
 	}
 
 	p.config = make(map[string]interface{})
@@ -1143,7 +1143,7 @@ func (p *Plugin) UpdateConfig(config map[string]interface{}) result.Result[bool]
 	})
 	p.addEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // AddCapability adds a new capability to the plugin's capability list.
@@ -1164,7 +1164,7 @@ func (p *Plugin) UpdateConfig(config map[string]interface{}) result.Result[bool]
 //
 // Returns:
 //
-//	result.Result[bool]: Success(true) if capability added, or Failure with validation error
+//	error: nil if capability added successfully, error if addition fails
 //
 // Example:
 //
@@ -1215,22 +1215,22 @@ func (p *Plugin) UpdateConfig(config map[string]interface{}) result.Result[bool]
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Plugin) AddCapability(capability string) result.Result[bool] {
+func (p *Plugin) AddCapability(capability string) error {
 	if capability == "" {
-		return result.Failure[bool](errors.ValidationError("capability cannot be empty"))
+		return errors.ValidationError("capability cannot be empty")
 	}
 
 	// Check if capability already exists
 	for _, existing := range p.capabilities {
 		if existing == capability {
-			return result.Failure[bool](errors.ValidationError("capability already exists"))
+			return errors.ValidationError("capability already exists")
 		}
 	}
 
 	p.capabilities = append(p.capabilities, capability)
 	p.updatedAt = time.Now()
 
-	return result.Success(true)
+	return nil
 }
 
 // RemoveCapability removes an existing capability from the plugin's capability list.
@@ -1252,7 +1252,7 @@ func (p *Plugin) AddCapability(capability string) result.Result[bool] {
 //
 // Returns:
 //
-//	result.Result[bool]: Success(true) if capability removed, or Failure if not found
+//	error: nil if capability removed successfully, error if not found
 //
 // Example:
 //
@@ -1302,16 +1302,16 @@ func (p *Plugin) AddCapability(capability string) result.Result[bool] {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Plugin) RemoveCapability(capability string) result.Result[bool] {
+func (p *Plugin) RemoveCapability(capability string) error {
 	for i, existing := range p.capabilities {
 		if existing == capability {
 			p.capabilities = append(p.capabilities[:i], p.capabilities[i+1:]...)
 			p.updatedAt = time.Now()
-			return result.Success(true)
+			return nil
 		}
 	}
 
-	return result.Failure[bool](errors.ValidationError("capability not found"))
+	return errors.ValidationError("capability not found")
 }
 
 // HasCapability checks if the plugin declares a specific capability.
@@ -1641,18 +1641,18 @@ func (v *PluginValidator) getPluginValidationRules() []PluginValidationRule {
 
 // ValidatePlugin validates plugin using rule-based approach
 // DRY PRINCIPLE: Eliminates 6 return statements using validation rules
-func (v *PluginValidator) ValidatePlugin(plugin *Plugin) result.Result[bool] {
+func (v *PluginValidator) ValidatePlugin(plugin *Plugin) error {
 	for _, rule := range v.getPluginValidationRules() {
 		if !rule.Check(plugin) {
-			return result.Failure[bool](errors.ValidationError(rule.Message))
+			return errors.ValidationError(rule.Message)
 		}
 	}
-	return result.Success(true)
+	return nil
 }
 
 // Validate validates the plugin state
 // DRY PRINCIPLE: Delegates to specialized validator eliminating multiple returns
-func (p *Plugin) Validate() result.Result[bool] {
+func (p *Plugin) Validate() error {
 	validator := NewPluginValidator()
 	return validator.ValidatePlugin(p)
 }
