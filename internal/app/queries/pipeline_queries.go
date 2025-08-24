@@ -31,26 +31,26 @@ type PipelineRepository interface {
 type PipelineQueryFunc func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error)
 
 // handlePagedPipelineQuery handles common pagination logic for pipeline queries (DRY principle)
-func handlePagedPipelineQuery(ctx context.Context, repository PipelineRepository, pagedQuery PagedQuery, queryFunc PipelineQueryFunc, errorMsg string) result.Result[PagedResult[*entities.Pipeline]] {
+func handlePagedPipelineQuery(ctx context.Context, repository PipelineRepository, pagedQuery PagedQuery, queryFunc PipelineQueryFunc, errorMsg string) (PagedResult[*entities.Pipeline], error) {
 	offset := (pagedQuery.Page - 1) * pagedQuery.PageSize
 	pipelines, err := queryFunc(ctx, pagedQuery.PageSize, offset)
 	if err != nil {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.Wrap(err, errorMsg))
+		return PagedResult[*entities.Pipeline]{}, errors.Wrap(err, errorMsg)
 	}
 
 	totalCount, err := repository.Count(ctx)
 	if err != nil {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.Wrap(err, "failed to count pipelines"))
+		return PagedResult[*entities.Pipeline]{}, errors.Wrap(err, "failed to count pipelines")
 	}
 
 	pagedResult := NewPagedResult(pipelines, totalCount, pagedQuery.Page, pagedQuery.PageSize)
-	return result.Success(pagedResult)
+	return pagedResult, nil
 }
 
 // handleParameterizedPipelineQuery handles parameterized pipeline queries with validation (eliminates duplication)
-func handleParameterizedPipelineQuery(ctx context.Context, repository PipelineRepository, pagedQuery PagedQuery, parameter, parameterName string, queryFunc PipelineQueryFunc, errorMsg string) result.Result[PagedResult[*entities.Pipeline]] {
+func handleParameterizedPipelineQuery(ctx context.Context, repository PipelineRepository, pagedQuery PagedQuery, parameter, parameterName string, queryFunc PipelineQueryFunc, errorMsg string) (PagedResult[*entities.Pipeline], error) {
 	if parameter == "" {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.ValidationError(parameterName + " cannot be empty"))
+		return PagedResult[*entities.Pipeline]{}, errors.ValidationError(parameterName + " cannot be empty")
 	}
 
 	return handlePagedPipelineQuery(ctx, repository, pagedQuery, queryFunc, errorMsg)
@@ -83,17 +83,17 @@ func NewGetPipelineQueryHandler(repository PipelineRepository) *GetPipelineQuery
 }
 
 // Handle handles the get pipeline query
-func (h *GetPipelineQueryHandler) Handle(ctx context.Context, query GetPipelineQuery) result.Result[*entities.Pipeline] {
+func (h *GetPipelineQueryHandler) Handle(ctx context.Context, query GetPipelineQuery) (*entities.Pipeline, error) {
 	pipeline, err := h.repository.FindByID(ctx, query.PipelineID)
 	if err != nil {
-		return result.Failure[*entities.Pipeline](errors.Wrap(err, "failed to find pipeline"))
+		return nil, errors.Wrap(err, "failed to find pipeline")
 	}
 
 	if pipeline == nil {
-		return result.Failure[*entities.Pipeline](errors.NotFoundError("pipeline"))
+		return nil, errors.NotFoundError("pipeline")
 	}
 
-	return result.Success(pipeline)
+	return pipeline, nil
 }
 
 // GetPipelineByNameQuery represents a query to get a pipeline by name
@@ -123,21 +123,21 @@ func NewGetPipelineByNameQueryHandler(repository PipelineRepository) *GetPipelin
 }
 
 // Handle handles the query
-func (h *GetPipelineByNameQueryHandler) Handle(ctx context.Context, query GetPipelineByNameQuery) result.Result[*entities.Pipeline] {
+func (h *GetPipelineByNameQueryHandler) Handle(ctx context.Context, query GetPipelineByNameQuery) (*entities.Pipeline, error) {
 	if query.Name == "" {
-		return result.Failure[*entities.Pipeline](errors.ValidationError("pipeline name cannot be empty"))
+		return nil, errors.ValidationError("pipeline name cannot be empty")
 	}
 
 	pipeline, err := h.repository.FindByName(ctx, query.Name)
 	if err != nil {
-		return result.Failure[*entities.Pipeline](errors.Wrap(err, "failed to find pipeline"))
+		return nil, errors.Wrap(err, "failed to find pipeline")
 	}
 
 	if pipeline == nil {
-		return result.Failure[*entities.Pipeline](errors.NotFoundError("pipeline"))
+		return nil, errors.NotFoundError("pipeline")
 	}
 
-	return result.Success(pipeline)
+	return pipeline, nil
 }
 
 // ListPipelinesQuery represents a query to list pipelines
@@ -165,25 +165,25 @@ func NewListPipelinesQueryHandler(repository PipelineRepository) *ListPipelinesQ
 }
 
 // Handle handles the query
-func (h *ListPipelinesQueryHandler) Handle(ctx context.Context, query ListPipelinesQuery) result.Result[PagedResult[*entities.Pipeline]] {
+func (h *ListPipelinesQueryHandler) Handle(ctx context.Context, query ListPipelinesQuery) (PagedResult[*entities.Pipeline], error) {
 	// Calculate offset
 	offset := (query.Page - 1) * query.PageSize
 
 	// Get pipelines
 	pipelines, err := h.repository.List(ctx, query.PageSize, offset)
 	if err != nil {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.Wrap(err, "failed to list pipelines"))
+		return PagedResult[*entities.Pipeline]{}, errors.Wrap(err, "failed to list pipelines")
 	}
 
 	// Get total count
 	totalCount, err := h.repository.Count(ctx)
 	if err != nil {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.Wrap(err, "failed to count pipelines"))
+		return PagedResult[*entities.Pipeline]{}, errors.Wrap(err, "failed to count pipelines")
 	}
 
 	// Create paged result
 	pagedResult := NewPagedResult(pipelines, totalCount, query.Page, query.PageSize)
-	return result.Success(pagedResult)
+	return pagedResult, nil
 }
 
 // ListPipelinesByOwnerQuery represents a query to list pipelines by owner
@@ -213,7 +213,7 @@ func NewListPipelinesByOwnerQueryHandler(repository PipelineRepository) *ListPip
 }
 
 // Handle handles the query
-func (h *ListPipelinesByOwnerQueryHandler) Handle(ctx context.Context, query ListPipelinesByOwnerQuery) result.Result[PagedResult[*entities.Pipeline]] {
+func (h *ListPipelinesByOwnerQueryHandler) Handle(ctx context.Context, query ListPipelinesByOwnerQuery) (PagedResult[*entities.Pipeline], error) {
 	return handleParameterizedPipelineQuery(ctx, h.repository, query.PagedQuery,
 		query.Owner, "owner",
 		func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error) {
@@ -248,7 +248,7 @@ func NewListPipelinesByTagQueryHandler(repository PipelineRepository) *ListPipel
 }
 
 // Handle handles the query
-func (h *ListPipelinesByTagQueryHandler) Handle(ctx context.Context, query ListPipelinesByTagQuery) result.Result[PagedResult[*entities.Pipeline]] {
+func (h *ListPipelinesByTagQueryHandler) Handle(ctx context.Context, query ListPipelinesByTagQuery) (PagedResult[*entities.Pipeline], error) {
 	return handleParameterizedPipelineQuery(ctx, h.repository, query.PagedQuery,
 		query.Tag, "tag",
 		func(ctx context.Context, pageSize, offset int) ([]*entities.Pipeline, error) {
@@ -283,20 +283,20 @@ func NewListPipelinesByStatusQueryHandler(repository PipelineRepository) *ListPi
 }
 
 // Handle handles the query
-func (h *ListPipelinesByStatusQueryHandler) Handle(ctx context.Context, query ListPipelinesByStatusQuery) result.Result[PagedResult[*entities.Pipeline]] {
+func (h *ListPipelinesByStatusQueryHandler) Handle(ctx context.Context, query ListPipelinesByStatusQuery) (PagedResult[*entities.Pipeline], error) {
 	offset := (query.Page - 1) * query.PageSize
 	pipelines, err := h.repository.FindByStatus(ctx, query.Status, query.PageSize, offset)
 	if err != nil {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.Wrap(err, "failed to list pipelines by status"))
+		return PagedResult[*entities.Pipeline]{}, errors.Wrap(err, "failed to list pipelines by status")
 	}
 
 	totalCount, err := h.repository.Count(ctx)
 	if err != nil {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.Wrap(err, "failed to count pipelines"))
+		return PagedResult[*entities.Pipeline]{}, errors.Wrap(err, "failed to count pipelines")
 	}
 
 	pagedResult := NewPagedResult(pipelines, totalCount, query.Page, query.PageSize)
-	return result.Success(pagedResult)
+	return pagedResult, nil
 }
 
 // PipelineStatistics represents pipeline statistics
@@ -336,13 +336,13 @@ func NewGetPipelineStatisticsQueryHandler(repository PipelineRepository) *GetPip
 }
 
 // Handle handles the query
-func (h *GetPipelineStatisticsQueryHandler) Handle(ctx context.Context, query GetPipelineStatisticsQuery) result.Result[PipelineStatistics] {
+func (h *GetPipelineStatisticsQueryHandler) Handle(ctx context.Context, query GetPipelineStatisticsQuery) (PipelineStatistics, error) {
 	// This is a simplified implementation
 	// In production, you would have specific repository methods for statistics
 
 	totalCount, err := h.repository.Count(ctx)
 	if err != nil {
-		return result.Failure[PipelineStatistics](errors.Wrap(err, "failed to get pipeline count"))
+		return PipelineStatistics{}, errors.Wrap(err, "failed to get pipeline count")
 	}
 
 	// Get counts by status - fallback to 0 on error for statistics
@@ -377,7 +377,7 @@ func (h *GetPipelineStatisticsQueryHandler) Handle(ctx context.Context, query Ge
 		AverageExecutionTime: time.Minute * averageExecutionTimeMinutes, // Would need execution data
 	}
 
-	return result.Success(stats)
+	return stats, nil
 }
 
 // SearchPipelinesQuery represents a query to search pipelines
@@ -409,9 +409,9 @@ func NewSearchPipelinesQueryHandler(repository PipelineRepository) *SearchPipeli
 }
 
 // Handle handles the query
-func (h *SearchPipelinesQueryHandler) Handle(ctx context.Context, query SearchPipelinesQuery) result.Result[PagedResult[*entities.Pipeline]] {
+func (h *SearchPipelinesQueryHandler) Handle(ctx context.Context, query SearchPipelinesQuery) (PagedResult[*entities.Pipeline], error) {
 	if query.SearchTerm == "" {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.ValidationError("search term cannot be empty"))
+		return PagedResult[*entities.Pipeline]{}, errors.ValidationError("search term cannot be empty")
 	}
 
 	// In a real implementation, you would have a Search method in the repository
@@ -419,7 +419,7 @@ func (h *SearchPipelinesQueryHandler) Handle(ctx context.Context, query SearchPi
 	offset := (query.Page - 1) * query.PageSize
 	pipelines, err := h.repository.List(ctx, query.PageSize, offset)
 	if err != nil {
-		return result.Failure[PagedResult[*entities.Pipeline]](errors.Wrap(err, "failed to search pipelines"))
+		return PagedResult[*entities.Pipeline]{}, errors.Wrap(err, "failed to search pipelines")
 	}
 
 	// Filter by search term (simple implementation)
@@ -432,7 +432,7 @@ func (h *SearchPipelinesQueryHandler) Handle(ctx context.Context, query SearchPi
 
 	totalCount := len(filteredPipelines)
 	pagedResult := NewPagedResult(filteredPipelines, totalCount, query.Page, query.PageSize)
-	return result.Success(pagedResult)
+	return pagedResult, nil
 }
 
 // SearchTextMatcher provides specialized text matching for pipeline search

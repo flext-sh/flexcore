@@ -69,6 +69,8 @@ linters-settings:
         allow:
           - $gostd
           - github.com/flext-sh/flexcore
+          - github.com/flext-sh/flext
+          - github.com/gin-gonic/gin
           - github.com/hashicorp/go-plugin
           - github.com/lib/pq
           - github.com/mattn/go-sqlite3

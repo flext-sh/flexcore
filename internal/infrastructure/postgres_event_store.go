@@ -8,7 +8,6 @@ import (
 
 	"github.com/flext-sh/flexcore/internal/domain/services"
 	"github.com/flext-sh/flexcore/pkg/logging"
-	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -105,39 +104,21 @@ func (es *PostgreSQLEventStore) GetEvents(ctx context.Context, aggregateID strin
 // DRY PRINCIPLE: Uses shared query execution eliminating 32-line duplication (mass=186)
 func (es *PostgreSQLEventStore) getEventsLegacy(ctx context.Context, streamID string) ([]EventEntry, error) {
 	queryBuilder := es.createEventQueryBuilder(ctx)
-	queryResult := queryBuilder.WithStreamFilter(streamID).ExecuteQuery()
-
-	if queryResult.IsFailure() {
-		return nil, queryResult.Error()
-	}
-
-	return queryResult.Value(), nil
+	return queryBuilder.WithStreamFilter(streamID).ExecuteQuery()
 }
 
 // GetAllEvents retrieves all events from PostgreSQL
 // DRY PRINCIPLE: Uses shared query execution for consistency with other methods
 func (es *PostgreSQLEventStore) GetAllEvents(ctx context.Context) ([]EventEntry, error) {
 	queryBuilder := es.createEventQueryBuilder(ctx)
-	queryResult := queryBuilder.WithoutFilters().ExecuteQuery()
-
-	if queryResult.IsFailure() {
-		return nil, queryResult.Error()
-	}
-
-	return queryResult.Value(), nil
+	return queryBuilder.WithoutFilters().ExecuteQuery()
 }
 
 // GetEventsByTypeLegacy retrieves events by type from PostgreSQL (legacy method)
 // DRY PRINCIPLE: Uses shared query execution eliminating 32-line duplication (mass=186)
 func (es *PostgreSQLEventStore) GetEventsByTypeLegacy(ctx context.Context, eventType string) ([]EventEntry, error) {
 	queryBuilder := es.createEventQueryBuilder(ctx)
-	queryResult := queryBuilder.WithTypeFilter(eventType).ExecuteQuery()
-
-	if queryResult.IsFailure() {
-		return nil, queryResult.Error()
-	}
-
-	return queryResult.Value(), nil
+	return queryBuilder.WithTypeFilter(eventType).ExecuteQuery()
 }
 
 // GetEventCount returns the total number of events in the store
@@ -209,23 +190,22 @@ func (qb *EventQueryBuilder) WithoutFilters() *EventQueryBuilder {
 
 // ExecuteQuery executes the built query and converts results
 // SOLID SRP: Single responsibility for complete query execution and conversion
-func (qb *EventQueryBuilder) ExecuteQuery() result.Result[[]EventEntry] {
+func (qb *EventQueryBuilder) ExecuteQuery() ([]EventEntry, error) {
 	var events []Event
 
 	// Execute database query
 	if err := qb.query.Find(&events).Error; err != nil {
-		return result.Failure[[]EventEntry](fmt.Errorf("%s: %w", qb.errorMsg, err))
+		return nil, fmt.Errorf("%s: %w", qb.errorMsg, err)
 	}
 
 	// Convert events using specialized converter
 	converter := qb.createEventConverter()
-	conversionResult := converter.ConvertEventsToEntries(events)
-
-	if conversionResult.IsFailure() {
-		return result.Failure[[]EventEntry](conversionResult.Error())
+	eventEntries, err := converter.ConvertEventsToEntries(events)
+	if err != nil {
+		return nil, err
 	}
 
-	return result.Success(conversionResult.Value())
+	return eventEntries, nil
 }
 
 // EventConverter handles event conversion with Result pattern
@@ -244,31 +224,31 @@ func (qb *EventQueryBuilder) createEventConverter() *EventConverter {
 
 // ConvertEventsToEntries converts database events to EventEntry format
 // SOLID SRP: Single responsibility for complete event conversion
-func (converter *EventConverter) ConvertEventsToEntries(events []Event) result.Result[[]EventEntry] {
+func (converter *EventConverter) ConvertEventsToEntries(events []Event) ([]EventEntry, error) {
 	var eventEntries []EventEntry
 
 	for _, event := range events {
-		conversionResult := converter.convertSingleEvent(event)
-		if conversionResult.IsFailure() {
+		eventEntry, err := converter.convertSingleEvent(event)
+		if err != nil {
 			// Log warning but continue processing other events
 			converter.logger.Warn("Failed to convert event",
 				zap.String("event_id", event.ID),
-				zap.Error(conversionResult.Error()))
+				zap.Error(err))
 			continue
 		}
 
-		eventEntries = append(eventEntries, conversionResult.Value())
+		eventEntries = append(eventEntries, eventEntry)
 	}
 
-	return result.Success(eventEntries)
+	return eventEntries, nil
 }
 
 // convertSingleEvent converts a single database event to EventEntry
 // SOLID SRP: Single responsibility for single event conversion
-func (converter *EventConverter) convertSingleEvent(event Event) result.Result[EventEntry] {
+func (converter *EventConverter) convertSingleEvent(event Event) (EventEntry, error) {
 	var eventData interface{}
 	if err := json.Unmarshal([]byte(event.Data), &eventData); err != nil {
-		return result.Failure[EventEntry](fmt.Errorf("failed to unmarshal event data: %w", err))
+		return EventEntry{}, fmt.Errorf("failed to unmarshal event data: %w", err)
 	}
 
 	eventEntry := EventEntry{
@@ -279,7 +259,7 @@ func (converter *EventConverter) convertSingleEvent(event Event) result.Result[E
 		Version:   event.Version,
 	}
 
-	return result.Success(eventEntry)
+	return eventEntry, nil
 }
 
 // Close closes the database connection

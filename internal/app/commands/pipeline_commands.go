@@ -437,23 +437,21 @@ func NewCreatePipelineCommandHandler(repository PipelineRepository, eventBus Eve
 //   - Repository: Persists aggregate with proper transaction handling
 //   - Event Bus: Publishes PipelineCreated and related events
 //   - Result Pattern: Explicit error handling with typed results
-func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command CreatePipelineCommand) result.Result[interface{}] {
+func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command CreatePipelineCommand) (*entities.Pipeline, error) {
 	// Check if pipeline with same name already exists
 	existingPipeline, err := h.repository.FindByName(ctx, command.Name)
 	if err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to check for existing pipeline"))
+		return nil, errors.Wrap(err, "failed to check for existing pipeline")
 	}
 	if existingPipeline != nil {
-		return result.Failure[interface{}](errors.AlreadyExistsError("pipeline with name " + command.Name))
+		return nil, errors.AlreadyExistsError("pipeline with name " + command.Name)
 	}
 
 	// Create new pipeline
-	pipelineResult := entities.NewPipeline(command.Name, command.Description, command.Owner)
-	if pipelineResult.IsFailure() {
-		return result.Failure[interface{}](pipelineResult.Error())
+	pipeline, err := entities.NewPipeline(command.Name, command.Description, command.Owner)
+	if err != nil {
+		return nil, err
 	}
-
-	pipeline := pipelineResult.Value()
 
 	// Add tags
 	for _, tag := range command.Tags {
@@ -462,7 +460,7 @@ func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command Creat
 
 	// Save pipeline
 	if err := h.repository.Save(ctx, pipeline); err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to save pipeline"))
+		return nil, errors.Wrap(err, "failed to save pipeline")
 	}
 
 	// Publish domain events
@@ -474,7 +472,7 @@ func (h *CreatePipelineCommandHandler) Handle(ctx context.Context, command Creat
 
 	pipeline.ClearEvents()
 
-	return result.Success[interface{}](pipeline)
+	return pipeline, nil
 }
 
 // AddPipelineStepCommand represents a command to add a processing step to an existing pipeline.
@@ -810,11 +808,11 @@ func NewAddPipelineStepCommandHandler(repository PipelineRepository, eventBus Ev
 //   - Repository: Persists updated pipeline with optimistic concurrency
 //   - Event Bus: Publishes PipelineStepAdded and related events
 //   - Result Pattern: Explicit error handling with typed results
-func (h *AddPipelineStepCommandHandler) Handle(ctx context.Context, command AddPipelineStepCommand) result.Result[interface{}] {
+func (h *AddPipelineStepCommandHandler) Handle(ctx context.Context, command AddPipelineStepCommand) (*entities.PipelineStep, error) {
 	// Find pipeline
 	pipeline, err := h.repository.FindByID(ctx, command.PipelineID)
 	if err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to find pipeline"))
+		return nil, errors.Wrap(err, "failed to find pipeline")
 	}
 
 	// Create step
@@ -825,14 +823,13 @@ func (h *AddPipelineStepCommandHandler) Handle(ctx context.Context, command AddP
 	step.Timeout = command.Timeout
 
 	// Add step to pipeline
-	addResult := pipeline.AddStep(&step)
-	if addResult.IsFailure() {
-		return result.Failure[interface{}](addResult.Error())
+	if err := pipeline.AddStep(&step); err != nil {
+		return nil, err
 	}
 
 	// Save pipeline
 	if err := h.repository.Save(ctx, pipeline); err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to save pipeline"))
+		return nil, errors.Wrap(err, "failed to save pipeline")
 	}
 
 	// Publish domain events
@@ -844,7 +841,7 @@ func (h *AddPipelineStepCommandHandler) Handle(ctx context.Context, command AddP
 
 	pipeline.ClearEvents()
 
-	return result.Success[interface{}](step)
+	return &step, nil
 }
 
 // ExecutePipelineCommand represents a command to execute a pipeline with runtime parameters.
@@ -1398,11 +1395,11 @@ type ExecutionResult struct {
 //   - Workflow Engine: External execution system coordination
 //   - Event System: Execution lifecycle event publishing
 //   - Repository: Pipeline state persistence and recovery
-func (o *PipelineExecutionOrchestrator) Execute(ctx context.Context, command ExecutePipelineCommand) result.Result[interface{}] {
+func (o *PipelineExecutionOrchestrator) Execute(ctx context.Context, command ExecutePipelineCommand) (*ExecutionResult, error) {
 	// Step 1: Load and validate pipeline
 	pipeline, err := o.loadAndValidatePipeline(ctx, command.PipelineID)
 	if err != nil {
-		return result.Failure[interface{}](err)
+		return nil, err
 	}
 
 	// Step 2: Prepare execution context
@@ -1493,21 +1490,21 @@ func (o *PipelineExecutionOrchestrator) loadAndValidatePipeline(ctx context.Cont
 
 // orchestrateExecution performs coordinated execution steps
 // SOLID SRP: Single responsibility for execution orchestration
-func (o *PipelineExecutionOrchestrator) orchestrateExecution(ctx context.Context, execCtx *ExecutionContext) result.Result[interface{}] {
+func (o *PipelineExecutionOrchestrator) orchestrateExecution(ctx context.Context, execCtx *ExecutionContext) (*ExecutionResult, error) {
 	// Start pipeline execution
-	if startResult := execCtx.Pipeline.Start(); startResult.IsFailure() {
-		return result.Failure[interface{}](startResult.Error())
+	if err := execCtx.Pipeline.Start(); err != nil {
+		return nil, err
 	}
 
 	// Save pipeline state
 	if err := o.repository.Save(ctx, execCtx.Pipeline); err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to save pipeline"))
+		return nil, errors.Wrap(err, "failed to save pipeline")
 	}
 
 	// Start workflow with error recovery
 	workflowID, err := o.startWorkflowWithRecovery(ctx, execCtx)
 	if err != nil {
-		return result.Failure[interface{}](err)
+		return nil, err
 	}
 
 	execCtx.WorkflowID = workflowID
@@ -1516,7 +1513,7 @@ func (o *PipelineExecutionOrchestrator) orchestrateExecution(ctx context.Context
 	o.publishDomainEvents(ctx, execCtx.Pipeline)
 	execCtx.Pipeline.ClearEvents()
 
-	return result.Success[interface{}](o.createExecutionResult(execCtx))
+	return o.createExecutionResult(execCtx), nil
 }
 
 // startWorkflowWithRecovery starts workflow with proper error recovery
@@ -1567,7 +1564,7 @@ func (o *PipelineExecutionOrchestrator) createExecutionResult(execCtx *Execution
 
 // Handle handles the execute pipeline command
 // DRY PRINCIPLE: Delegates to specialized orchestrator, eliminating complex method with 6 returns
-func (h *ExecutePipelineCommandHandler) Handle(ctx context.Context, command ExecutePipelineCommand) result.Result[interface{}] {
+func (h *ExecutePipelineCommandHandler) Handle(ctx context.Context, command ExecutePipelineCommand) (*ExecutionResult, error) {
 	orchestrator := NewPipelineExecutionOrchestrator(h.repository, h.eventBus, h.workflowEngine)
 	return orchestrator.Execute(ctx, command)
 }
@@ -1864,22 +1861,21 @@ func NewActivatePipelineCommandHandler(repository PipelineRepository, eventBus E
 //   - Repository: Persists pipeline state changes with optimistic concurrency
 //   - Event Bus: Publishes PipelineActivated and related events
 //   - Result Pattern: Explicit error handling with typed results
-func (h *ActivatePipelineCommandHandler) Handle(ctx context.Context, command ActivatePipelineCommand) result.Result[interface{}] {
+func (h *ActivatePipelineCommandHandler) Handle(ctx context.Context, command ActivatePipelineCommand) (*entities.Pipeline, error) {
 	// Find pipeline
 	pipeline, err := h.repository.FindByID(ctx, command.PipelineID)
 	if err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to find pipeline"))
+		return nil, errors.Wrap(err, "failed to find pipeline")
 	}
 
 	// Activate pipeline
-	activateResult := pipeline.Activate()
-	if activateResult.IsFailure() {
-		return result.Failure[interface{}](activateResult.Error())
+	if err := pipeline.Activate(); err != nil {
+		return nil, err
 	}
 
 	// Save pipeline
 	if err := h.repository.Save(ctx, pipeline); err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to save pipeline"))
+		return nil, errors.Wrap(err, "failed to save pipeline")
 	}
 
 	// Publish domain events
@@ -1891,7 +1887,7 @@ func (h *ActivatePipelineCommandHandler) Handle(ctx context.Context, command Act
 
 	pipeline.ClearEvents()
 
-	return result.Success[interface{}](pipeline)
+	return pipeline, nil
 }
 
 // SetPipelineScheduleCommand represents a command to configure automated pipeline scheduling.
@@ -2235,22 +2231,21 @@ func NewSetPipelineScheduleCommandHandler(repository PipelineRepository, eventBu
 //   - Repository: Persists pipeline schedule changes with optimistic concurrency
 //   - Event Bus: Publishes PipelineScheduleSet and related events
 //   - Scheduling System: Triggers schedule system updates for automated execution
-func (h *SetPipelineScheduleCommandHandler) Handle(ctx context.Context, command SetPipelineScheduleCommand) result.Result[interface{}] {
+func (h *SetPipelineScheduleCommandHandler) Handle(ctx context.Context, command SetPipelineScheduleCommand) (*entities.PipelineSchedule, error) {
 	// Find pipeline
 	pipeline, err := h.repository.FindByID(ctx, command.PipelineID)
 	if err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to find pipeline"))
+		return nil, errors.Wrap(err, "failed to find pipeline")
 	}
 
 	// Set schedule
-	scheduleResult := pipeline.SetSchedule(command.CronExpression, command.Timezone)
-	if scheduleResult.IsFailure() {
-		return result.Failure[interface{}](scheduleResult.Error())
+	if err := pipeline.SetSchedule(command.CronExpression, command.Timezone); err != nil {
+		return nil, err
 	}
 
 	// Save pipeline
 	if err := h.repository.Save(ctx, pipeline); err != nil {
-		return result.Failure[interface{}](errors.Wrap(err, "failed to save pipeline"))
+		return nil, errors.Wrap(err, "failed to save pipeline")
 	}
 
 	// Publish domain events
@@ -2262,5 +2257,5 @@ func (h *SetPipelineScheduleCommandHandler) Handle(ctx context.Context, command 
 
 	pipeline.ClearEvents()
 
-	return result.Success[interface{}](pipeline.Schedule)
+	return pipeline.Schedule, nil
 }

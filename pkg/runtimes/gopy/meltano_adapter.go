@@ -20,9 +20,9 @@ type MeltanoAdapter struct {
 
 // Result represents a standard result format for gopy compatibility
 type Result struct {
-	Success bool        `json:"success"`
 	Data    interface{} `json:"data,omitempty"`
 	Error   string      `json:"error,omitempty"`
+	Success bool        `json:"success"`
 }
 
 // ProjectInfo contains basic project information
@@ -224,11 +224,11 @@ func (m *MeltanoAdapter) GetVersion() string {
 // Helper methods
 
 // formatResult formats a result as JSON string for gopy compatibility
-func (m *MeltanoAdapter) formatResult(success bool, data interface{}, error string) string {
+func (m *MeltanoAdapter) formatResult(success bool, data interface{}, errorMsg string) string {
 	result := Result{
-		Success: success,
 		Data:    data,
-		Error:   error,
+		Error:   errorMsg,
+		Success: success,
 	}
 
 	jsonBytes, err := json.Marshal(result)
@@ -284,13 +284,15 @@ func CheckMeltanoAvailable() bool {
 // GetMeltanoVersion returns Meltano version information
 func GetMeltanoVersion() string {
 	// Simple version response without service initialization
-	return `{"success": true, "data": {"adapter_version": "1.0.0", "flext_version": "2.0.0", "gopy_enabled": true}, "error": ""}`
+	return `{"success": true, "data": {"adapter_version": "1.0.0", "flext_version": "2.0.0", ` +
+		`"gopy_enabled": true}, "error": ""}`
 }
 
 // CreateProject creates a new Meltano project
 func CreateProject(directory, name string) string {
 	// Simple stub response for gopy testing
-	return `{"success": true, "data": {"message": "Project creation stubbed for gopy", "directory": "` + directory + `", "name": "` + name + `"}, "error": ""}`
+	return `{"success": true, "data": {"message": "Project creation stubbed for gopy", ` +
+		`"directory": "` + directory + `", "name": "` + name + `"}, "error": ""}`
 }
 
 // AddPluginToProject adds a plugin to an existing project

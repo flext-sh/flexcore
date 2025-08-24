@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-
-	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // EventStore provides event sourcing capabilities using composition
@@ -41,24 +39,20 @@ func NewEventStore(dbPath string) (*EventStore, error) {
 }
 
 // AppendEvent appends an event to the event store
-// SOLID SRP: Single responsibility for event appending with Result pattern
+// SOLID SRP: Single responsibility for event appending
 func (es *EventStore) AppendEvent(event DomainEvent) error {
 	es.mu.Lock()
 	defer es.mu.Unlock()
 
-	result := es.performEventAppend(event)
-	if result.IsFailure() {
-		return result.Error()
-	}
-	return nil
+	return es.performEventAppend(event)
 }
 
 // performEventAppend performs the actual event append operation
-// SOLID SRP: Single responsibility for event append with Result pattern
-func (es *EventStore) performEventAppend(event DomainEvent) result.Result[bool] {
+// SOLID SRP: Single responsibility for event append
+func (es *EventStore) performEventAppend(event DomainEvent) error {
 	// Validate concurrency
-	if concurrencyResult := es.validateConcurrency(event); concurrencyResult.IsFailure() {
-		return concurrencyResult
+	if err := es.validateConcurrency(event); err != nil {
+		return err
 	}
 
 	// Store event using storage module
@@ -67,20 +61,19 @@ func (es *EventStore) performEventAppend(event DomainEvent) result.Result[bool] 
 
 // validateConcurrency validates that the event version is sequential
 // SOLID SRP: Single responsibility for concurrency validation
-func (es *EventStore) validateConcurrency(event DomainEvent) result.Result[bool] {
-	latestVersionResult := es.storage.GetLatestVersion(event.AggregateID())
-	if latestVersionResult.IsFailure() {
-		return result.Failure[bool](latestVersionResult.Error())
+func (es *EventStore) validateConcurrency(event DomainEvent) error {
+	latestVersion, err := es.storage.GetLatestVersion(event.AggregateID())
+	if err != nil {
+		return err
 	}
 
-	expectedVersion := latestVersionResult.Value() + 1
+	expectedVersion := latestVersion + 1
 	if event.EventVersion() != expectedVersion {
-		return result.Failure[bool](
-			fmt.Errorf("concurrency conflict: expected version %d, got %d",
-				expectedVersion, event.EventVersion()))
+		return fmt.Errorf("concurrency conflict: expected version %d, got %d",
+			expectedVersion, event.EventVersion())
 	}
 
-	return result.Success(true)
+	return nil
 }
 
 // LoadEventStream loads events for an aggregate from a specific version
@@ -89,12 +82,11 @@ func (es *EventStore) LoadEventStream(aggregateID string, fromVersion int) (*Eve
 	es.mu.RLock()
 	defer es.mu.RUnlock()
 
-	eventsResult := es.storage.LoadEvents(aggregateID, fromVersion)
-	if eventsResult.IsFailure() {
-		return nil, eventsResult.Error()
+	events, err := es.storage.LoadEvents(aggregateID, fromVersion)
+	if err != nil {
+		return nil, err
 	}
 
-	events := eventsResult.Value()
 	version := 0
 	if len(events) > 0 {
 		version = events[len(events)-1].Version
@@ -118,11 +110,7 @@ func (es *EventStore) SaveSnapshot(snapshot *Snapshot) error {
 	es.mu.Lock()
 	defer es.mu.Unlock()
 
-	result := es.snapshotService.SaveSnapshot(snapshot)
-	if result.IsFailure() {
-		return result.Error()
-	}
-	return nil
+	return es.snapshotService.SaveSnapshot(snapshot)
 }
 
 // LoadSnapshot loads a snapshot for an aggregate
@@ -131,15 +119,7 @@ func (es *EventStore) LoadSnapshot(aggregateID string) (*Snapshot, error) {
 	es.mu.RLock()
 	defer es.mu.RUnlock()
 
-	result := es.snapshotService.LoadSnapshot(aggregateID)
-	if result.IsFailure() {
-		// Snapshot not found is not an error
-		if result.Error() == nil {
-			return nil, nil
-		}
-		return nil, result.Error()
-	}
-	return result.Value(), nil
+	return es.snapshotService.LoadSnapshot(aggregateID)
 }
 
 // GetEventCount returns the total number of events for an aggregate
@@ -148,12 +128,12 @@ func (es *EventStore) GetEventCount(aggregateID string) (int, error) {
 	es.mu.RLock()
 	defer es.mu.RUnlock()
 
-	eventsResult := es.storage.LoadAllEvents(aggregateID)
-	if eventsResult.IsFailure() {
-		return 0, eventsResult.Error()
+	events, err := es.storage.LoadAllEvents(aggregateID)
+	if err != nil {
+		return 0, err
 	}
 
-	return len(eventsResult.Value()), nil
+	return len(events), nil
 }
 
 // GetLatestVersion gets the latest version number for an aggregate
@@ -161,11 +141,7 @@ func (es *EventStore) GetLatestVersion(aggregateID string) (int, error) {
 	es.mu.RLock()
 	defer es.mu.RUnlock()
 
-	result := es.storage.GetLatestVersion(aggregateID)
-	if result.IsFailure() {
-		return 0, result.Error()
-	}
-	return result.Value(), nil
+	return es.storage.GetLatestVersion(aggregateID)
 }
 
 // Close closes the event store and releases resources

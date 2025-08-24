@@ -58,11 +58,11 @@
 package entities
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/flext-sh/flexcore/internal/domain"
 	"github.com/flext-sh/flexcore/pkg/errors"
-	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/google/uuid"
 )
 
@@ -459,16 +459,16 @@ func (s PipelineStatus) String() string {
 //	Individual step instances should be treated as immutable after creation.
 //	Modifications should only occur through Pipeline aggregate methods.
 type PipelineStep struct {
+	DependsOn  []string               // Step dependencies (step names)
+	CreatedAt  time.Time              // Step creation timestamp
 	ID         string                 // Unique step identifier
 	Name       string                 // Human-readable step name (unique within pipeline)
 	Type       string                 // Processing type/plugin identifier
 	Config     map[string]interface{} // Flexible configuration parameters
-	DependsOn  []string               // Step dependencies (step names)
+	Timeout    time.Duration          // Step execution timeout
 	RetryCount int                    // Current retry attempt count
 	MaxRetries int                    // Maximum allowed retries
-	Timeout    time.Duration          // Step execution timeout
 	IsEnabled  bool                   // Whether step is active
-	CreatedAt  time.Time              // Step creation timestamp
 }
 
 // NewPipelineStep creates a new pipeline step with default configuration and unique identifier.
@@ -735,13 +735,13 @@ type PipelineSchedule struct {
 // Thread Safety:
 //
 //	Safe for concurrent use as each call creates an independent pipeline instance.
-func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
+func NewPipeline(name, description, owner string) (*Pipeline, error) {
 	if name == "" {
-		return result.Failure[*Pipeline](errors.ValidationError("pipeline name cannot be empty"))
+		return nil, errors.ValidationError("pipeline name cannot be empty")
 	}
 
 	if owner == "" {
-		return result.Failure[*Pipeline](errors.ValidationError("pipeline owner cannot be empty"))
+		return nil, errors.ValidationError("pipeline owner cannot be empty")
 	}
 
 	id := NewPipelineID()
@@ -759,7 +759,7 @@ func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
 	event := NewPipelineCreatedEvent(id, name, owner)
 	pipeline.RaiseEvent(event)
 
-	return result.Success(pipeline)
+	return pipeline, nil
 }
 
 // AddStep adds a processing step to the pipeline with comprehensive validation and dependency checking.
@@ -827,22 +827,22 @@ func NewPipeline(name, description, owner string) result.Result[*Pipeline] {
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
 //	Concurrent step additions should be coordinated at the application layer.
-func (p *Pipeline) AddStep(step *PipelineStep) result.Result[bool] {
+func (p *Pipeline) AddStep(step *PipelineStep) error {
 	if step.Name == "" {
-		return result.Failure[bool](errors.ValidationError("step name cannot be empty"))
+		return errors.ValidationError("step name cannot be empty")
 	}
 
 	// Check for duplicate step names
 	for i := range p.Steps {
 		if p.Steps[i].Name == step.Name {
-			return result.Failure[bool](errors.AlreadyExistsError("step with name " + step.Name))
+			return errors.AlreadyExistsError("step with name " + step.Name)
 		}
 	}
 
 	// Validate dependencies
 	for _, dependency := range step.DependsOn {
 		if !p.hasStep(dependency) {
-			return result.Failure[bool](errors.ValidationError("dependency step not found: " + dependency))
+			return errors.ValidationError("dependency step not found: " + dependency)
 		}
 	}
 
@@ -853,7 +853,7 @@ func (p *Pipeline) AddStep(step *PipelineStep) result.Result[bool] {
 	event := NewPipelineStepAddedEvent(p.ID, step.ID, step.Name)
 	p.RaiseEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // RemoveStep removes a processing step from the pipeline with dependency validation.
@@ -917,24 +917,24 @@ func (p *Pipeline) AddStep(step *PipelineStep) result.Result[bool] {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Pipeline) RemoveStep(stepName string) result.Result[bool] {
+func (p *Pipeline) RemoveStep(stepName string) error {
 	stepIndex := -1
-	for i, step := range p.Steps {
-		if step.Name == stepName {
+	for i := range p.Steps {
+		if p.Steps[i].Name == stepName {
 			stepIndex = i
 			break
 		}
 	}
 
 	if stepIndex == -1 {
-		return result.Failure[bool](errors.NotFoundError("step " + stepName))
+		return errors.NotFoundError("step " + stepName)
 	}
 
 	// Check if other steps depend on this step
-	for _, step := range p.Steps {
-		for _, dependency := range step.DependsOn {
+	for i := range p.Steps {
+		for _, dependency := range p.Steps[i].DependsOn {
 			if dependency == stepName {
-				return result.Failure[bool](errors.ValidationError("cannot remove step: other steps depend on it"))
+				return errors.ValidationError("cannot remove step: other steps depend on it")
 			}
 		}
 	}
@@ -947,7 +947,7 @@ func (p *Pipeline) RemoveStep(stepName string) result.Result[bool] {
 	event := NewPipelineStepRemovedEvent(p.ID, stepName)
 	p.RaiseEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // Activate transitions the pipeline from Draft to Active status, enabling execution.
@@ -1016,13 +1016,13 @@ func (p *Pipeline) RemoveStep(stepName string) result.Result[bool] {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Pipeline) Activate() result.Result[bool] {
+func (p *Pipeline) Activate() error {
 	if p.Status == PipelineStatusActive {
-		return result.Failure[bool](errors.ValidationError("pipeline is already active"))
+		return errors.ValidationError("pipeline is already active")
 	}
 
 	if len(p.Steps) == 0 {
-		return result.Failure[bool](errors.ValidationError("cannot activate pipeline without steps"))
+		return errors.ValidationError("cannot activate pipeline without steps")
 	}
 
 	p.Status = PipelineStatusActive
@@ -1032,7 +1032,7 @@ func (p *Pipeline) Activate() result.Result[bool] {
 	event := NewPipelineActivatedEvent(p.ID, p.Name)
 	p.RaiseEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // Deactivate transitions the pipeline from Active back to Draft status, disabling execution.
@@ -1104,9 +1104,9 @@ func (p *Pipeline) Activate() result.Result[bool] {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Pipeline) Deactivate() result.Result[bool] {
+func (p *Pipeline) Deactivate() error {
 	if p.Status == PipelineStatusRunning {
-		return result.Failure[bool](errors.ValidationError("cannot deactivate running pipeline"))
+		return errors.ValidationError("cannot deactivate running pipeline")
 	}
 
 	p.Status = PipelineStatusDraft
@@ -1116,7 +1116,7 @@ func (p *Pipeline) Deactivate() result.Result[bool] {
 	event := NewPipelineDeactivatedEvent(p.ID, p.Name)
 	p.RaiseEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // Start initiates pipeline execution, transitioning from Active to Running status.
@@ -1191,13 +1191,13 @@ func (p *Pipeline) Deactivate() result.Result[bool] {
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
 //	Concurrent start attempts should be handled by application layer coordination.
-func (p *Pipeline) Start() result.Result[bool] {
+func (p *Pipeline) Start() error {
 	if p.Status != PipelineStatusActive {
-		return result.Failure[bool](errors.ValidationError("can only start active pipelines"))
+		return errors.ValidationError("can only start active pipelines")
 	}
 
 	if p.Status == PipelineStatusRunning {
-		return result.Failure[bool](errors.ValidationError("pipeline is already running"))
+		return errors.ValidationError("pipeline is already running")
 	}
 
 	p.Status = PipelineStatusRunning
@@ -1209,7 +1209,7 @@ func (p *Pipeline) Start() result.Result[bool] {
 	event := NewPipelineStartedEvent(p.ID, p.Name, now)
 	p.RaiseEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // Complete marks the pipeline execution as successfully finished, transitioning to Completed status.
@@ -1288,9 +1288,9 @@ func (p *Pipeline) Start() result.Result[bool] {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Pipeline) Complete() result.Result[bool] {
+func (p *Pipeline) Complete() error {
 	if p.Status != PipelineStatusRunning {
-		return result.Failure[bool](errors.ValidationError("can only complete running pipelines"))
+		return errors.ValidationError("can only complete running pipelines")
 	}
 
 	p.Status = PipelineStatusCompleted
@@ -1300,7 +1300,7 @@ func (p *Pipeline) Complete() result.Result[bool] {
 	event := NewPipelineCompletedEvent(p.ID, p.Name, time.Now())
 	p.RaiseEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // Fail marks the pipeline execution as failed with a detailed reason, transitioning to Failed status.
@@ -1387,9 +1387,9 @@ func (p *Pipeline) Complete() result.Result[bool] {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Pipeline) Fail(reason string) result.Result[bool] {
+func (p *Pipeline) Fail(reason string) error {
 	if p.Status != PipelineStatusRunning {
-		return result.Failure[bool](errors.ValidationError("can only fail running pipelines"))
+		return errors.ValidationError("can only fail running pipelines")
 	}
 
 	p.Status = PipelineStatusFailed
@@ -1399,7 +1399,7 @@ func (p *Pipeline) Fail(reason string) result.Result[bool] {
 	event := NewPipelineFailedEvent(p.ID, p.Name, reason, time.Now())
 	p.RaiseEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // SetSchedule configures automated scheduling for the pipeline using cron expressions.
@@ -1475,9 +1475,9 @@ func (p *Pipeline) Fail(reason string) result.Result[bool] {
 // Thread Safety:
 //
 //	Not thread-safe - should be called from single thread managing the aggregate.
-func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bool] {
+func (p *Pipeline) SetSchedule(cronExpression, timezone string) error {
 	if cronExpression == "" {
-		return result.Failure[bool](errors.ValidationError("cron expression cannot be empty"))
+		return errors.ValidationError("cron expression cannot be empty")
 	}
 
 	p.Schedule = &PipelineSchedule{
@@ -1492,7 +1492,7 @@ func (p *Pipeline) SetSchedule(cronExpression, timezone string) result.Result[bo
 	event := NewPipelineScheduleSetEvent(p.ID, cronExpression, timezone)
 	p.RaiseEvent(event)
 
-	return result.Success(true)
+	return nil
 }
 
 // ClearSchedule removes the automated scheduling configuration from the pipeline.
@@ -1743,8 +1743,8 @@ func (p *Pipeline) RemoveTag(tag string) {
 //
 //	Read-only operation, safe for concurrent access to immutable step data.
 func (p *Pipeline) hasStep(stepName string) bool {
-	for _, step := range p.Steps {
-		if step.Name == stepName {
+	for i := range p.Steps {
+		if p.Steps[i].Name == stepName {
 			return true
 		}
 	}
@@ -1806,9 +1806,9 @@ func (p *Pipeline) hasStep(stepName string) bool {
 //
 //	Read-only operation returning copied step data, safe for concurrent access.
 func (p *Pipeline) GetStep(stepName string) (PipelineStep, bool) {
-	for _, step := range p.Steps {
-		if step.Name == stepName {
-			return step, true
+	for i := range p.Steps {
+		if p.Steps[i].Name == stepName {
+			return p.Steps[i], true
 		}
 	}
 	return PipelineStep{}, false
@@ -1985,20 +1985,20 @@ func (p *Pipeline) CanExecute() bool {
 // Thread Safety:
 //
 //	Read-only validation operation, safe for concurrent access.
-func (p *Pipeline) Validate() result.Result[bool] {
+func (p *Pipeline) Validate() error {
 	if p.Name == "" {
-		return result.Failure[bool](errors.ValidationError("name is required"))
+		return errors.ValidationError("name is required")
 	}
 
 	if p.Owner == "" {
-		return result.Failure[bool](errors.ValidationError("owner is required"))
+		return errors.ValidationError("owner is required")
 	}
 
 	if len(p.Steps) == 0 {
-		return result.Failure[bool](errors.ValidationError("at least one step is required"))
+		return errors.ValidationError("at least one step is required")
 	}
 
-	return result.Success(true)
+	return nil
 }
 
 // HasTag checks if the pipeline contains a specific tag in its tag collection.

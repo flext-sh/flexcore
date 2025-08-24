@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/flext-sh/flexcore/pkg/logging"
-	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -63,20 +62,14 @@ func (rc *RealRedisCoordinator) GetNodeID() string {
 }
 
 // CoordinateExecution coordinates pipeline execution across cluster nodes using Redis
-// SOLID SRP: Reduced from 7 returns to 1 return using Result pattern and CoordinationOrchestrator
+// SOLID SRP: Uses standard Go error handling with orchestrator pattern
 func (rc *RealRedisCoordinator) CoordinateExecution(ctx context.Context, workflowID string) error {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 
 	// Use orchestrator for centralized error handling
 	orchestrator := rc.createCoordinationOrchestrator(ctx, workflowID)
-	coordinationResult := orchestrator.CoordinateDistributedExecution()
-
-	if coordinationResult.IsFailure() {
-		return coordinationResult.Error()
-	}
-
-	return nil
+	return orchestrator.CoordinateDistributedExecution()
 }
 
 // CoordinationOrchestrator handles complete coordination execution with Result pattern
@@ -99,24 +92,22 @@ func (rc *RealRedisCoordinator) createCoordinationOrchestrator(ctx context.Conte
 
 // CoordinateDistributedExecution coordinates distributed execution with centralized error handling
 // SOLID SRP: Single responsibility for complete distributed coordination
-func (orchestrator *CoordinationOrchestrator) CoordinateDistributedExecution() result.Result[bool] {
+func (orchestrator *CoordinationOrchestrator) CoordinateDistributedExecution() error {
 	orchestrator.coordinator.logger.Info("Starting distributed coordination using Redis",
 		zap.String("workflow_id", orchestrator.workflowID),
 		zap.String("node_id", orchestrator.coordinator.nodeID))
 
 	// Phase 1: Register node in cluster
-	registrationResult := orchestrator.registerNodeInCluster()
-	if registrationResult.IsFailure() {
-		return result.Failure[bool](registrationResult.Error())
+	if err := orchestrator.registerNodeInCluster(); err != nil {
+		return err
 	}
 
 	// Phase 2: Acquire distributed lock
-	lockResult := orchestrator.acquireDistributedLock()
-	if lockResult.IsFailure() {
-		return result.Failure[bool](lockResult.Error())
+	lockKey, err := orchestrator.acquireDistributedLock()
+	if err != nil {
+		return err
 	}
 
-	lockKey := lockResult.Value()
 	defer func() {
 		if err := orchestrator.coordinator.releaseLock(orchestrator.ctx, lockKey); err != nil {
 			orchestrator.coordinator.logger.Error("Failed to release lock", zap.Error(err))
@@ -124,96 +115,91 @@ func (orchestrator *CoordinationOrchestrator) CoordinateDistributedExecution() r
 	}()
 
 	// Phase 3: Elect leader for workflow
-	leaderResult := orchestrator.electWorkflowLeader()
-	if leaderResult.IsFailure() {
-		return result.Failure[bool](leaderResult.Error())
+	isLeader, err := orchestrator.electWorkflowLeader()
+	if err != nil {
+		return err
 	}
 
-	isLeader := leaderResult.Value()
-
 	// Phase 4: Execute coordination based on leadership
-	executionResult := orchestrator.executeCoordinationPhase(isLeader)
-	if executionResult.IsFailure() {
-		return result.Failure[bool](executionResult.Error())
+	if err := orchestrator.executeCoordinationPhase(isLeader); err != nil {
+		return err
 	}
 
 	orchestrator.coordinator.logger.Info("Distributed coordination completed successfully",
 		zap.String("workflow_id", orchestrator.workflowID),
 		zap.Bool("is_leader", isLeader))
 
-	return result.Success(true)
+	return nil
 }
 
 // registerNodeInCluster registers node in Redis cluster registry
 // SOLID SRP: Single responsibility for node registration
-func (orchestrator *CoordinationOrchestrator) registerNodeInCluster() result.Result[bool] {
+func (orchestrator *CoordinationOrchestrator) registerNodeInCluster() error {
 	if err := orchestrator.coordinator.registerNode(orchestrator.ctx); err != nil {
-		return result.Failure[bool](fmt.Errorf("failed to register node in cluster: %w", err))
+		return fmt.Errorf("failed to register node in cluster: %w", err)
 	}
-	return result.Success(true)
+	return nil
 }
 
 // acquireDistributedLock acquires distributed lock for workflow
 // SOLID SRP: Single responsibility for lock acquisition
-func (orchestrator *CoordinationOrchestrator) acquireDistributedLock() result.Result[string] {
+func (orchestrator *CoordinationOrchestrator) acquireDistributedLock() (string, error) {
 	lockKey := orchestrator.coordinator.lockPrefix + orchestrator.workflowID
 	acquired, err := orchestrator.coordinator.acquireLock(orchestrator.ctx, lockKey, 2*time.Minute)
 	if err != nil {
-		return result.Failure[string](fmt.Errorf("failed to acquire coordination lock: %w", err))
+		return "", fmt.Errorf("failed to acquire coordination lock: %w", err)
 	}
 	if !acquired {
-		return result.Failure[string](fmt.Errorf("coordination lock is held by another node"))
+		return "", fmt.Errorf("coordination lock is held by another node")
 	}
-	return result.Success(lockKey)
+	return lockKey, nil
 }
 
 // electWorkflowLeader elects leader for workflow execution
 // SOLID SRP: Single responsibility for leader election
-func (orchestrator *CoordinationOrchestrator) electWorkflowLeader() result.Result[bool] {
+func (orchestrator *CoordinationOrchestrator) electWorkflowLeader() (bool, error) {
 	leaderKey := orchestrator.coordinator.leaderPrefix + orchestrator.workflowID
 	isLeader, err := orchestrator.coordinator.electLeader(orchestrator.ctx, leaderKey, orchestrator.workflowID)
 	if err != nil {
-		return result.Failure[bool](fmt.Errorf("leader election failed: %w", err))
+		return false, fmt.Errorf("leader election failed: %w", err)
 	}
-	return result.Success(isLeader)
+	return isLeader, nil
 }
 
 // executeCoordinationPhase executes coordination based on leadership role
 // SOLID SRP: Single responsibility for coordination execution
-func (orchestrator *CoordinationOrchestrator) executeCoordinationPhase(isLeader bool) result.Result[bool] {
+func (orchestrator *CoordinationOrchestrator) executeCoordinationPhase(isLeader bool) error {
 	if isLeader {
 		// Leader distributes workload
-		distributionResult := orchestrator.executeLeaderWorkflow()
-		if distributionResult.IsFailure() {
-			return result.Failure[bool](distributionResult.Error())
+		if err := orchestrator.executeLeaderWorkflow(); err != nil {
+			return err
 		}
 	}
 
 	// All nodes register their execution
-	registrationResult := orchestrator.registerWorkflowExecution()
-	if registrationResult.IsFailure() {
-		return result.Failure[bool](registrationResult.Error())
+	if err := orchestrator.registerWorkflowExecution(); err != nil {
+		return err
 	}
 
-	return result.Success(true)
+	return nil
 }
 
 // executeLeaderWorkflow executes leader-specific workflow coordination
 // SOLID SRP: Single responsibility for leader workflow execution
-func (orchestrator *CoordinationOrchestrator) executeLeaderWorkflow() result.Result[bool] {
+func (orchestrator *CoordinationOrchestrator) executeLeaderWorkflow() error {
 	if err := orchestrator.coordinator.distributeWorkload(orchestrator.ctx, orchestrator.workflowID); err != nil {
-		return result.Failure[bool](fmt.Errorf("workload distribution failed: %w", err))
+		return fmt.Errorf("workload distribution failed: %w", err)
 	}
-	return result.Success(true)
+	return nil
 }
 
 // registerWorkflowExecution registers workflow execution in Redis
 // SOLID SRP: Single responsibility for execution registration
-func (orchestrator *CoordinationOrchestrator) registerWorkflowExecution() result.Result[bool] {
+func (orchestrator *CoordinationOrchestrator) registerWorkflowExecution() error {
 	if err := orchestrator.coordinator.registerWorkflowExecution(orchestrator.ctx, orchestrator.workflowID); err != nil {
-		return result.Failure[bool](fmt.Errorf("workflow execution registration failed: %w", err))
+		return fmt.Errorf("workflow execution registration failed: %w", err)
 	}
-	return result.Success(true)
+	return nil
 }
 
 // registerNode registers this node in Redis cluster registry
@@ -395,13 +381,7 @@ func (rc *RealRedisCoordinator) electLeader(ctx context.Context, leaderKey, work
 // SOLID SRP: Reduced complexity using specialized WorkloadDistributor
 func (rc *RealRedisCoordinator) distributeWorkload(ctx context.Context, workflowID string) error {
 	distributor := rc.createWorkloadDistributor(ctx, workflowID)
-	distributionResult := distributor.DistributeWorkloadAcrossNodes()
-
-	if distributionResult.IsFailure() {
-		return distributionResult.Error()
-	}
-
-	return nil
+	return distributor.DistributeWorkloadAcrossNodes()
 }
 
 // WorkloadDistributor handles workload distribution operations
@@ -424,23 +404,20 @@ func (rc *RealRedisCoordinator) createWorkloadDistributor(ctx context.Context, w
 
 // DistributeWorkloadAcrossNodes distributes workload with centralized error handling
 // SOLID SRP: Single responsibility for complete workload distribution
-func (distributor *WorkloadDistributor) DistributeWorkloadAcrossNodes() result.Result[bool] {
+func (distributor *WorkloadDistributor) DistributeWorkloadAcrossNodes() error {
 	distributor.coordinator.logger.Info("Distributing workload as leader using Redis",
 		zap.String("workflow_id", distributor.workflowID),
 		zap.String("node_id", distributor.coordinator.nodeID))
 
 	// Phase 1: Discover available nodes
-	nodesResult := distributor.discoverAvailableNodes()
-	if nodesResult.IsFailure() {
-		return result.Failure[bool](nodesResult.Error())
+	availableNodes, err := distributor.discoverAvailableNodes()
+	if err != nil {
+		return err
 	}
 
-	availableNodes := nodesResult.Value()
-
 	// Phase 2: Create and store distribution plan
-	planResult := distributor.createAndStoreDistributionPlan(availableNodes)
-	if planResult.IsFailure() {
-		return result.Failure[bool](planResult.Error())
+	if err := distributor.createAndStoreDistributionPlan(availableNodes); err != nil {
+		return err
 	}
 
 	distributor.coordinator.logger.Info("Workload distribution completed using Redis",
@@ -448,21 +425,21 @@ func (distributor *WorkloadDistributor) DistributeWorkloadAcrossNodes() result.R
 		zap.Int("available_nodes", len(availableNodes)),
 		zap.String("strategy", "round_robin"))
 
-	return result.Success(true)
+	return nil
 }
 
 // discoverAvailableNodes discovers healthy nodes in the cluster
 // SOLID SRP: Single responsibility for node discovery
-func (distributor *WorkloadDistributor) discoverAvailableNodes() result.Result[[]string] {
+func (distributor *WorkloadDistributor) discoverAvailableNodes() ([]string, error) {
 	// Get all node keys from Redis
 	nodeKeys, err := distributor.coordinator.client.Keys(distributor.ctx, distributor.coordinator.nodePrefix+"*").Result()
 	if err != nil {
-		return result.Failure[[]string](fmt.Errorf("failed to get active nodes: %w", err))
+		return nil, fmt.Errorf("failed to get active nodes: %w", err)
 	}
 
 	// Filter healthy nodes
 	healthyNodes := distributor.filterHealthyNodes(nodeKeys)
-	return result.Success(healthyNodes)
+	return healthyNodes, nil
 }
 
 // filterHealthyNodes filters nodes by health status
@@ -497,23 +474,23 @@ func (distributor *WorkloadDistributor) getNodeInfo(nodeKey string) *NodeInfo {
 
 // createAndStoreDistributionPlan creates and stores the distribution plan
 // SOLID SRP: Single responsibility for plan creation and storage
-func (distributor *WorkloadDistributor) createAndStoreDistributionPlan(availableNodes []string) result.Result[bool] {
+func (distributor *WorkloadDistributor) createAndStoreDistributionPlan(availableNodes []string) error {
 	// Create distribution plan
 	distributionPlan := distributor.createDistributionPlan(availableNodes)
 
 	// Marshal plan to JSON
 	planData, err := json.Marshal(distributionPlan)
 	if err != nil {
-		return result.Failure[bool](fmt.Errorf("failed to marshal distribution plan: %w", err))
+		return fmt.Errorf("failed to marshal distribution plan: %w", err)
 	}
 
 	// Store plan in Redis
 	distributionKey := distributor.coordinator.workflowPrefix + distributor.workflowID + ":distribution"
 	if err := distributor.coordinator.client.Set(distributor.ctx, distributionKey, planData, 1*time.Hour).Err(); err != nil {
-		return result.Failure[bool](fmt.Errorf("failed to store distribution plan: %w", err))
+		return fmt.Errorf("failed to store distribution plan: %w", err)
 	}
 
-	return result.Success(true)
+	return nil
 }
 
 // createDistributionPlan creates the distribution plan structure
@@ -641,13 +618,7 @@ func (rc *RealRedisCoordinator) Stop() error {
 // SOLID SRP: Reduced complexity using specialized ClusterStatusCollector
 func (rc *RealRedisCoordinator) GetClusterStatus() (map[string]NodeInfo, error) {
 	collector := rc.createClusterStatusCollector()
-	statusResult := collector.CollectClusterStatus()
-
-	if statusResult.IsFailure() {
-		return nil, statusResult.Error()
-	}
-
-	return statusResult.Value(), nil
+	return collector.CollectClusterStatus()
 }
 
 // ClusterStatusCollector handles cluster status collection operations
@@ -666,21 +637,19 @@ func (rc *RealRedisCoordinator) createClusterStatusCollector() *ClusterStatusCol
 
 // CollectClusterStatus collects cluster status with centralized error handling
 // SOLID SRP: Single responsibility for complete cluster status collection
-func (collector *ClusterStatusCollector) CollectClusterStatus() result.Result[map[string]NodeInfo] {
+func (collector *ClusterStatusCollector) CollectClusterStatus() (map[string]NodeInfo, error) {
 	ctx := context.Background()
 
 	// Phase 1: Get all node keys
-	nodeKeysResult := collector.getAllNodeKeys(ctx)
-	if nodeKeysResult.IsFailure() {
-		return result.Failure[map[string]NodeInfo](nodeKeysResult.Error())
+	nodeKeys, err := collector.getAllNodeKeys(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	nodeKeys := nodeKeysResult.Value()
 
 	// Phase 2: Collect all node information
 	cluster := collector.collectAllNodeInformation(ctx, nodeKeys)
 
-	return result.Success(cluster)
+	return cluster, nil
 }
 
 // getAllNodeKeys retrieves all node keys from Redis

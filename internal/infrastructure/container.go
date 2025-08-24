@@ -8,7 +8,6 @@ import (
 	domainservices "github.com/flext-sh/flexcore/internal/domain/services"
 	"github.com/flext-sh/flexcore/pkg/config"
 	"github.com/flext-sh/flexcore/pkg/logging"
-	"github.com/flext-sh/flexcore/pkg/result"
 	"go.uber.org/zap"
 )
 
@@ -92,10 +91,8 @@ func (fc *FlexCoreContainer) Initialize(ctx context.Context) error {
 
 	// Use orchestrator for centralized error handling
 	orchestrator := fc.createInitializationOrchestrator(ctx)
-	initResult := orchestrator.InitializeAllComponents()
-
-	if initResult.IsFailure() {
-		return initResult.Error()
+	if err := orchestrator.InitializeAllComponents(); err != nil {
+		return err
 	}
 
 	fc.initialized = true
@@ -149,8 +146,8 @@ func (fc *FlexCoreContainer) createInitializationOrchestrator(ctx context.Contex
 
 // InitializeAllComponents initializes all container components
 // SOLID SRP: Single responsibility for complete initialization sequence
-func (orchestrator *ContainerInitializationOrchestrator) InitializeAllComponents() result.Result[bool] {
-	// Initialize components in order with Result pattern
+func (orchestrator *ContainerInitializationOrchestrator) InitializeAllComponents() error {
+	// Initialize components in order
 	components := []ComponentInitializer{
 		{Name: "event store", InitFunc: orchestrator.container.initializeEventStore},
 		{Name: "event bus", InitFunc: orchestrator.container.initializeEventBus},
@@ -160,11 +157,11 @@ func (orchestrator *ContainerInitializationOrchestrator) InitializeAllComponents
 
 	for _, component := range components {
 		if err := component.InitFunc(orchestrator.ctx); err != nil {
-			return result.Failure[bool](fmt.Errorf("failed to initialize %s: %w", component.Name, err))
+			return fmt.Errorf("failed to initialize %s: %w", component.Name, err)
 		}
 	}
 
-	return result.Success(true)
+	return nil
 }
 
 // ComponentInitializer represents a component initialization function
@@ -183,10 +180,8 @@ func (fc *FlexCoreContainer) Shutdown(ctx context.Context) error {
 
 	// Use orchestrator for shutdown coordination
 	shutdownOrchestrator := fc.createShutdownOrchestrator(ctx)
-	shutdownResult := shutdownOrchestrator.ShutdownAllComponents()
-
-	if shutdownResult.IsFailure() {
-		fc.logger.Error("Container shutdown had errors", zap.Error(shutdownResult.Error()))
+	if err := shutdownOrchestrator.ShutdownAllComponents(); err != nil {
+		fc.logger.Error("Container shutdown had errors", zap.Error(err))
 	}
 
 	fc.initialized = false
@@ -212,7 +207,7 @@ func (fc *FlexCoreContainer) createShutdownOrchestrator(ctx context.Context) *Co
 
 // ShutdownAllComponents shuts down all container components gracefully
 // SOLID SRP: Single responsibility for complete shutdown sequence
-func (orchestrator *ContainerShutdownOrchestrator) ShutdownAllComponents() result.Result[bool] {
+func (orchestrator *ContainerShutdownOrchestrator) ShutdownAllComponents() error {
 	// Shutdown components in reverse order
 	components := []string{"query bus", "command bus", "event bus", "event store"}
 
@@ -221,5 +216,5 @@ func (orchestrator *ContainerShutdownOrchestrator) ShutdownAllComponents() resul
 		// For now, just log - actual shutdown logic can be added per component
 	}
 
-	return result.Success(true)
+	return nil
 }

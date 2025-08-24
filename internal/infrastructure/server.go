@@ -9,7 +9,6 @@ import (
 	"github.com/flext-sh/flexcore/internal/application/services"
 	"github.com/flext-sh/flexcore/internal/infrastructure/middleware"
 	"github.com/flext-sh/flexcore/pkg/logging"
-	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -33,13 +32,12 @@ func NewFlexcoreServer(workflowService *services.WorkflowService) *FlexcoreServe
 // DRY PRINCIPLE: Uses shared server starter eliminating 31-line duplication (mass=167)
 func (fs *FlexcoreServer) Start(address string) error {
 	starter := fs.createServerStarter(address)
-	startResult := starter.ConfigureAndStart("FLEXCORE container server", fs.setupRouterWithMiddleware)
-
-	if startResult.IsFailure() {
-		return startResult.Error()
+	server, err := starter.ConfigureAndStart("FLEXCORE container server", fs.setupRouterWithMiddleware)
+	if err != nil {
+		return err
 	}
 
-	fs.server = startResult.Value()
+	fs.server = server
 	// Start server (this blocks)
 	return fs.server.ListenAndServe()
 }
@@ -381,25 +379,25 @@ type RouteRegistrar func(*gin.Engine)
 
 // ConfigureAndStart configures and starts the HTTP server
 // SOLID SRP: Single responsibility for complete server configuration and startup
-func (starter *FlexcoreServerStarter) ConfigureAndStart(serverName string, routeRegistrar RouteRegistrar) result.Result[*http.Server] {
+func (starter *FlexcoreServerStarter) ConfigureAndStart(serverName string, routeRegistrar RouteRegistrar) (*http.Server, error) {
 	starter.logger.Info(fmt.Sprintf("Starting %s", serverName), zap.String("address", starter.address))
 
 	// Configure Gin router
-	routerResult := starter.configureGinRouter(routeRegistrar)
-	if routerResult.IsFailure() {
-		return result.Failure[*http.Server](routerResult.Error())
+	router, err := starter.configureGinRouter(routeRegistrar)
+	if err != nil {
+		return nil, err
 	}
 
 	// Create HTTP server
-	server := starter.createHTTPServer(routerResult.Value())
+	server := starter.createHTTPServer(router)
 
 	starter.logger.Info(fmt.Sprintf("%s started successfully", serverName), zap.String("address", starter.address))
-	return result.Success(server)
+	return server, nil
 }
 
 // configureGinRouter configures the Gin router with middleware and routes
 // SOLID SRP: Single responsibility for router configuration
-func (starter *FlexcoreServerStarter) configureGinRouter(routeRegistrar RouteRegistrar) result.Result[*gin.Engine] {
+func (starter *FlexcoreServerStarter) configureGinRouter(routeRegistrar RouteRegistrar) (*gin.Engine, error) {
 	// Set Gin to release mode for production
 	gin.SetMode(gin.ReleaseMode)
 
@@ -413,7 +411,7 @@ func (starter *FlexcoreServerStarter) configureGinRouter(routeRegistrar RouteReg
 	// Register routes using provided registrar
 	routeRegistrar(router)
 
-	return result.Success(router)
+	return router, nil
 }
 
 // createHTTPServer creates the HTTP server with standard configuration

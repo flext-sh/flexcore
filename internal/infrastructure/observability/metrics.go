@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/flext-sh/flexcore/pkg/errors"
-	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 const (
@@ -468,9 +467,9 @@ func (mc *MetricsCollector) Name() string {
 }
 
 // Health check for metrics collector
-func (mc *MetricsCollector) HealthCheck(ctx context.Context) result.Result[bool] {
+func (mc *MetricsCollector) HealthCheck(ctx context.Context) (bool, error) {
 	if !mc.IsEnabled() {
-		return result.Failure[bool](errors.ValidationError("metrics collector is disabled"))
+		return false, errors.ValidationError("metrics collector is disabled")
 	}
 
 	mc.mu.RLock()
@@ -479,5 +478,5 @@ func (mc *MetricsCollector) HealthCheck(ctx context.Context) result.Result[bool]
 	// Check if we have any metrics (indicates system is working)
 	totalMetrics := len(mc.counters) + len(mc.gauges) + len(mc.histograms) + len(mc.timers)
 
-	return result.Success(totalMetrics >= 0) // Always healthy if enabled
+	return totalMetrics >= 0, nil // Always healthy if enabled
 }

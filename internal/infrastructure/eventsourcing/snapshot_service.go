@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"sync"
 	"time"
-
-	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 // Snapshot represents an aggregate snapshot
@@ -38,7 +36,7 @@ func NewSnapshotService(db *sql.DB) *SnapshotService {
 
 // SaveSnapshot saves a snapshot for an aggregate
 // SOLID SRP: Single responsibility for snapshot saving
-func (ss *SnapshotService) SaveSnapshot(snapshot *Snapshot) result.Result[bool] {
+func (ss *SnapshotService) SaveSnapshot(snapshot *Snapshot) error {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 
@@ -53,7 +51,7 @@ func (ss *SnapshotService) SaveSnapshot(snapshot *Snapshot) result.Result[bool] 
 
 	dataBytes, err := json.Marshal(snapshot.Data)
 	if err != nil {
-		return result.Failure[bool](err)
+		return err
 	}
 
 	_, err = ss.db.Exec(query,
@@ -64,22 +62,18 @@ func (ss *SnapshotService) SaveSnapshot(snapshot *Snapshot) result.Result[bool] 
 		snapshot.CreatedAt,
 	)
 
-	if err != nil {
-		return result.Failure[bool](err)
-	}
-
-	return result.Success(true)
+	return err
 }
 
 // LoadSnapshot loads a snapshot for an aggregate
 // SOLID SRP: Single responsibility for snapshot loading
-func (ss *SnapshotService) LoadSnapshot(aggregateID string) result.Result[*Snapshot] {
+func (ss *SnapshotService) LoadSnapshot(aggregateID string) (*Snapshot, error) {
 	ss.mu.RLock()
 	defer ss.mu.RUnlock()
 
 	// Try memory cache first
 	if snapshot, exists := ss.snapshots[aggregateID]; exists {
-		return result.Success(snapshot)
+		return snapshot, nil
 	}
 
 	// Load from database
@@ -87,7 +81,7 @@ func (ss *SnapshotService) LoadSnapshot(aggregateID string) result.Result[*Snaps
 }
 
 // loadSnapshotFromDatabase loads snapshot from persistent storage
-func (ss *SnapshotService) loadSnapshotFromDatabase(aggregateID string) result.Result[*Snapshot] {
+func (ss *SnapshotService) loadSnapshotFromDatabase(aggregateID string) (*Snapshot, error) {
 	query := `
 		SELECT aggregate_id, aggregate_type, version, data, created_at 
 		FROM snapshots 
@@ -109,23 +103,23 @@ func (ss *SnapshotService) loadSnapshotFromDatabase(aggregateID string) result.R
 	)
 
 	if err == sql.ErrNoRows {
-		return result.Failure[*Snapshot](nil) // No snapshot found
+		return nil, nil // No snapshot found
 	}
 
 	if err != nil {
-		return result.Failure[*Snapshot](err)
+		return nil, err
 	}
 
 	// Unmarshal data
 	err = json.Unmarshal([]byte(dataStr), &snapshot.Data)
 	if err != nil {
-		return result.Failure[*Snapshot](err)
+		return nil, err
 	}
 
 	// Cache in memory
 	ss.snapshots[aggregateID] = &snapshot
 
-	return result.Success(&snapshot)
+	return &snapshot, nil
 }
 
 // CreateSnapshotTable creates the snapshots table if it doesn't exist

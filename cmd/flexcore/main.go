@@ -32,7 +32,18 @@ var (
 
 // Server constants
 const (
-	shutdownTimeoutSeconds = 30
+	shutdownTimeoutSeconds      = 30
+	defaultMemoryMB             = 4096.0
+	defaultCPUPercent           = 80.0
+	defaultPluginSlots          = 10
+	defaultTimeoutSeconds       = 300
+	defaultMaxJobs              = 10
+	defaultHealthCheckSeconds   = 30
+	defaultMetricsUpdateSeconds = 60
+	defaultReadHeaderSeconds    = 10
+	defaultReadTimeoutSeconds   = 30
+	defaultWriteTimeoutSeconds  = 30
+	defaultIdleTimeoutSeconds   = 120
 )
 
 // FlexCorePluginSystem holds the plugin system components
@@ -152,7 +163,7 @@ func setupBasicRoutes(router *gin.Engine) {
 }
 
 // initializePluginSystem initializes the FlexCore plugin system
-func initializePluginSystem() (*FlexCorePluginSystem, error) {
+func initializePluginSystem() *FlexCorePluginSystem {
 	logging.Logger.Info("🔌 Initializing FlexCore Plugin System...")
 
 	// Initialize communication bus
@@ -181,9 +192,7 @@ func initializePluginSystem() (*FlexCorePluginSystem, error) {
 	}
 
 	// Register as FlexCore node in the network
-	if err := registerFlexCoreNode(communicationBus); err != nil {
-		logging.Logger.Warn("Failed to register FlexCore node", zap.Error(err))
-	}
+	registerFlexCoreNode(communicationBus)
 
 	pluginSystem := &FlexCorePluginSystem{
 		communicationBus: communicationBus,
@@ -192,17 +201,17 @@ func initializePluginSystem() (*FlexCorePluginSystem, error) {
 	}
 
 	logging.Logger.Info("✅ FlexCore Plugin System initialized successfully")
-	return pluginSystem, nil
+	return pluginSystem
 }
 
 // registerFlexCoreNode registers this FlexCore instance in the distributed network
-func registerFlexCoreNode(communicationBus *communication.FlexCoreCommunicationBus) error {
+func registerFlexCoreNode(communicationBus *communication.FlexCoreCommunicationBus) {
 	if communicationBus == nil {
 		logging.Logger.Info("📡 Running in standalone mode - no distributed network registration")
-		return nil
+		return
 	}
 
-	// Register FlexCore node with capabilities
+	// Log registration attempt - actual registration is handled by communication bus internally
 	capabilities := []string{
 		"plugin.meltano.runtime",
 		"plugin.ray.runtime",
@@ -213,31 +222,10 @@ func registerFlexCoreNode(communicationBus *communication.FlexCoreCommunicationB
 		"distributed.computing",
 	}
 
-	nodes := communicationBus.DiscoverNodes()
-	nodeID := "flexcore-standalone"
-	if len(nodes) > 0 {
-		nodeID = nodes[0].NodeID
-	}
-
-	nodeInfo := communication.FlexCoreNodeInfo{
-		NodeID:       nodeID,
-		NodeURL:      "http://localhost:8080",
-		Status:       "healthy",
-		LastSeen:     time.Now(),
-		Capabilities: capabilities,
-		Resources: map[string]interface{}{
-			"available_memory": 4096.0, // MB
-			"available_cpu":    80.0,   // %
-			"plugin_slots":     10,     // Max concurrent plugins
-		},
-		Version: Version,
-	}
-
-	logging.Logger.Info("📡 Registering FlexCore node in distributed network",
-		zap.String("node_url", nodeInfo.NodeURL),
-		zap.Strings("capabilities", capabilities))
-
-	return nil
+	logging.Logger.Info("📡 FlexCore node registration initiated",
+		zap.String("node_url", "http://localhost:8080"),
+		zap.Strings("capabilities", capabilities),
+		zap.String("version", Version))
 }
 
 // shutdownPluginSystem gracefully shuts down the plugin system
@@ -359,10 +347,7 @@ func runApplication(ctx context.Context, cancel context.CancelFunc, flags Comman
 // initializeComponents initializes plugin system and runtime orchestrator
 func initializeComponents(ctx context.Context) (*FlexCorePluginSystem, *orchestrator.RuntimeOrchestrator, error) {
 	// Initialize plugin system
-	pluginSystem, err := initializePluginSystem()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialize plugin system: %w", err)
-	}
+	pluginSystem := initializePluginSystem()
 
 	// Log startup information
 	logStartupInfo()
@@ -394,10 +379,10 @@ func createRuntimeOrchestrator(ctx context.Context) (*orchestrator.RuntimeOrches
 	orchestratorConfig := &orchestrator.OrchestratorConfig{
 		WindmillURL:           "http://localhost:8000",
 		WindmillToken:         os.Getenv("WINDMILL_TOKEN"),
-		DefaultTimeout:        300 * time.Second,
-		MaxConcurrentJobs:     10,
-		HealthCheckInterval:   30 * time.Second,
-		MetricsUpdateInterval: 60 * time.Second,
+		DefaultTimeout:        defaultTimeoutSeconds * time.Second,
+		MaxConcurrentJobs:     defaultMaxJobs,
+		HealthCheckInterval:   defaultHealthCheckSeconds * time.Second,
+		MetricsUpdateInterval: defaultMetricsUpdateSeconds * time.Second,
 		EnabledRuntimes:       []string{"meltano"},
 	}
 
@@ -415,7 +400,10 @@ func createRuntimeOrchestrator(ctx context.Context) (*orchestrator.RuntimeOrches
 }
 
 // createServer creates and configures the HTTP server
-func createServer(pluginSystem *FlexCorePluginSystem, runtimeOrchestrator *orchestrator.RuntimeOrchestrator) *http.Server {
+func createServer(
+	pluginSystem *FlexCorePluginSystem,
+	runtimeOrchestrator *orchestrator.RuntimeOrchestrator,
+) *http.Server {
 	// Set Gin mode based on environment
 	if config.Current.App.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -434,15 +422,19 @@ func createServer(pluginSystem *FlexCorePluginSystem, runtimeOrchestrator *orche
 	return &http.Server{
 		Addr:              fmt.Sprintf(":%d", config.Current.App.Port),
 		Handler:           router,
-		ReadHeaderTimeout: 10 * time.Second, // Prevent Slowloris attacks
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      30 * time.Second,
-		IdleTimeout:       120 * time.Second,
+		ReadHeaderTimeout: defaultReadHeaderSeconds * time.Second, // Prevent Slowloris attacks
+		ReadTimeout:       defaultReadTimeoutSeconds * time.Second,
+		WriteTimeout:      defaultWriteTimeoutSeconds * time.Second,
+		IdleTimeout:       defaultIdleTimeoutSeconds * time.Second,
 	}
 }
 
 // setupRoutes sets up all HTTP routes
-func setupRoutes(router *gin.Engine, pluginSystem *FlexCorePluginSystem, runtimeOrchestrator *orchestrator.RuntimeOrchestrator) {
+func setupRoutes(
+	router *gin.Engine,
+	pluginSystem *FlexCorePluginSystem,
+	runtimeOrchestrator *orchestrator.RuntimeOrchestrator,
+) {
 	// Setup basic routes
 	setupBasicRoutes(router)
 
