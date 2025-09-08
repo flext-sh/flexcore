@@ -1,9 +1,11 @@
-"""FLEXT FlexCore - Event-driven architecture system.
+"""FLEXT - Enterprise Data Integration Platform.
 
-Copyright (c) 2025 Flext. All rights reserved.
+Copyright (c) 2025 FLEXT Team. All rights reserved.
 SPDX-License-Identifier: MIT
-
 """
+
+
+"""FLEXT FlexCore - Event-driven architecture system."""
 
 from __future__ import annotations
 
