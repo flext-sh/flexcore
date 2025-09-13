@@ -12,6 +12,7 @@ class FlexCore:
     """Main FlexCore class for event-driven architecture."""
 
     def __init__(self, config: dict[str, object] | None = None) -> None:
+        """Initialize FlexCore with optional configuration."""
         self.config = config or {}
         self._initialized = False
 
