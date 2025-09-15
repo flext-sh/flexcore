@@ -15,7 +15,11 @@ flexcore_src = Path(__file__).parent.parent / "src"
 if str(flexcore_src) not in sys.path:
     sys.path.insert(0, str(flexcore_src))
 
-from flexcore import FlexCore
+try:
+    from flexcore import FlexCore
+except ImportError:
+    # Fallback: import directly from the module
+    from flexcore.core import FlexCore
 
 
 def test_basic() -> None:
