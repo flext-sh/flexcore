@@ -40,7 +40,6 @@ import (
 	"github.com/flext-sh/flexcore/internal/domain/entities"
 	"github.com/flext-sh/flexcore/pkg/errors"
 	"github.com/flext-sh/flexcore/pkg/logging"
-	"github.com/flext-sh/flexcore/pkg/result"
 	"go.uber.org/zap"
 )
 
@@ -1513,7 +1512,8 @@ func (o *PipelineExecutionOrchestrator) orchestrateExecution(ctx context.Context
 	o.publishDomainEvents(ctx, execCtx.Pipeline)
 	execCtx.Pipeline.ClearEvents()
 
-	return o.createExecutionResult(execCtx), nil
+	result := o.createExecutionResult(execCtx)
+	return &result, nil
 }
 
 // startWorkflowWithRecovery starts workflow with proper error recovery
