@@ -16,7 +16,6 @@
 package entities
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/flext-sh/flexcore/pkg/errors"

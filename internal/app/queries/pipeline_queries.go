@@ -8,7 +8,6 @@ import (
 
 	"github.com/flext-sh/flexcore/internal/domain/entities"
 	"github.com/flext-sh/flexcore/pkg/errors"
-	"github.com/flext-sh/flexcore/pkg/result"
 )
 
 const (
