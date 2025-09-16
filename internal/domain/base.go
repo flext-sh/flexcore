@@ -640,18 +640,127 @@ func (e BaseDomainEvent) AggregateID() string {
 	return e.AggregateId
 }
 
-// CreatePluginEvent creates a plugin-related domain event
-func CreatePluginEvent(eventType, pluginID string, data map[string]interface{}) DomainEvent {
+// DomainEventFactory provides centralized domain event creation following the unified struct pattern.
+//
+// This factory encapsulates all domain event creation logic, ensuring consistent event
+// structure and eliminating loose helper functions. It follows SOLID principles by
+// providing a single responsibility for event creation with type-safe operations.
+//
+// Design Patterns:
+//   - Factory Pattern: Centralized creation of domain events
+//   - Single Responsibility: Only handles domain event creation
+//   - Unified Struct: All event creation logic in one struct
+//
+// Example:
+//
+//	Creating events with the factory:
+//
+//	  factory := domain.NewDomainEventFactory()
+//
+//	  // Create plugin events
+//	  pluginEvent := factory.CreatePluginEvent("plugin.loaded", "plugin-123", eventData)
+//
+//	  // Create pipeline events
+//	  pipelineEvent := factory.CreatePipelineEvent("pipeline.started", "pipeline-456", eventData)
+//
+//	  // Create system events
+//	  systemEvent := factory.CreateSystemEvent("system.startup", eventData)
+//
+// Thread Safety:
+//
+//	Safe for concurrent use as event creation is stateless.
+type DomainEventFactory struct{}
+
+// NewDomainEventFactory creates a new domain event factory instance.
+//
+// Returns:
+//
+//	*DomainEventFactory: A new factory instance ready for event creation
+//
+// Example:
+//
+//	factory := domain.NewDomainEventFactory()
+//	event := factory.CreatePluginEvent("plugin.loaded", "plugin-123", nil)
+func NewDomainEventFactory() *DomainEventFactory {
+	return &DomainEventFactory{}
+}
+
+// CreatePluginEvent creates a plugin-related domain event with consistent structure.
+//
+// This method generates domain events for plugin lifecycle operations, ensuring
+// consistent event format and proper aggregate identification for event sourcing.
+//
+// Parameters:
+//
+//	eventType string: The type of plugin event (e.g., "plugin.loaded", "plugin.failed")
+//	pluginID string: The unique identifier of the plugin aggregate
+//	data map[string]interface{}: Additional event data (currently unused but reserved for future use)
+//
+// Returns:
+//
+//	DomainEvent: A properly structured domain event for plugin operations
+//
+// Example:
+//
+//	factory := domain.NewDomainEventFactory()
+//	event := factory.CreatePluginEvent("plugin.loaded", "plugin-123", map[string]interface{}{
+//	    "version": "1.0.0",
+//	    "author":  "FLEXT Team",
+//	})
+func (factory *DomainEventFactory) CreatePluginEvent(eventType, pluginID string, data map[string]interface{}) DomainEvent {
 	return NewBaseDomainEvent(eventType, pluginID)
 }
 
-// CreatePipelineEvent creates a pipeline-related domain event
-func CreatePipelineEvent(eventType, pipelineID string, data map[string]interface{}) DomainEvent {
+// CreatePipelineEvent creates a pipeline-related domain event with consistent structure.
+//
+// This method generates domain events for pipeline lifecycle operations, ensuring
+// consistent event format and proper aggregate identification for event sourcing.
+//
+// Parameters:
+//
+//	eventType string: The type of pipeline event (e.g., "pipeline.started", "pipeline.completed")
+//	pipelineID string: The unique identifier of the pipeline aggregate
+//	data map[string]interface{}: Additional event data (currently unused but reserved for future use)
+//
+// Returns:
+//
+//	DomainEvent: A properly structured domain event for pipeline operations
+//
+// Example:
+//
+//	factory := domain.NewDomainEventFactory()
+//	event := factory.CreatePipelineEvent("pipeline.started", "pipeline-456", map[string]interface{}{
+//	    "owner":     "data-team",
+//	    "step_count": 3,
+//	})
+func (factory *DomainEventFactory) CreatePipelineEvent(eventType, pipelineID string, data map[string]interface{}) DomainEvent {
 	return NewBaseDomainEvent(eventType, pipelineID)
 }
 
-// CreateSystemEvent creates a system-related domain event
-func CreateSystemEvent(eventType string, data map[string]interface{}) DomainEvent {
+// CreateSystemEvent creates a system-related domain event with consistent structure.
+//
+// This method generates domain events for system-wide operations that don't belong
+// to a specific aggregate, ensuring consistent event format for monitoring and
+// observability systems.
+//
+// Parameters:
+//
+//	eventType string: The type of system event (e.g., "system.startup", "system.shutdown")
+//	data map[string]interface{}: Additional event data (currently unused but reserved for future use)
+//
+// Returns:
+//
+//	DomainEvent: A properly structured domain event for system operations
+//
+// Example:
+//
+//	factory := domain.NewDomainEventFactory()
+//	event := factory.CreateSystemEvent("system.startup", map[string]interface{}{
+//	    "version":   "0.9.0",
+//	    "node_id":   "node-789",
+//	    "timestamp": time.Now(),
+//	})
+func (factory *DomainEventFactory) CreateSystemEvent(eventType string, data map[string]interface{}) DomainEvent {
 	return NewBaseDomainEvent(eventType, "")
 }
 

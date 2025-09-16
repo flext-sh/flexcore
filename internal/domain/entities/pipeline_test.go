@@ -15,10 +15,9 @@ func TestNewPipeline(t *testing.T) {
 	description := "Test pipeline description"
 	owner := "user@example.com"
 
-	result := entities.NewPipeline(name, description, owner)
-	require.True(t, result.IsSuccess())
-
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline(name, description, owner)
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 	assert.NotEmpty(t, pipeline.ID)
 	assert.Equal(t, name, pipeline.Name)
 	assert.Equal(t, description, pipeline.Description)
@@ -35,9 +34,9 @@ func TestNewPipeline(t *testing.T) {
 }
 
 func TestPipelineAddStep(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Add first step
 	step1 := entities.PipelineStep{
@@ -48,8 +47,8 @@ func TestPipelineAddStep(t *testing.T) {
 		IsEnabled: true,
 	}
 
-	res := pipeline.AddStep(&step1)
-	require.True(t, res.IsSuccess())
+	err = pipeline.AddStep(&step1)
+	require.NoError(t, err)
 	assert.Len(t, pipeline.Steps, 1)
 	assert.Equal(t, step1, pipeline.Steps[0])
 
@@ -62,8 +61,8 @@ func TestPipelineAddStep(t *testing.T) {
 		IsEnabled: true,
 	}
 
-	res = pipeline.AddStep(&step2)
-	require.True(t, res.IsSuccess())
+	err = pipeline.AddStep(&step2)
+	require.NoError(t, err)
 	assert.Len(t, pipeline.Steps, 2)
 
 	// Try to add step with duplicate name
@@ -74,18 +73,18 @@ func TestPipelineAddStep(t *testing.T) {
 		IsEnabled: true,
 	}
 
-	res = pipeline.AddStep(&step3)
-	assert.True(t, res.IsFailure())
-	assert.Contains(t, res.Error().Error(), "already exists")
+	err = pipeline.AddStep(&step3)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
 	assert.Len(t, pipeline.Steps, 2) // Should still have only 2 steps
 }
 
 // UpdateStep test removed - method doesn't exist in Pipeline
 
 func TestPipelineRemoveStep(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Add steps
 	step1 := entities.PipelineStep{
@@ -107,26 +106,26 @@ func TestPipelineRemoveStep(t *testing.T) {
 	assert.Len(t, pipeline.Steps, 2)
 
 	// Remove first step by name
-	res := pipeline.RemoveStep("Step1")
-	require.True(t, res.IsSuccess())
+	err = pipeline.RemoveStep("Step1")
+	require.NoError(t, err)
 	assert.Len(t, pipeline.Steps, 1)
 	assert.Equal(t, "Step2", pipeline.Steps[0].Name)
 
 	// Try to remove non-existent step
-	res = pipeline.RemoveStep("NonExistent")
-	assert.True(t, res.IsFailure())
-	assert.Contains(t, res.Error().Error(), "not found")
+	err =pipeline.RemoveStep("NonExistent")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
 
 	// Remove last step
-	res = pipeline.RemoveStep("Step2")
-	require.True(t, res.IsSuccess())
+	err =pipeline.RemoveStep("Step2")
+	require.NoError(t, err)
 	assert.Empty(t, pipeline.Steps)
 }
 
 func TestPipelineActivate(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Initially inactive
 	assert.Equal(t, entities.PipelineStatusDraft, pipeline.Status)
@@ -140,8 +139,8 @@ func TestPipelineActivate(t *testing.T) {
 	}
 	pipeline.AddStep(&step)
 
-	res := pipeline.Activate()
-	require.True(t, res.IsSuccess())
+	err =pipeline.Activate()
+	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusActive, pipeline.Status)
 
 	// Events should be raised (3 events: PipelineCreated, PipelineStepAdded, PipelineActivated)
@@ -151,9 +150,9 @@ func TestPipelineActivate(t *testing.T) {
 }
 
 func TestPipelineDeactivate(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Add step and activate first
 	step := entities.PipelineStep{
@@ -167,8 +166,8 @@ func TestPipelineDeactivate(t *testing.T) {
 	pipeline.ClearEvents()
 
 	// Deactivate
-	res := pipeline.Deactivate()
-	require.True(t, res.IsSuccess())
+	err =pipeline.Deactivate()
+	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusDraft, pipeline.Status)
 
 	// Events should be raised
@@ -178,9 +177,9 @@ func TestPipelineDeactivate(t *testing.T) {
 }
 
 func TestPipelineStart(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Add step and activate first
 	step := entities.PipelineStep{
@@ -194,14 +193,14 @@ func TestPipelineStart(t *testing.T) {
 	pipeline.ClearEvents()
 
 	// Start pipeline
-	res := pipeline.Start()
-	require.True(t, res.IsSuccess())
+	err =pipeline.Start()
+	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusRunning, pipeline.Status)
 
 	// Try to start already running pipeline
-	res = pipeline.Start()
-	assert.True(t, res.IsFailure())
-	assert.Contains(t, res.Error().Error(), "can only start active pipelines")
+	err =pipeline.Start()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "can only start active pipelines")
 
 	// Events should be raised
 	events := pipeline.DomainEvents()
@@ -210,9 +209,9 @@ func TestPipelineStart(t *testing.T) {
 }
 
 func TestPipelineComplete(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Add step, activate and start
 	step := entities.PipelineStep{
@@ -227,15 +226,15 @@ func TestPipelineComplete(t *testing.T) {
 	pipeline.ClearEvents()
 
 	// Complete pipeline
-	res := pipeline.Complete()
-	require.True(t, res.IsSuccess())
+	err =pipeline.Complete()
+	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusCompleted, pipeline.Status)
 	assert.NotNil(t, pipeline.LastRunAt)
 
 	// Try to complete non-running pipeline
-	res = pipeline.Complete()
-	assert.True(t, res.IsFailure())
-	assert.Contains(t, res.Error().Error(), "can only complete running pipelines")
+	err =pipeline.Complete()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "can only complete running pipelines")
 
 	// Events should be raised
 	events := pipeline.DomainEvents()
@@ -244,9 +243,9 @@ func TestPipelineComplete(t *testing.T) {
 }
 
 func TestPipelineFail(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Add step, activate and start
 	step := entities.PipelineStep{
@@ -261,15 +260,15 @@ func TestPipelineFail(t *testing.T) {
 	pipeline.ClearEvents()
 
 	// Fail pipeline
-	res := pipeline.Fail("Test error message")
-	require.True(t, res.IsSuccess())
+	err =pipeline.Fail("Test error message")
+	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusFailed, pipeline.Status)
 	assert.NotNil(t, pipeline.LastRunAt)
 
 	// Try to fail non-running pipeline
-	res = pipeline.Fail("Another error")
-	assert.True(t, res.IsFailure())
-	assert.Contains(t, res.Error().Error(), "can only fail running pipelines")
+	err =pipeline.Fail("Another error")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "can only fail running pipelines")
 
 	// Events should be raised
 	events := pipeline.DomainEvents()
@@ -278,13 +277,13 @@ func TestPipelineFail(t *testing.T) {
 }
 
 func TestPipelineSetSchedule(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Set daily schedule
-	res := pipeline.SetSchedule("0 10 * * *", "UTC")
-	require.True(t, res.IsSuccess())
+	err =pipeline.SetSchedule("0 10 * * *", "UTC")
+	require.NoError(t, err)
 
 	assert.NotNil(t, pipeline.Schedule)
 	assert.Equal(t, "0 10 * * *", pipeline.Schedule.CronExpression)
@@ -298,9 +297,9 @@ func TestPipelineSetSchedule(t *testing.T) {
 }
 
 func TestPipelineCanExecute(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Inactive pipeline cannot execute
 	assert.False(t, pipeline.CanExecute())
@@ -380,21 +379,21 @@ func TestPipelineValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := tt.pipeline.Validate()
+			err := tt.pipeline.Validate()
 			if tt.expectError {
-				assert.True(t, res.IsFailure())
-				assert.Contains(t, res.Error().Error(), tt.errorMsg)
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMsg)
 			} else {
-				assert.True(t, res.IsSuccess())
+				assert.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestPipelineAddTag(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 
 	// Add tags
 	pipeline.AddTag("production")
@@ -412,9 +411,9 @@ func TestPipelineAddTag(t *testing.T) {
 }
 
 func TestPipelineRemoveTag(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 	pipeline.AddTag("production")
 	pipeline.AddTag("etl")
 	pipeline.AddTag("daily")
@@ -430,9 +429,9 @@ func TestPipelineRemoveTag(t *testing.T) {
 }
 
 func TestPipelineHasTag(t *testing.T) {
-	result := entities.NewPipeline("test", "desc", "owner")
-	require.True(t, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("test", "desc", "owner")
+	require.NoError(t, err)
+	require.NotNil(t, pipeline)
 	pipeline.AddTag("production")
 	pipeline.AddTag("etl")
 
@@ -462,16 +461,15 @@ func TestPipelineStepValidation(t *testing.T) {
 
 func BenchmarkNewPipeline(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = entities.NewPipeline("benchmark", "description", "owner")
+		_, _ = entities.NewPipeline("benchmark", "description", "owner")
 	}
 }
 
 func BenchmarkPipelineAddStep(b *testing.B) {
-	result := entities.NewPipeline("benchmark", "description", "owner")
-	if !result.IsSuccess() {
-		b.Fatal("Failed to create pipeline")
+	pipeline, err := entities.NewPipeline("benchmark", "description", "owner")
+	if err != nil {
+		b.Fatal("Failed to create pipeline:", err)
 	}
-	pipeline := result.Value()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -486,9 +484,10 @@ func BenchmarkPipelineAddStep(b *testing.B) {
 }
 
 func BenchmarkPipelineValidate(b *testing.B) {
-	result := entities.NewPipeline("benchmark", "description", "owner")
-	require.True(b, result.IsSuccess())
-	pipeline := result.Value()
+	pipeline, err := entities.NewPipeline("benchmark", "description", "owner")
+	if err != nil {
+		b.Fatal("Failed to create pipeline:", err)
+	}
 	step := entities.PipelineStep{
 		ID:        uuid.New().String(),
 		Name:      "Step",

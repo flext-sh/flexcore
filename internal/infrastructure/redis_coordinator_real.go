@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/flext-sh/flexcore/pkg/logging"
+	"github.com/flext-sh/flexcore/pkg/result"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -641,10 +642,11 @@ func (collector *ClusterStatusCollector) CollectClusterStatus() (map[string]Node
 	ctx := context.Background()
 
 	// Phase 1: Get all node keys
-	nodeKeys, err := collector.getAllNodeKeys(ctx)
-	if err != nil {
-		return nil, err
+	nodeKeysResult := collector.getAllNodeKeys(ctx)
+	if nodeKeysResult.IsFailure() {
+		return nil, nodeKeysResult.Error()
 	}
+	nodeKeys := nodeKeysResult.Value()
 
 	// Phase 2: Collect all node information
 	cluster := collector.collectAllNodeInformation(ctx, nodeKeys)
