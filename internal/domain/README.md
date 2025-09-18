@@ -1,8 +1,8 @@
 # Domain Layer
 
 **Package**: `github.com/flext-sh/flexcore/internal/domain`  
-**Version**: 0.9.0  
-**Status**: Active Development
+**Version**: 0.9.9 RC  
+**Status**: 1.0.0 Release Preparation
 
 ## Overview
 

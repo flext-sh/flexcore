@@ -1,8 +1,8 @@
 # Application Layer
 
 **Package**: `github.com/flext-sh/flexcore/internal/app`  
-**Version**: 0.9.0  
-**Status**: In Development - Architecture Refactoring Required
+**Version**: 0.9.9 RC  
+**Status**: In Development - Architecture Refactoring Required · 1.0.0 Release Preparation
 
 ## Overview
 

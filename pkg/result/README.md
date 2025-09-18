@@ -1,8 +1,8 @@
 # Result Package
 
 **Package**: `github.com/flext-sh/flexcore/pkg/result`  
-**Version**: 0.9.0  
-**Status**: Active Development
+**Version**: 0.9.9 RC  
+**Status**: 1.0.0 Release Preparation
 
 ## Overview
 
