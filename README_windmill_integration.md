@@ -1,6 +1,6 @@
 # FlexCore Windmill Integration - Workflow Orchestration Engine
 
-**Status**: 🚧 **ACTIVE DEVELOPMENT** - Windmill workflow orchestration for distributed runtime coordination
+**Status**: 🚧 **ACTIVE DEVELOPMENT** - Windmill workflow orchestration for distributed runtime coordination · 1.0.0 Release Preparation
 
 ## Overview
 

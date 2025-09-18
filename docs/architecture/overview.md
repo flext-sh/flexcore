@@ -1,6 +1,6 @@
 # FlexCore Architecture Overview
 
-**Version**: 0.9.0  
+**Version**: 0.9.9 RC  
 **Go Version**: 1.24+  
 **Architecture**: Clean Architecture + DDD + CQRS + Event Sourcing
 

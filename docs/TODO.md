@@ -1,6 +1,6 @@
 # FlexCore TODO & Architecture Issues
 
-**Status**: Active Development  
+**Status**: 1.0.0 Release Preparation
 **Last Updated**: 2025-08-23  
 **Priority**: High
 
@@ -8,7 +8,7 @@
 
 ### 1. Docker Infrastructure Migration (COMPLETED ✅)
 
-**Status**: COMPLETED - Integrated with workspace infrastructure  
+**Status**: COMPLETED - Integrated with workspace infrastructure · 1.0.0 Release Preparation
 **Description**: FlexCore Docker configuration consolidated with workspace unified infrastructure.
 
 **Resolution**:
@@ -18,7 +18,7 @@
 
 ### 2. Clean Architecture Implementation (IN PROGRESS)
 
-**Status**: PARTIAL - Needs refactoring  
+**Status**: PARTIAL - Needs refactoring · 1.0.0 Release Preparation
 **Priority**: HIGH  
 **Location**: `internal/app/`, `internal/domain/`, `internal/infrastructure/`
 
@@ -30,7 +30,7 @@
 
 ### 3. Project Structure Cleanup (COMPLETED ✅)
 
-**Status**: COMPLETED  
+**Status**: COMPLETED · 1.0.0 Release Preparation
 **Description**: Comprehensive cleanup of temporary files and project organization.
 
 **Resolution**:
@@ -42,7 +42,7 @@
 
 ### 4. Plugin System Architecture (PENDING)
 
-**Status**: NEEDS REFACTORING  
+**Status**: NEEDS REFACTORING · 1.0.0 Release Preparation
 **Priority**: MEDIUM  
 **Location**: `pkg/plugin/`, `plugins/`
 
@@ -53,7 +53,7 @@
 
 ### 5. API Standardization (PENDING)
 
-**Status**: NEEDS DESIGN  
+**Status**: NEEDS DESIGN · 1.0.0 Release Preparation
 **Priority**: MEDIUM  
 **Location**: `api/`, `pkg/`
 
