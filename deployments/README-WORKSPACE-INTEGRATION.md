@@ -15,7 +15,7 @@ FlexCore's Docker infrastructure has been integrated with the FLEXT workspace un
 The following workspace Docker files should be used for FlexCore:
 
 - **Development**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-dev`
-- **Production**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-node`  
+- **Production**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-node`
 - **Compose**: `/home/marlonsc/flext/docker/docker-compose.flexcore.yml`
 
 ### Updated Makefile Commands
@@ -43,7 +43,7 @@ make d                              # Same as docker-run
 ### Unified Infrastructure
 
 1. **Consistent Configuration**: All FLEXT projects use the same Docker patterns
-2. **Centralized Management**: Single source of truth for Docker configurations  
+2. **Centralized Management**: Single source of truth for Docker configurations
 3. **Cross-Service Integration**: Seamless integration between FlexCore and FLEXT services
 4. **Standardized Observability**: Unified monitoring stack (Prometheus, Grafana, Jaeger)
 
@@ -52,12 +52,12 @@ make d                              # Same as docker-run
 ```yaml
 # Workspace Docker Compose Structure
 services:
-  flexcore-server:          # FlexCore runtime (port 8080)
-    - PostgreSQL 15         # Event sourcing & persistence
-    - Redis 7              # CQRS buses & caching
-    - Jaeger               # Distributed tracing
-    - Prometheus           # Metrics collection
-    - Grafana              # Monitoring dashboards
+  flexcore-server: # FlexCore runtime (port 8080)
+    - PostgreSQL 15 # Event sourcing & persistence
+    - Redis 7 # CQRS buses & caching
+    - Jaeger # Distributed tracing
+    - Prometheus # Metrics collection
+    - Grafana # Monitoring dashboards
 ```
 
 ## Local Docker Files (Maintained for Reference)
@@ -65,7 +65,7 @@ services:
 The files in `flexcore/deployments/docker/` are maintained for:
 
 - **Development Testing**: Local isolated testing
-- **CI/CD Pipelines**: Project-specific build automation  
+- **CI/CD Pipelines**: Project-specific build automation
 - **Documentation**: Reference implementation patterns
 - **Compatibility**: Legacy support during migration period
 
@@ -80,7 +80,7 @@ cd /home/marlonsc/flext/flexcore
 # 1. Build and test locally
 make build test validate
 
-# 2. Build Docker image using workspace infrastructure  
+# 2. Build Docker image using workspace infrastructure
 make docker-build
 
 # 3. Run with complete workspace stack
@@ -141,12 +141,12 @@ FlexCore automatically integrates with:
 ✅ **COMPLETED**: Docker commands reference workspace infrastructure  
 ✅ **COMPLETED**: Help documentation updated with Docker commands  
 ✅ **COMPLETED**: Single-letter shortcuts added (`make d` for docker-run)  
-✅ **COMPLETED**: Build system maintains workspace bin/ output  
+✅ **COMPLETED**: Build system maintains workspace bin/ output
 
 ## Next Steps
 
 1. **Team Migration**: Update team documentation to use workspace Docker commands
-2. **CI/CD Updates**: Migrate build pipelines to use workspace infrastructure  
+2. **CI/CD Updates**: Migrate build pipelines to use workspace infrastructure
 3. **Monitoring Setup**: Configure team dashboards using workspace Grafana
 4. **Documentation**: Update FlexCore deployment documentation
 
