@@ -13,7 +13,7 @@ These Docker files have been moved to legacy status following FlexCore's integra
 FlexCore now uses the centralized workspace Docker infrastructure:
 
 - **Development**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-dev`
-- **Production**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-node`  
+- **Production**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-node`
 - **Compose**: `/home/marlonsc/flext/docker/docker-compose.flexcore.yml`
 
 ## Updated Commands
@@ -31,7 +31,7 @@ docker-compose -f deployments/docker-compose.yml up -d
 ## Legacy Files
 
 - `docker-compose.yml` - Original main configuration
-- `docker-compose.prod.yml` - Production configuration  
+- `docker-compose.prod.yml` - Production configuration
 - `docker-compose.test.yml` - Testing configuration
 - `docker-compose.override.yml` - Development overrides
 - `docker-compose-windmill-*.yml` - Windmill integration variants

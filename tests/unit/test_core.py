@@ -122,15 +122,9 @@ class TestFlexCore:
     def test_complex_config_handling(self) -> None:
         """Test handling of complex configuration objects."""
         complex_config: dict[str, object] = {
-            "database": {
-                "host": "localhost",
-                "port": 5432
-            },
+            "database": {"host": "localhost", "port": 5432},
             "features": ["auth", "logging"],
-            "limits": {
-                "max_connections": 100,
-                "timeout": 30
-            }
+            "limits": {"max_connections": 100, "timeout": 30},
         }
 
         core = FlexCore(complex_config)

@@ -45,21 +45,25 @@ FlexCore implements a hexagonal architecture with clear separation of concerns:
 ## Key Architectural Patterns
 
 ### 1. Clean Architecture
+
 - **Dependency Inversion**: Core business logic independent of external concerns
 - **Layer Separation**: Strict boundaries between domain, application, and infrastructure
 - **Interface Segregation**: Small, focused interfaces for better testability
 
 ### 2. Domain-Driven Design (DDD)
+
 - **Aggregates**: ProcessorAggregate, PipelineAggregate, PluginAggregate
 - **Value Objects**: ProcessorID, DataFormat, PluginConfig
 - **Domain Events**: ProcessorStarted, PluginLoaded, PipelineCompleted
 
 ### 3. CQRS (Command Query Responsibility Segregation)
+
 - **Command Side**: Write operations with business logic validation
 - **Query Side**: Optimized read models for different use cases
 - **Separate Models**: Different data structures for reads and writes
 
 ### 4. Event Sourcing
+
 - **Immutable Events**: All state changes captured as events
 - **Event Store**: PostgreSQL-based persistence with snapshots
 - **Event Replay**: Ability to rebuild state from event history
@@ -98,11 +102,13 @@ flexcore/
 ## Integration Points
 
 ### FLEXT Ecosystem Integration
+
 - **flext-core**: Python foundation library integration
 - **Singer SDK**: Data pipeline orchestration
 - **Enterprise Services**: Oracle, LDAP, WMS integrations
 
 ### External Dependencies
+
 - **PostgreSQL 15+**: Event store and persistence
 - **Redis 7+**: Message bus and caching
 - **Observability Stack**: Prometheus, Grafana, Jaeger
