@@ -80,7 +80,7 @@ class TestFlexCorePackage:
 
     def test_import_from_package(self) -> None:
         """Test importing specific items from package."""
-        from flexcore import FlexCore, __version__, __version_info__  # noqa: PLC0415
+        from flexcore import FlexCore, __version__, __version_info__
 
         assert FlexCore is not None
         assert __version__ is not None
@@ -88,7 +88,7 @@ class TestFlexCorePackage:
 
     def test_core_module_import(self) -> None:
         """Test that core module is properly imported."""
-        from flexcore.core import FlexCore as CoreFlexCore  # noqa: PLC0415
+        from flexcore.core import FlexCore as CoreFlexCore
 
         # Should be the same class
         assert flexcore.FlexCore is CoreFlexCore
