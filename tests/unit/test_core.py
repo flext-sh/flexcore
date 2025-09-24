@@ -5,8 +5,7 @@ SPDX-License-Identifier: MIT
 """
 
 from __future__ import annotations
-
-from flexcore.core import FlexCore
+from flexcore import FlexCore
 
 
 class TestFlexCore:

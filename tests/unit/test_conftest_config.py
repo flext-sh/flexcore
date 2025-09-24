@@ -42,7 +42,7 @@ class TestConftestConfiguration:
     def test_flexcore_core_import_works(self) -> None:
         """Test that flexcore.core can be imported after path setup."""
         try:
-            from flexcore.core import FlexCore
+            from flexcore import FlexCore
 
             assert FlexCore is not None
         except ImportError as e:

@@ -88,7 +88,7 @@ class TestFlexCorePackage:
 
     def test_core_module_import(self) -> None:
         """Test that core module is properly imported."""
-        from flexcore.core import FlexCore as CoreFlexCore
+        from flexcore import FlexCore as CoreFlexCore
 
         # Should be the same class
         assert flexcore.FlexCore is CoreFlexCore
