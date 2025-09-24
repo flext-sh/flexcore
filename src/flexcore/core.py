@@ -1,3 +1,4 @@
+from typing import Any, Dict, List
 """FlexCore main class - Event-driven architecture core.
 
 Copyright (c) 2025 Flext. All rights reserved.
@@ -13,10 +14,10 @@ class FlexCore:
 
     def __init__(self, config: dict[str, object] | None = None) -> None:
         """Initialize FlexCore with optional configuration."""
-        self.config = config or {}
+        self.config: dict[str, object] = config or {}
         self._initialized = False
 
-    def initialize(self) -> None:
+    def initialize(self: object) -> None:
         """Initialize the core system components."""
         if self._initialized:
             return
@@ -24,10 +25,10 @@ class FlexCore:
         # Initialize components here
         self._initialized = True
 
-    def is_initialized(self) -> bool:
+    def is_initialized(self: object) -> bool:
         """Check if system is initialized."""
         return self._initialized
 
-    def shutdown(self) -> None:
+    def shutdown(self: object) -> None:
         """Shutdown the core system."""
         self._initialized = False
