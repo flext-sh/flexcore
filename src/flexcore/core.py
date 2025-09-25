@@ -1,4 +1,3 @@
-from typing import Any, Dict, List
 """FlexCore main class - Event-driven architecture core.
 
 Copyright (c) 2025 Flext. All rights reserved.
