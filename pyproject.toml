@@ -42,98 +42,6 @@ flexcore-server = "flexcore.server:main"
 
 [tool.ruff]
 extend = "../ruff-shared.toml"
-lint.isort.known-first-party = ["flexcore"]
-
-[tool.mypy]
-# Strict mode - enables all recommended checks
-strict = true
-
-# Additional strict checks beyond default strict mode
-check_untyped_defs = true
-disallow_any_decorated = true
-disallow_any_explicit = true
-disallow_any_expr = false          # Too restrictive for real-world usage
-disallow_any_generics = true
-disallow_any_unimported = true
-disallow_incomplete_defs = true
-disallow_subclassing_any = true
-disallow_untyped_calls = true
-disallow_untyped_decorators = true
-disallow_untyped_defs = true
-
-# Warning controls - maximum safety
-warn_no_return = true
-warn_redundant_casts = true
-warn_return_any = true
-warn_unreachable = true
-warn_unused_configs = true
-warn_unused_ignores = true
-
-# Optional type checking
-no_implicit_optional = true
-strict_optional = true
-
-# Import handling
-ignore_missing_imports = false
-follow_imports = "normal"
-follow_imports_for_stubs = false
-
-# Error reporting
-show_error_codes = true
-show_error_context = true
-show_column_numbers = true
-show_traceback = true
-pretty = true
-color_output = true
-error_summary = true
-
-# Python version and execution
-python_version = "3.13"
-platform = "linux"
-
-# Package structure
-explicit_package_bases = true
-namespace_packages = true
-mypy_path = ["src"]
-files = ["src", "tests"]
-
-# Plugins
-plugins = ["pydantic.mypy"]
-
-# Cache
-# sqlite_cache = true
-cache_dir = ".mypy_cache"
-
-# Advanced checks
-strict_equality = true
-extra_checks = true
-local_partial_types = true
-no_implicit_reexport = true
-
-# Performance
-incremental = true
-warn_incomplete_stub = true
-
-exclude = [
-    "__pycache__/",
-    ".*/generate_config.py",
-    ".*/manage.py",
-    ".coverage.*",
-    ".git/",
-    ".mypy_cache/",
-    ".ruff_cache/",
-    ".pytest_cache/",
-    ".venv/",
-    "build/",
-    "dist/",
-    "node_modules/",
-    "vendor/",
-]
-[tool.pydantic-mypy]
-init_forbid_extra = true
-init_typed = true
-warn_required_dynamic_aliases = true
-warn_untyped_fields = true
 
 [tool.bandit]
 exclude_dirs = ["tests", "build", "dist"]
@@ -146,6 +54,9 @@ from = "src"
 
 [tool.deptry]
 known_first_party = ["flexcore"]
+
+[tool.poetry.dependencies]
+python = ">=3.13,<3.14"
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -198,8 +109,8 @@ directory = "reports/coverage"
 [tool.coverage.xml]
 output = "reports/coverage.xml"
 
-[tool.poetry.dependencies]
-python = ">=3.13,<3.14"
+[tool.ruff.lint.isort]
+known-first-party = ["flexcore"]
 
 [tool.poetry.dependencies.flext-core]
 path = "../flext-core"
@@ -209,7 +120,6 @@ develop = true
 ruff = ">=0.12.3"
 black = ">=25.1.0"
 isort = ">=6.0.1"
-mypy = ">=1.13.0"
 pylint = ">=3.3.0"
 pre-commit = ">=4.0.1"
 vulture = ">=2.13"
@@ -219,6 +129,7 @@ pyupgrade = ">=3.19.0"
 autoflake = ">=2.3.1"
 detect-secrets = ">=1.5.0"
 commitizen = ">=4.8.3"
+pyrefly = "^0.34.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = ">=8.4.0"

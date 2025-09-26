@@ -55,10 +55,10 @@ repos:
         require_serial: true
         args: [--check-only, --diff]
 
-      # MyPy type checking
-      - id: mypy
-        name: "🛡️ MyPy Strict"
-        entry: poetry run mypy
+      # Pyrefly unified type checking
+      - id: pyrefly
+        name: "🛡️ Pyrefly Unified Type Checking"
+        entry: poetry run pyrefly
         language: system
         types: [python]
         require_serial: true
@@ -164,7 +164,7 @@ ci:
       ruff-format,
       ruff-lint,
       isort,
-      mypy,
+      pyrefly,
       bandit,
       vulture,
       radon-cc,
