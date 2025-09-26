@@ -7,9 +7,14 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+from typing import override
+
 
 class FlexCore:
     """Main FlexCore class for event-driven architecture."""
+
+    @override
+
 
     def __init__(self, config: dict[str, object] | None = None) -> None:
         """Initialize FlexCore with optional configuration."""
