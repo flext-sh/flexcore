@@ -14,8 +14,6 @@ class FlexCore:
     """Main FlexCore class for event-driven architecture."""
 
     @override
-
-
     def __init__(self, config: dict[str, object] | None = None) -> None:
         """Initialize FlexCore with optional configuration."""
         self.config: dict[str, object] = config or {}
