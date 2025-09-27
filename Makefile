@@ -109,15 +109,20 @@ mod-verify: ## Verify Go modules
 # =============================================================================
 
 .PHONY: validate
-validate: lint vet security test mod-verify ## Run all quality gates
+validate: lint type-check security test mod-verify ## Run all quality gates
 
 .PHONY: check
-check: lint vet ## Quick health check
+check: lint type-check ## Quick health check
 
 .PHONY: lint
-lint: ## Run Go linting
+lint: ## Run Go linting (ZERO TOLERANCE)
 	@echo "🧹 Linting..."
 	@golangci-lint run
+
+.PHONY: type-check
+type-check: vet ## Run type checking (ZERO TOLERANCE)
+	@echo "🔍 Running type checking..."
+	@go vet ./...
 
 .PHONY: format
 format: ## Format Go code
@@ -140,11 +145,11 @@ fix: format ## Auto-fix issues
 	@golangci-lint run --fix
 
 # =============================================================================
-# TESTING
+# TESTING (MANDATORY - 80% COVERAGE)
 # =============================================================================
 
 .PHONY: test
-test: ## Run tests with coverage
+test: ## Run tests with coverage (MANDATORY)
 	@echo "🧪 Running tests..."
 	@go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 	@go tool cover -func=coverage.out
