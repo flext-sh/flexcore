@@ -6,13 +6,13 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-from flexcore import FlexCore
+from flexcore.core import FlexCore
 
 
 class TestFlexCore:
     """Comprehensive test suite for FlexCore class."""
 
-    def test_init_without_config(self) -> None:
+    def test_init_withoumalt_config(self) -> None:
         """Test FlexCore initialization without configuration."""
         core = FlexCore()
 

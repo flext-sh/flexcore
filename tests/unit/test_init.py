@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import re
 
+from flexcore.core import FlexCore
+
 import flexcore
-from flexcore import FlexCore
 
 
 class TestFlexCorePackage:
@@ -19,26 +20,14 @@ class TestFlexCorePackage:
         """Test that package exports are available."""
         assert hasattr(flexcore, "FlexCore")
         assert hasattr(flexcore, "__version__")
-        assert hasattr(flexcore, "__version_info__")
 
     def test_version_attributes(self) -> None:
         """Test version attributes are properly set."""
         assert isinstance(flexcore.__version__, str)
-        assert isinstance(flexcore.__version_info__, tuple)
 
         # Version should be in semantic versioning format
         version_pattern = re.compile(r"^\d+\.\d+\.\d+")
         assert version_pattern.match(flexcore.__version__)
-
-    def test_version_info_structure(self) -> None:
-        """Test version_info tuple structure."""
-        version_info = flexcore.__version_info__
-        assert isinstance(version_info, tuple)
-        assert len(version_info) >= 3
-
-        # All elements should be integers
-        for part in version_info:
-            assert isinstance(part, int)
 
     def test_author_and_email(self) -> None:
         """Test author and email attributes."""
@@ -52,7 +41,7 @@ class TestFlexCorePackage:
         assert hasattr(flexcore, "__all__")
         assert isinstance(flexcore.__all__, list)
 
-        expected_exports = ["FlexCore", "__version__", "__version_info__"]
+        expected_exports = ["FlexCore", "__version__"]
         assert flexcore.__all__ == expected_exports
 
     def test_flexcore_class_accessible(self) -> None:
@@ -60,17 +49,6 @@ class TestFlexCorePackage:
         # Direct import should work
         core = flexcore.FlexCore()
         assert isinstance(core, FlexCore)
-
-    def test_version_consistency(self) -> None:
-        """Test version consistency between string and tuple."""
-        version_str = flexcore.__version__
-        version_tuple = flexcore.__version_info__
-
-        # Extract numbers from version string
-        version_parts = [int(x) for x in version_str.split(".") if x.isdigit()]
-
-        # Should match version_info
-        assert tuple(version_parts) == version_tuple
 
     def test_package_metadata(self) -> None:
         """Test package metadata is accessible."""
@@ -80,11 +58,10 @@ class TestFlexCorePackage:
 
     def test_import_from_package(self) -> None:
         """Test importing specific items from package."""
-        from flexcore import FlexCore, __version__, __version_info__
+        from flexcore import FlexCore, __version__
 
         assert FlexCore is not None
         assert __version__ is not None
-        assert __version_info__ is not None
 
     def test_core_module_import(self) -> None:
         """Test that core module is properly imported."""

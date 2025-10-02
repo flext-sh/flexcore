@@ -4,17 +4,13 @@
 Copyright (c) 2025 FLEXT Team. All rights reserved.
 SPDX-License-Identifier: MIT
 """
-
 from __future__ import annotations
 
-from importlib.metadata import version
-
 from flexcore.core import FlexCore
+from flext_core import FlextConstants
 
-__version__ = version("flexcore")
-__version_info__ = tuple(int(x) for x in __version__.split(".") if x.isdigit())
+__version__ = "1.0.0"
 __author__ = "FLEXT Team"
 __email__ = "team@flext.dev"
-
-
-__all__: list[str] = ["FlexCore", "__version__", "__version_info__"]
+__name__ = "flexcore"
+__all__ = ["FlexCore", "FlextConstants", "__author__", "__email__", "__name__", "__version__"]
