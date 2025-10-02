@@ -60,7 +60,6 @@ python = ">=3.13,<3.14"
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-asyncio_mode = "auto"
 addopts = [
     "-ra",
     "--strict-markers",
@@ -133,7 +132,6 @@ pyrefly = "^0.34.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = ">=8.4.0"
-pytest-asyncio = ">=1.0.0"
 pytest-cov = ">=6.2.0"
 pytest-xdist = ">=3.8.0"
 pytest-mock = ">=3.14.0"
