@@ -4,22 +4,23 @@ Copyright (c) 2025 Flext. All rights reserved.
 SPDX-License-Identifier: MIT
 
 """
+from typing import override
+
 
 from __future__ import annotations
 
-from typing import override
 
 
 class FlexCore:
     """Main FlexCore class for event-driven architecture."""
 
     @override
-    def __init__(self, config: dict[str, object] | None = None) -> None:
+    def __init__(self, config: dict[str, object] | None = None, **kwargs: object) -> None:
         """Initialize FlexCore with optional configuration."""
         self.config: dict[str, object] = config or {}
         self._initialized = False
 
-    def initialize(self: object) -> None:
+    def initialize(self) -> None:
         """Initialize the core system components."""
         if self._initialized:
             return
@@ -27,10 +28,10 @@ class FlexCore:
         # Initialize components here
         self._initialized = True
 
-    def is_initialized(self: object) -> bool:
+    def is_initialized(self) -> bool:
         """Check if system is initialized."""
         return self._initialized
 
-    def shutdown(self: object) -> None:
+    def shutdown(self) -> None:
         """Shutdown the core system."""
         self._initialized = False
