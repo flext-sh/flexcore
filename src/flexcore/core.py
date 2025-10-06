@@ -4,11 +4,9 @@ Copyright (c) 2025 Flext. All rights reserved.
 SPDX-License-Identifier: MIT
 
 """
-from typing import override
-
-
 from __future__ import annotations
 
+from typing import override
 
 
 class FlexCore:

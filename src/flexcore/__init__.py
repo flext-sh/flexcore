@@ -6,8 +6,9 @@ SPDX-License-Identifier: MIT
 """
 from __future__ import annotations
 
-from flexcore.core import FlexCore
 from flext_core import FlextConstants
+
+from flexcore.core import FlexCore
 
 __version__ = "1.0.0"
 __author__ = "FLEXT Team"
