@@ -8,9 +8,8 @@ from __future__ import annotations
 
 import re
 
-from flexcore.core import FlexCore
-
 import flexcore
+from flexcore.core import FlexCore
 
 
 class TestFlexCorePackage:
