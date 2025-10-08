@@ -12,9 +12,9 @@ These Docker files have been moved to legacy status following FlexCore's integra
 
 FlexCore now uses the centralized workspace Docker infrastructure:
 
-- **Development**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-dev`
-- **Production**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-node`
-- **Compose**: `/home/marlonsc/flext/docker/docker-compose.flexcore.yml`
+- **Development**: `../../../../docker/Dockerfile.flexcore-dev`
+- **Production**: `../../../../docker/Dockerfile.flexcore-node`
+- **Compose**: `../../../../docker/docker-compose.flexcore.yml`
 
 ## Updated Commands
 

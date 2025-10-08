@@ -91,7 +91,7 @@ func (fpa *FlextProxyAdapter) simulatePluginList(ctx context.Context) (interface
 				"state_management",
 				"environment_support",
 			},
-			"workspace": "/home/marlonsc/flext",
+			"workspace": "../../..",
 		},
 	}
 

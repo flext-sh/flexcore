@@ -69,7 +69,7 @@ func (fsp *FlextServicePlugin) Execute(ctx context.Context, params map[string]in
 		fmt.Sprintf("FLEXT_CONFIG_PATH=%s", fsp.configPath),
 		"FLEXT_ENV=production",
 		"FLEXT_DEBUG=false",
-		"PYTHONPATH=/home/marlonsc/flext/flext-core/src:/home/marlonsc/flext/flext-meltano/src",
+		"PYTHONPATH=../../../flext-core/src:/home/marlonsc/flext/flext-meltano/src",
 	)
 
 	// Add parameters as environment variables
