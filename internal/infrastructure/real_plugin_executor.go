@@ -188,7 +188,7 @@ func (orchestrator *RealPluginExecutionOrchestrator) createCommand(execCtx conte
 		fmt.Sprintf("FLEXT_CONFIG_PATH=%s", orchestrator.plugin.configPath),
 		"FLEXT_ENV=production",
 		"FLEXT_DEBUG=false",
-		"PYTHONPATH=/home/marlonsc/flext/flext-core/src:/home/marlonsc/flext/flext-meltano/src",
+		"PYTHONPATH=../../../flext-core/src:/home/marlonsc/flext/flext-meltano/src",
 	)
 
 	// Add parameters as environment variables

@@ -14,9 +14,9 @@ FlexCore's Docker infrastructure has been integrated with the FLEXT workspace un
 
 The following workspace Docker files should be used for FlexCore:
 
-- **Development**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-dev`
-- **Production**: `/home/marlonsc/flext/docker/Dockerfile.flexcore-node`
-- **Compose**: `/home/marlonsc/flext/docker/docker-compose.flexcore.yml`
+- **Development**: `../../docker/Dockerfile.flexcore-dev`
+- **Production**: `../../docker/Dockerfile.flexcore-node`
+- **Compose**: `../../docker/docker-compose.flexcore.yml`
 
 ### Updated Makefile Commands
 
@@ -75,7 +75,7 @@ The files in `flexcore/deployments/docker/` are maintained for:
 
 ```bash
 # Recommended development workflow
-cd /home/marlonsc/flext/flexcore
+cd ..
 
 # 1. Build and test locally
 make build test validate
@@ -96,7 +96,7 @@ curl http://localhost:8080/health  # Direct health check
 
 ```bash
 # Production deployment using workspace infrastructure
-cd /home/marlonsc/flext
+cd ../..
 
 # Build production image
 make docker-build-flexcore-prod
