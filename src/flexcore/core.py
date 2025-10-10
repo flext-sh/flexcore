@@ -4,6 +4,7 @@ Copyright (c) 2025 Flext. All rights reserved.
 SPDX-License-Identifier: MIT
 
 """
+
 from __future__ import annotations
 
 from typing import override
@@ -13,7 +14,9 @@ class FlexCore:
     """Main FlexCore class for event-driven architecture."""
 
     @override
-    def __init__(self, config: dict[str, object] | None = None, **kwargs: object) -> None:
+    def __init__(
+        self, config: dict[str, object] | None = None, **kwargs: object
+    ) -> None:
         """Initialize FlexCore with optional configuration."""
         self.config: dict[str, object] = config or {}
         self._initialized = False
