@@ -25,12 +25,12 @@ __license__ = _metadata.get("License")
 __url__ = _metadata.get("Home-Page")
 
 __all__ = [
-    "__version__",
-    "__version_info__",
-    "__title__",
-    "__description__",
     "__author__",
     "__author_email__",
+    "__description__",
     "__license__",
+    "__title__",
     "__url__",
+    "__version__",
+    "__version_info__",
 ]
