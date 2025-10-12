@@ -9,16 +9,18 @@ from __future__ import annotations
 
 from typing import override
 
+from flext_core import FlextCore
+
 
 class FlexCore:
     """Main FlexCore class for event-driven architecture."""
 
     @override
     def __init__(
-        self, config: dict[str, object] | None = None, **kwargs: object
+        self, config: FlextCore.Types.Dict | None = None, **kwargs: object
     ) -> None:
         """Initialize FlexCore with optional configuration."""
-        self.config: dict[str, object] = config or {}
+        self.config: FlextCore.Types.Dict = config or {}
         self._initialized = False
 
     def initialize(self) -> None:

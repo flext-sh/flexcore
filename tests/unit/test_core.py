@@ -6,6 +6,8 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+import flext_core
+
 from flexcore.core import FlexCore
 
 
@@ -110,7 +112,7 @@ class TestFlexCore:
 
     def test_config_immutability_after_init(self) -> None:
         """Test that config remains accessible after initialization."""
-        config: dict[str, object] = {"database_url": "sqlite:///test.db"}
+        config: flext_core.Types.Dict = {"database_url": "sqlite:///test.db"}
         core = FlexCore(config)
 
         core.initialize()
@@ -121,7 +123,7 @@ class TestFlexCore:
 
     def test_complex_config_handling(self) -> None:
         """Test handling of complex configuration objects."""
-        complex_config: dict[str, object] = {
+        complex_config: flext_core.Types.Dict = {
             "database": {"host": "localhost", "port": 5432},
             "features": ["auth", "logging"],
             "limits": {"max_connections": 100, "timeout": 30},
