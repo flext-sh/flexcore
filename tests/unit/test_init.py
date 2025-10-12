@@ -40,7 +40,15 @@ class TestFlexCorePackage:
         assert hasattr(flexcore, "__all__")
         assert isinstance(flexcore.__all__, list)
 
-        expected_exports = ["FlexCore", "__version__"]
+        expected_exports = [
+            "FlexCore",
+            "FlextCore.Constants",
+            "__author__",
+            "__email__",
+            "__name__",
+            "__version__",
+            "__version_info__",
+        ]
         assert flexcore.__all__ == expected_exports
 
     def test_flexcore_class_accessible(self) -> None:
