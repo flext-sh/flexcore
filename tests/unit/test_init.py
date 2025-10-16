@@ -43,7 +43,7 @@ class TestFlexCorePackage:
 
         expected_exports = [
             "FlexCore",
-            "FlextCore.Constants",
+            "FlextConstants",
             "__author__",
             "__email__",
             "__name__",
