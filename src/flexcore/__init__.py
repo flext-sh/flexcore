@@ -7,6 +7,8 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+from flext_core import FlextConstants
+
 from flexcore.__version__ import __version__, __version_info__
 from flexcore.core import FlexCore
 
@@ -16,7 +18,7 @@ __email__ = "team@flext.dev"
 
 __all__ = [
     "FlexCore",
-    "FlextCore.Constants",
+    "FlextConstants",
     "__author__",
     "__email__",
     "__name__",
