@@ -53,7 +53,7 @@ FlexCore implements a hexagonal architecture with clear separation of concerns:
 ### 2. Domain-Driven Design (DDD)
 
 - **Aggregates**: ProcessorAggregate, PipelineAggregate, PluginAggregate
-- **Value Objects**: ProcessorID, DataFormat, PluginConfig
+- **Value Objects**: ProcessorID, DataFormat, FlextPluginConfig
 - **Domain Events**: ProcessorStarted, PluginLoaded, PipelineCompleted
 
 ### 3. CQRS (Command Query Responsibility Segregation)
