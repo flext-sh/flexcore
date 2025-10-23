@@ -16,6 +16,8 @@
         "Typing :: Typed",
     ]
     dependencies = [
+    "pydantic (>=2.12.3)",
+    "pydantic-core (>=2.41.4)"
     ]
     description = "FlexCore - High-Performance Go-Python Hybrid Enterprise Framework"
     keywords = [
@@ -91,18 +93,19 @@
                 pip-audit = ">=2.7.3"
 
             [tool.poetry.group.test.dependencies]
-                factory-boy = ">=3.3.1"
+                
+        
+factory-boy = ">=3.3.1"
                 faker = ">=37.4.0"
                 hypothesis = ">=6.125.0"
                 pytest = ">=8.4.0"
                 pytest-benchmark = ">=5.1.0"
                 pytest-clarity = ">=1.0.1"
-                pytest-cov = ">=6.2.0"
+                pytest-cov = "=7.0.0"
                 pytest-deadfixtures = ">=2.2.1"
                 pytest-env = ">=1.1.5"
                 pytest-httpx = ">=0.35.0"
                 pytest-mock = ">=3.14.0"
-                pytest-randomly = ">=3.16.0"
                 pytest-sugar = ">=1.0.0"
                 pytest-timeout = ">=2.4.0"
                 pytest-xdist = ">=3.8.0"
