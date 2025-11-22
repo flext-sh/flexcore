@@ -153,6 +153,14 @@ factory-boy = ">=3.3.1"
             "tests",
         ]
 
+    [tool.pyrefly]
+        search-path = [
+            "src",
+            "tests",
+            "examples",
+            "scripts",
+        ]
+
     [tool.ruff]
         extend = "../ruff-shared.toml"
 
