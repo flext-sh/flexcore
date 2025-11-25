@@ -12,6 +12,14 @@ from pathlib import Path
 
 import pytest
 
+# Import flexcore modules for testing
+try:
+    import flexcore
+    from flexcore import FlexCore
+except ImportError:
+    flexcore = None
+    FlexCore = None
+
 
 class TestConftestConfiguration:
     """Test suite for conftest.py path setup."""
@@ -31,23 +39,12 @@ class TestConftestConfiguration:
 
     def test_flexcore_import_works(self) -> None:
         """Test that flexcore can be imported after path setup."""
-        try:
-            import flexcore
-            from flexcore import FlexCore
-
-            assert flexcore is not None
-            assert FlexCore is not None
-        except ImportError as e:
-            pytest.fail(f"Failed to import flexcore after path setup: {e}")
+        assert flexcore is not None, "flexcore module not imported"
+        assert FlexCore is not None, "FlexCore class not imported"
 
     def test_flexcore_core_import_works(self) -> None:
         """Test that flexcore.core can be imported after path setup."""
-        try:
-            from flexcore import FlexCore
-
-            assert FlexCore is not None
-        except ImportError as e:
-            pytest.fail(f"Failed to import flexcore.core after path setup: {e}")
+        assert FlexCore is not None, "FlexCore class not imported"
 
     def test_path_setup_idempotent(self) -> None:
         """Test that path setup is idempotent (safe to run multiple times)."""
