@@ -12,6 +12,13 @@ import re
 import flexcore
 from flexcore.core import FlexCore
 
+# Additional imports for testing
+try:
+    from flexcore import FlexCore as CoreFlexCore, __version__
+except ImportError:
+    CoreFlexCore = None
+    __version__ = None
+
 
 class TestFlexCorePackage:
     """Test suite for FlexCore package initialization."""
@@ -66,14 +73,10 @@ class TestFlexCorePackage:
 
     def test_import_from_package(self) -> None:
         """Test importing specific items from package."""
-        from flexcore import FlexCore, __version__
-
-        assert FlexCore is not None
+        assert CoreFlexCore is not None
         assert __version__ is not None
 
     def test_core_module_import(self) -> None:
         """Test that core module is properly imported."""
-        from flexcore import FlexCore as CoreFlexCore
-
         # Should be the same class
         assert flexcore.FlexCore is CoreFlexCore
