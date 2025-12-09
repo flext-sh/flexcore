@@ -30,7 +30,7 @@ FlexCore implements a hexagonal architecture with clear separation of concerns:
 ├─────────────────────────────────────────────────────────────────┤
 │  Domain Layer (Business Logic)                                 │
 │  ┌─────────────────────┐  ┌─────────────────────────────────┐  │
-│  │    Aggregates       │  │    Domain Services              │  │
+│  │    Aggregates       │  │    Services              │  │
 │  │   • ProcessorRoot   │  │    • Plugin Orchestrator       │  │
 │  │   • PipelineEntity  │  │    • Health Monitor             │  │
 │  │   • PluginEntity    │  │    • Data Transformer          │  │
