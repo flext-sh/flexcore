@@ -56,7 +56,7 @@ FlexCore acts as the **coordination layer** between:
 │      Use Cases + Command/Query Handlers        │
 ├─────────────────────────────────────────────────┤
 │              Domain Layer                       │
-│    Rich Domain Model + Domain Services         │
+│    Rich Domain Model + Services         │
 ├─────────────────────────────────────────────────┤
 │           Infrastructure Layer                  │
 │  Event Store + Plugin Runtime + Coordination   │
