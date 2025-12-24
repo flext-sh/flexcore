@@ -531,7 +531,7 @@ ccflags="$@"
 		$2 ~ /^KCM/ ||
 		$2 ~ /^LANDLOCK_/ ||
 		$2 ~ /^LOCK_(SH|EX|NB|UN)$/ ||
-		$2 ~ /^LO_(KEY|NAME)_SIZE$/ ||
+		$2 ~ /^LO_(KEY|NAME)size$/ ||
 		$2 ~ /^LOOP_(CLR|CTL|GET|SET)_/ ||
 		$2 == "LOOP_CONFIGURE" ||
 		$2 ~ /^(AF|SOCK|SO|SOL|IPPROTO|IP|IPV6|TCP|MCAST|EVFILT|NOTE|SHUT|PROT|MAP|MREMAP|MFD|T?PACKET|MSG|SCM|MCL|DT|MADV|PR|LOCAL|TCPOPT|UDP)_/ ||
