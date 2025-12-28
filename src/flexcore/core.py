@@ -18,11 +18,11 @@ class FlexCore:
     @override
     def __init__(
         self,
-        config: dict[str, t.Types.GeneralValueType] | None = None,
-        **kwargs: object,
+        config: dict[str, t.GeneralValueType] | None = None,
+        **kwargs: t.GeneralValueType,
     ) -> None:
         """Initialize FlexCore with optional configuration."""
-        self.config: dict[str, t.Types.GeneralValueType] = config or {}
+        self.config: dict[str, t.GeneralValueType] = config or {}
         self._initialized = False
 
     def initialize(self) -> None:
