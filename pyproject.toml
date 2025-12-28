@@ -17,7 +17,8 @@
     ]
     dependencies = [
     "pydantic (>=2.12.3)",
-    "pydantic-core (>=2.41.4)"
+    "pydantic-core (>=2.41.4)",
+    "prompt-toolkit (>=3.0.51)"
     ]
     description = "FlexCore - High-Performance Go-Python Hybrid Enterprise Framework"
     keywords = [
