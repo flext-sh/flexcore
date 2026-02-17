@@ -8,8 +8,8 @@ default_stages: [pre-commit, pre-push]
 default_language_version:
   python: python3.13
 
-repos: []  # DISABLED BY SCRIPT - All hooks disabled
-# 
+repos: [] # DISABLED BY SCRIPT - All hooks disabled
+#
 #   # Poetry-managed tools via local repo
 #   - repo: local
 #     hooks:
@@ -21,7 +21,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         types: [python]
 #         require_serial: true
 #         args: [--check, --diff]
-# 
+#
 #       # Ruff linting and formatting
 #       - id: ruff-format
 #         name: "⚡ Ruff Format"
@@ -30,7 +30,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         types: [python]
 #         require_serial: true
 #         args: [--check, --diff]
-# 
+#
 #       - id: ruff-lint
 #         name: "🔥 Ruff Lint (17 categories)"
 #         entry: poetry run ruff check
@@ -38,7 +38,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         types: [python]
 #         require_serial: true
 #         args: [--fix, --exit-non-zero-on-fix]
-# 
+#
 #       # isort import sorting
 #       - id: isort
 #         name: "📦 Import Sort"
@@ -47,7 +47,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         types: [python]
 #         require_serial: true
 #         args: [--check-only, --diff]
-# 
+#
 #       # Pyrefly unified type checking
 #       - id: pyrefly
 #         name: "🛡️ Pyrefly Unified Type Checking"
@@ -57,7 +57,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         require_serial: true
 #         pass_filenames: false
 #         args: [src/, tests/, --config-file=pyproject.toml]
-# 
+#
 #       # Bandit security
 #       - id: bandit
 #         name: "🔒 Bandit Security"
@@ -67,7 +67,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         require_serial: true
 #         args: [-r, src/, --severity-level=medium]
 #         exclude: tests/
-# 
+#
 #       # Vulture dead code
 #       - id: vulture
 #         name: "🦅 Dead Code Detection"
@@ -76,7 +76,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         types: [python]
 #         pass_filenames: false
 #         args: [src/, --min-confidence=80]
-# 
+#
 #       # Radon complexity
 #       - id: radon-cc
 #         name: "📊 Cyclomatic Complexity"
@@ -85,7 +85,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         types: [python]
 #         pass_filenames: false
 #         args: [src/, -a, -nb, --total-average]
-# 
+#
 #       - id: radon-mi
 #         name: "📊 Maintainability Index"
 #         entry: poetry run radon mi
@@ -93,7 +93,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         types: [python]
 #         pass_filenames: false
 #         args: [src/, -nb]
-# 
+#
 #   # YAML/TOML/JSON validation
 #   - repo: https://github.com/pre-commit/pre-commit-hooks
 #     rev: v5.0.0
@@ -120,7 +120,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         args: [--fix=lf]
 #       - id: debug-statements
 #         name: "🐛 Debug Statement Check"
-# 
+#
 #   # Python-specific checks
 #   - repo: https://github.com/pre-commit/pygrep-hooks
 #     rev: v1.10.0
@@ -135,7 +135,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         name: "⚠️ No log.warn Check"
 #       - id: python-use-type-annotations
 #         name: "📝 Type Annotations Check"
-# 
+#
 #   # Commit message validation via Poetry
 #   - repo: local
 #     hooks:
@@ -146,7 +146,7 @@ repos: []  # DISABLED BY SCRIPT - All hooks disabled
 #         stages: [commit-msg]
 #         pass_filenames: false
 #         args: [--commit-msg-file]
-# 
+#
 # CI configuration
 ci:
   autofix_prs: false # No automatic fixes - must be intentional
