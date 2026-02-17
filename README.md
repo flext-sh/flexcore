@@ -6,6 +6,10 @@
 
 **FlexCore** is the high-performance distributed runtime container service that serves as the primary orchestration engine for the FLEXT data integration ecosystem. Built with Go 1.24+, it implements Clean Architecture, Domain-Driven Design (DDD), CQRS, and Event Sourcing patterns to provide a robust, scalable foundation for enterprise data operations.
 
+**Reviewed**: 2026-02-17 | **Version**: 0.10.0-dev
+
+Part of the [FLEXT](https://github.com/flext-sh/flext) ecosystem.
+
 ## 🚀 Key Features
 
 - **Distributed Orchestration**: Coordinates microservices and data pipelines across the FLEXT ecosystem.
