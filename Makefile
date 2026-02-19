@@ -133,14 +133,14 @@ format: ## Format Go code
 	@echo "🎨 Formatting..."
 	@go fmt ./...
 	@goimports -w .
-	@md_files=$$(find . -type f -name '*.md' ! -path './.git/*' ! -path './.reports/*' ! -path './bin/*' ! -path './build/*'); \
+	@md_files=$$(find . -type f -name '*.md' ! -path './.git/*' ! -path './.reports/*' ! -path './reports/*' ! -path './bin/*' ! -path './build/*'); \
 	md_config=""; \
 	if [ -f "../.markdownlint.json" ]; then md_config="--config ../.markdownlint.json"; fi; \
 	if [ -n "$$md_files" ]; then printf '%s\n' "$$md_files" | xargs -r mdformat; markdownlint --fix $$md_config $$md_files || true; fi
 
 .PHONY: markdown-lint
 markdown-lint: ## Run markdown linting
-	@md_files=$$(find . -type f -name '*.md' ! -path './.git/*' ! -path './.reports/*' ! -path './bin/*' ! -path './build/*'); \
+	@md_files=$$(find . -type f -name '*.md' ! -path './.git/*' ! -path './.reports/*' ! -path './reports/*' ! -path './bin/*' ! -path './build/*'); \
 	md_config=""; \
 	if [ -f "../.markdownlint.json" ]; then md_config="--config ../.markdownlint.json"; fi; \
 	if [ -n "$$md_files" ]; then markdownlint $$md_config $$md_files; fi
