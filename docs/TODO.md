@@ -1,7 +1,6 @@
 # FlexCore TODO & Architecture Issues
 
 <!-- TOC START -->
-
 - [🚨 Critical Architectural Issues](#-critical-architectural-issues)
   - [1. Docker Infrastructure Migration (COMPLETED ✅)](#1-docker-infrastructure-migration-completed-)
   - [2. Clean Architecture Implementation (IN PROGRESS)](#2-clean-architecture-implementation-in-progress)
@@ -15,7 +14,6 @@
 - [🔧 Development Guidelines](#-development-guidelines)
   - [Code Quality Standards](#code-quality-standards)
   - [Architecture Principles](#architecture-principles)
-
 <!-- TOC END -->
 
 **Status**: 1.0.0 Release Preparation

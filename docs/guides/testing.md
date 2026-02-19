@@ -1,13 +1,13 @@
 <!-- Generated from docs/guides/testing.md for flexcore. -->
-
 <!-- Source of truth: workspace docs/guides/. -->
 
 # flexcore - FLEXT Testing Guide
 
 > Project profile: `flexcore`
 
-<!-- TOC START -->
 
+
+<!-- TOC START -->
 - Overview
 - Test Structure
 - Test Categories
@@ -41,7 +41,6 @@
 - Troubleshooting
   - Common Test Issues
 - Resources
-
 <!-- TOC END -->
 
 This guide covers testing strategies, best practices, and procedures for FLEXT applications and libraries.
@@ -682,7 +681,7 @@ def test_parse_invalid_ldif():
    pytest
    ```
 
-1. **Fixture Not Found**
+2. **Fixture Not Found**
 
    ```python
    # Check fixture scope and dependencies
@@ -691,14 +690,14 @@ def test_parse_invalid_ldif():
        return "value"
    ```
 
-1. **Test Timeout**
+3. **Test Timeout**
 
    ```bash
    # Increase timeout
    pytest --timeout=300
    ```
 
-1. **Coverage Issues**
+4. **Coverage Issues**
 
    ```bash
    # Check coverage configuration

@@ -1,13 +1,13 @@
 <!-- Generated from docs/guides/development.md for flexcore. -->
-
 <!-- Source of truth: workspace docs/guides/. -->
 
 # flexcore - FLEXT Development Guide
 
 > Project profile: `flexcore`
 
-<!-- TOC START -->
 
+
+<!-- TOC START -->
 - Prerequisites
 - Development Environment Setup
   - 1. Clone the Repository
@@ -47,7 +47,6 @@
   - Common Issues
 - Resources
 - Support
-
 <!-- TOC END -->
 
 This guide covers setting up a development environment for FLEXT contributions and understanding the development workflow.
@@ -441,12 +440,12 @@ config = FlextNewlibSettings(new_setting="value")
 ### Pull Request Process
 
 1. **Fork the repository**
-1. **Create a feature branch**
-1. **Make your changes**
-1. **Run quality gates**
-1. **Write tests**
-1. **Update documentation**
-1. **Submit pull request**
+2. **Create a feature branch**
+3. **Make your changes**
+4. **Run quality gates**
+5. **Write tests**
+6. **Update documentation**
+7. **Submit pull request**
 
 ### Code Review Guidelines
 
@@ -461,16 +460,13 @@ config = FlextNewlibSettings(new_setting="value")
 ### Common Issues
 
 1. **Import Errors**
-
    ```bash
    # Check PYTHONPATH
    export PYTHONPATH=src
 
    # Reinstall dependencies
    make clean && make setup
-   ```
-
-````
+```
 
 2. **Test Failures**
 
@@ -480,7 +476,7 @@ config = FlextNewlibSettings(new_setting="value")
 
    # Check specific test
    pytest tests/unit/test_specific.py::test_function -v
-````
+   ```
 
 3. **Build Issues**
 
