@@ -116,7 +116,7 @@ validate: ## Run validate gates only (optional: FIX=1)
 	@$(MAKE) mod-verify
 
 .PHONY: check
-check: lint type-check ## Run lint gates
+check: lint type-check markdown-lint ## Run lint gates
 
 .PHONY: lint
 lint: ## Run Go linting (ZERO TOLERANCE)
@@ -133,6 +133,17 @@ format: ## Format Go code
 	@echo "🎨 Formatting..."
 	@go fmt ./...
 	@goimports -w .
+	@md_files=$$(find . -type f -name '*.md' ! -path './.git/*' ! -path './.reports/*' ! -path './bin/*' ! -path './build/*'); \
+	md_config=""; \
+	if [ -f "../.markdownlint.json" ]; then md_config="--config ../.markdownlint.json"; fi; \
+	if [ -n "$$md_files" ]; then printf '%s\n' "$$md_files" | xargs -r mdformat; markdownlint --fix $$md_config $$md_files || true; fi
+
+.PHONY: markdown-lint
+markdown-lint: ## Run markdown linting
+	@md_files=$$(find . -type f -name '*.md' ! -path './.git/*' ! -path './.reports/*' ! -path './bin/*' ! -path './build/*'); \
+	md_config=""; \
+	if [ -f "../.markdownlint.json" ]; then md_config="--config ../.markdownlint.json"; fi; \
+	if [ -n "$$md_files" ]; then markdownlint $$md_config $$md_files; fi
 
 .PHONY: vet
 vet: ## Run Go vet

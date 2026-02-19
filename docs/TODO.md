@@ -1,7 +1,7 @@
 # FlexCore TODO & Architecture Issues
 
-
 <!-- TOC START -->
+
 - [🚨 Critical Architectural Issues](#-critical-architectural-issues)
   - [1. Docker Infrastructure Migration (COMPLETED ✅)](#1-docker-infrastructure-migration-completed-)
   - [2. Clean Architecture Implementation (IN PROGRESS)](#2-clean-architecture-implementation-in-progress)
@@ -15,10 +15,11 @@
 - [🔧 Development Guidelines](#-development-guidelines)
   - [Code Quality Standards](#code-quality-standards)
   - [Architecture Principles](#architecture-principles)
+
 <!-- TOC END -->
 
 **Status**: 1.0.0 Release Preparation
-**Last Updated**: 2025-08-23  
+**Last Updated**: 2025-08-23\
 **Priority**: High
 
 ## 🚨 Critical Architectural Issues
@@ -37,7 +38,7 @@
 ### 2. Clean Architecture Implementation (IN PROGRESS)
 
 **Status**: PARTIAL - Needs refactoring · 1.0.0 Release Preparation
-**Priority**: HIGH  
+**Priority**: HIGH\
 **Location**: `internal/app/`, `internal/domain/`, `internal/infrastructure/`
 
 **Issues**:
@@ -63,7 +64,7 @@
 ### 4. Plugin System Architecture (PENDING)
 
 **Status**: NEEDS REFACTORING · 1.0.0 Release Preparation
-**Priority**: MEDIUM  
+**Priority**: MEDIUM\
 **Location**: `pkg/plugin/`, `plugins/`
 
 **Issues**:
@@ -75,7 +76,7 @@
 ### 5. API Standardization (PENDING)
 
 **Status**: NEEDS DESIGN · 1.0.0 Release Preparation
-**Priority**: MEDIUM  
+**Priority**: MEDIUM\
 **Location**: `api/`, `pkg/`
 
 **Issues**:

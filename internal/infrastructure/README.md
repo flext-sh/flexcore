@@ -1,7 +1,7 @@
 # Infrastructure Layer
 
-
 <!-- TOC START -->
+
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [⚠️ Current Status: Major Issues](#-current-status-major-issues)
@@ -37,10 +37,11 @@
   - [Phase 2: Event Sourcing Enhancement](#phase-2-event-sourcing-enhancement)
   - [Phase 3: Plugin System Security](#phase-3-plugin-system-security)
   - [Phase 4: Performance Optimization](#phase-4-performance-optimization)
+
 <!-- TOC END -->
 
-**Package**: `github.com/flext-sh/flexcore/internal/infrastructure`  
-**Version**: 0.9.9 RC  
+**Package**: `github.com/flext-sh/flexcore/internal/infrastructure`\
+**Version**: 0.9.9 RC\
 **Status**: In Development - Major Refactoring Required · 1.0.0 Release Preparation
 
 ## Overview

@@ -1,7 +1,7 @@
 # Result Package
 
-
 <!-- TOC START -->
+
 - [Overview](#overview)
 - [Key Features](#key-features)
 - [Core Types](#core-types)
@@ -24,10 +24,11 @@
 - [Performance Considerations](#performance-considerations)
 - [Thread Safety](#thread-safety)
 - [Architecture Integration](#architecture-integration)
+
 <!-- TOC END -->
 
-**Package**: `github.com/flext-sh/flexcore/pkg/result`  
-**Version**: 0.9.9 RC  
+**Package**: `github.com/flext-sh/flexcore/pkg/result`\
+**Version**: 0.9.9 RC\
 **Status**: 1.0.0 Release Preparation
 
 ## Overview
@@ -210,10 +211,10 @@ The Result package serves as the foundation for error handling across FlexCore:
 ## Best Practices
 
 1. **Always handle errors explicitly** - avoid ignoring Result state
-2. **Use method chaining** for functional composition
-3. **Prefer ValueOr() over Get()** for safer value access
-4. **Chain operations** to avoid nested error checking
-5. **Use ForEach/IfFailure** for side effects without breaking chains
+1. **Use method chaining** for functional composition
+1. **Prefer ValueOr() over Get()** for safer value access
+1. **Chain operations** to avoid nested error checking
+1. **Use ForEach/IfFailure** for side effects without breaking chains
 
 ## Performance Considerations
 

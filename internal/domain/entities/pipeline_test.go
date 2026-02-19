@@ -112,12 +112,12 @@ func TestPipelineRemoveStep(t *testing.T) {
 	assert.Equal(t, "Step2", pipeline.Steps[0].Name)
 
 	// Try to remove non-existent step
-	err =pipeline.RemoveStep("NonExistent")
+	err = pipeline.RemoveStep("NonExistent")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 
 	// Remove last step
-	err =pipeline.RemoveStep("Step2")
+	err = pipeline.RemoveStep("Step2")
 	require.NoError(t, err)
 	assert.Empty(t, pipeline.Steps)
 }
@@ -139,7 +139,7 @@ func TestPipelineActivate(t *testing.T) {
 	}
 	pipeline.AddStep(&step)
 
-	err =pipeline.Activate()
+	err = pipeline.Activate()
 	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusActive, pipeline.Status)
 
@@ -166,7 +166,7 @@ func TestPipelineDeactivate(t *testing.T) {
 	pipeline.ClearEvents()
 
 	// Deactivate
-	err =pipeline.Deactivate()
+	err = pipeline.Deactivate()
 	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusDraft, pipeline.Status)
 
@@ -193,12 +193,12 @@ func TestPipelineStart(t *testing.T) {
 	pipeline.ClearEvents()
 
 	// Start pipeline
-	err =pipeline.Start()
+	err = pipeline.Start()
 	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusRunning, pipeline.Status)
 
 	// Try to start already running pipeline
-	err =pipeline.Start()
+	err = pipeline.Start()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "can only start active pipelines")
 
@@ -226,13 +226,13 @@ func TestPipelineComplete(t *testing.T) {
 	pipeline.ClearEvents()
 
 	// Complete pipeline
-	err =pipeline.Complete()
+	err = pipeline.Complete()
 	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusCompleted, pipeline.Status)
 	assert.NotNil(t, pipeline.LastRunAt)
 
 	// Try to complete non-running pipeline
-	err =pipeline.Complete()
+	err = pipeline.Complete()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "can only complete running pipelines")
 
@@ -260,13 +260,13 @@ func TestPipelineFail(t *testing.T) {
 	pipeline.ClearEvents()
 
 	// Fail pipeline
-	err =pipeline.Fail("Test error message")
+	err = pipeline.Fail("Test error message")
 	require.NoError(t, err)
 	assert.Equal(t, entities.PipelineStatusFailed, pipeline.Status)
 	assert.NotNil(t, pipeline.LastRunAt)
 
 	// Try to fail non-running pipeline
-	err =pipeline.Fail("Another error")
+	err = pipeline.Fail("Another error")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "can only fail running pipelines")
 
@@ -282,7 +282,7 @@ func TestPipelineSetSchedule(t *testing.T) {
 	require.NotNil(t, pipeline)
 
 	// Set daily schedule
-	err =pipeline.SetSchedule("0 10 * * *", "UTC")
+	err = pipeline.SetSchedule("0 10 * * *", "UTC")
 	require.NoError(t, err)
 
 	assert.NotNil(t, pipeline.Schedule)

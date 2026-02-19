@@ -1,7 +1,7 @@
 # FlexCore Architecture Overview
 
-
 <!-- TOC START -->
+
 - [System Overview](#system-overview)
 - [Key Architectural Patterns](#key-architectural-patterns)
   - [1. Clean Architecture](#1-clean-architecture)
@@ -13,10 +13,11 @@
   - [FLEXT Ecosystem Integration](#flext-ecosystem-integration)
   - [External Dependencies](#external-dependencies)
 - [Development Status](#development-status)
+
 <!-- TOC END -->
 
-**Version**: 0.9.9 RC  
-**Go Version**: 1.24+  
+**Version**: 0.9.9 RC\
+**Go Version**: 1.24+\
 **Architecture**: Clean Architecture + DDD + CQRS + Event Sourcing
 
 ## System Overview
@@ -130,8 +131,8 @@ flexcore/
 
 ## Development Status
 
-**Current Phase**: Architecture Foundation  
-**Next Phase**: Core Systems Implementation  
+**Current Phase**: Architecture Foundation\
+**Next Phase**: Core Systems Implementation\
 **Target**: Production-ready v1.0
 
 See [TODO.md](../TODO.md) for detailed implementation roadmap.
