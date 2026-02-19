@@ -97,7 +97,17 @@ known_first_party = [
 
 [tool.pytest]
 # addopts = "-ra -q --strict-markers --strict-config -p no:sugar"
-ini_options.addopts = [ "--strict-config", "--strict-markers", "--tb=short", "-p no:sugar", "-q", "-ra" ]
+ini_options.addopts = [
+  "--strict-config",
+  "--strict-markers",
+  "--tb=short",
+  "-p no:sugar",
+  "-q",
+  "-ra",
+  "--timeout=30",
+  "--timeout-method=signal",
+  "--durations=0",
+]
 ini_options.markers = [
   "e2e: End-to-end tests",
   "integration: Integration tests",

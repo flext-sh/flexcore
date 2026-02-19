@@ -235,6 +235,6 @@ Result instances are immutable and safe for concurrent read access. Async operat
 - **Event Sourcing**: Results used in event handler return values
 - **CQRS**: Command and query results use Result pattern consistently
 
----
+______________________________________________________________________
 
 **See Also**: [FlexCore Architecture](../../docs/architecture/overview.md) | [Domain Layer](../../internal/domain/README.md) | [Error Handling Guide](../../docs/development/error-handling.md)
