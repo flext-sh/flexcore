@@ -1,5 +1,19 @@
 # FlexCore
 
+
+<!-- TOC START -->
+- [🚀 Key Features](#-key-features)
+- [📦 Installation](#-installation)
+  - [Prerequisites](#prerequisites)
+  - [Development Setup](#development-setup)
+- [🛠️ Usage](#-usage)
+  - [API Endpoints](#api-endpoints)
+  - [Docker Deployment](#docker-deployment)
+- [🏗️ Architecture](#-architecture)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+<!-- TOC END -->
+
 [![Go 1.24+](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Clean Architecture](https://img.shields.io/badge/Architecture-Clean_Architecture-green)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)

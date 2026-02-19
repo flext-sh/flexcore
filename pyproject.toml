@@ -1,179 +1,138 @@
 [build-system]
-    build-backend = "poetry.core.masonry.api"
-    requires = [
-        "poetry-core>=1.9.0",
-    ]
+build-backend = "poetry.core.masonry.api"
+requires = [
+  "poetry-core>=2",
+]
 
 [project]
-    classifiers = [
-        "Development Status :: 5 - Production/Stable",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.13",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Typing :: Typed",
-    ]
-    dependencies = [
-    "pydantic (>=2.12.3)",
-    "pydantic-core (>=2.41.4)",
-    "prompt-toolkit (>=3.0.52,<4.0.0)"
-    ]
-    description = "FlexCore - High-Performance Go-Python Hybrid Enterprise Framework"
-    keywords = [
-        "async",
-        "compatibility",
-        "enterprise",
-        "flext",
-        "legacy",
-        "typed",
-    ]
-    name = "flexcore"
-    readme = "README.md"
-    requires-python = ">=3.13,<3.14"
-    version = "0.10.0-dev"
-
-    [[project.authors]]
-        email = "team@flext.sh"
-        name = "FLEXT Team"
-
-    [[project.maintainers]]
-        email = "team@flext.sh"
-        name = "FLEXT Team"
-
-    [project.license]
-        text = "MIT"
-
-    [project.urls]
-        Documentation = "https://github.com/flext-sh/flext/blob/main/README.md"
-        Homepage = "https://github.com/flext-sh/flext"
-        Repository = "https://github.com/flext-sh/flext"
-
-    [project.scripts]
-        flexcore = "flexcore.cli:main"
-        flexcore-server = "flexcore.server:main"
+name = "flexcore"
+version = "0.10.0-dev"
+description = "FlexCore - High-Performance Go-Python Hybrid Enterprise Framework"
+readme = "README.md"
+keywords = [
+  "async",
+  "compatibility",
+  "enterprise",
+  "flext",
+  "legacy",
+  "typed",
+]
+license = "MIT"
+maintainers = [ { email = "team@flext.sh", name = "FLEXT Team" } ]
+authors = [ { email = "team@flext.sh", name = "FLEXT Team" } ]
+requires-python = ">=3.13,<3.14"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = [ "prompt-toolkit>=3.0.52,<4", "pydantic>=2.12.3", "pydantic-core>=2.41.4" ]
+urls.Documentation = "https://github.com/flext-sh/flext/blob/main/README.md"
+urls.Homepage = "https://github.com/flext-sh/flext"
+scripts.flexcore = "flexcore.cli:main"
+scripts.flexcore-server = "flexcore.server:main"
 
 [tool]
+[tool.poetry]
+dependencies.python = ">=3.13,<3.14"
+dependencies.flext-core.develop = true
+dependencies.flext-core.path = ".flext-deps/flext-core"
+group.dev.dependencies.autoflake = ">=2.3.1"
+group.dev.dependencies.black = ">=25.1.0"
+group.dev.dependencies.codespell = ">=2.3.0"
+group.dev.dependencies.commitizen = ">=4.8.3"
+group.dev.dependencies.detect-secrets = ">=1.5.0"
+group.dev.dependencies.isort = ">=6.0.1"
+group.dev.dependencies.pre-commit = ">=4.0.1"
+group.dev.dependencies.pylint = ">=3.3.0"
+group.dev.dependencies.pyrefly = "^0.46.3"
+group.dev.dependencies.pyupgrade = ">=3.19.0"
+group.dev.dependencies.radon = ">=6.0.1"
+group.dev.dependencies.ruff = ">=0.12.3"
+group.dev.dependencies.vulture = ">=2.13"
+group.dev.dependencies.pytest = "^9.0.2"
+group.dev.dependencies.pytest-cov = "^7.0.0"
+group.dev.dependencies.pytest-httpx = "^0.36.0"
+group.dev.dependencies.faker = "^40.1.0"
+group.dev.dependencies.opentelemetry-api = ">=1.39.1"
+group.dev.dependencies.opentelemetry-sdk = ">=1.39.1"
+group.dev.dependencies.prompt-toolkit = ">=3.0.52"
+group.dev.dependencies.sqlparse = ">=0.5.5"
+group.security.dependencies.bandit = ">=1.8.0"
+group.security.dependencies.pip-audit = ">=2.7.3"
+group.test.dependencies.factory-boy = ">=3.3.1"
+group.test.dependencies.faker = ">=37.4.0"
+group.test.dependencies.hypothesis = ">=6.125.0"
+group.test.dependencies.pytest = ">=8.4.0"
+group.test.dependencies.pytest-benchmark = ">=5.1.0"
+group.test.dependencies.pytest-clarity = ">=1.0.1"
+group.test.dependencies.pytest-cov = ">=7.0.0"
+group.test.dependencies.pytest-deadfixtures = ">=2.2.1"
+group.test.dependencies.pytest-env = ">=1.1.5"
+group.test.dependencies.pytest-httpx = ">=0.35.0"
+group.test.dependencies.pytest-mock = ">=3.14.0"
+group.test.dependencies.pytest-sugar = ">=1.0.0"
+group.test.dependencies.pytest-timeout = ">=2.4.0"
+group.test.dependencies.pytest-xdist = ">=3.8.0"
+group.typings.dependencies.types-psutil = ">=7.0.0"
+group.typings.dependencies.types-python-dateutil = ">=2.9.0"
+group.typings.dependencies.types-pyyaml = ">=6.0.12"
+group.typings.dependencies.types-redis = ">=4.6.0"
+group.typings.dependencies.types-requests = ">=2.32.4"
+group.typings.dependencies.types-setuptools = ">=80.9.0"
+group.typings.dependencies.types-toml = ">=0.10.8.20240310"
+packages = [ { from = "src", include = "flexcore" } ]
 
-    [tool.deptry]
-        known_first_party = [
-            "flexcore",
-        ]
+[tool.ruff]
+extend = "../ruff-shared.toml"
 
-    [tool.poetry]
-        [[tool.poetry.packages]]
-            from = "src"
-            include = "flexcore"
+[tool.deptry]
+known_first_party = [
+  "flexcore",
+]
 
-        [tool.poetry.dependencies]
-            python = ">=3.13,<3.14"
+[tool.pytest]
+# addopts = "-ra -q --strict-markers --strict-config -p no:sugar"
+ini_options.addopts = [ "--strict-config", "--strict-markers", "--tb=short", "-p no:sugar", "-q", "-ra" ]
+ini_options.markers = [
+  "e2e: End-to-end tests",
+  "integration: Integration tests",
+  "slow: Slow tests",
+  "smoke: Smoke tests",
+  "unit: Unit tests",
+]
+ini_options.minversion = "8.0"
+ini_options.python_classes = [
+  "Test*",
+]
+ini_options.python_files = [
+  "*_test.py",
+  "test_*.py",
+]
+ini_options.python_functions = [
+  "test_*",
+]
+ini_options.testpaths = [
+  "tests",
+]
 
-            [tool.poetry.dependencies.flext-core]
-                develop = true
-                path = "../flext-core"
+[tool.coverage]
+run.source = [ "src/flexcore" ]
+report.fail_under = 100
+report.precision = 2
 
-        [tool.poetry.group]
-            [tool.poetry.group.dev.dependencies]
-                autoflake = ">=2.3.1"
-                black = ">=25.1.0"
-                codespell = ">=2.3.0"
-                commitizen = ">=4.8.3"
-                detect-secrets = ">=1.5.0"
-                isort = ">=6.0.1"
-                pre-commit = ">=4.0.1"
-                pylint = ">=3.3.0"
-                pyrefly = "^0.46.3"
-                pyupgrade = ">=3.19.0"
-                radon = ">=6.0.1"
-                ruff = ">=0.12.3"
-                vulture = ">=2.13"
-            pytest = "^9.0.2"
-            pytest-cov = "^7.0.0"
-            pytest-httpx = "^0.36.0"
-            faker = "^40.1.0"
-            opentelemetry-api = ">=1.39.1"
-            opentelemetry-sdk = ">=1.39.1"
-            prompt-toolkit = ">=3.0.52"
-            sqlparse = ">=0.5.5"
+[tool.pyrefly]
+search-path = [
+  "../typings",
+  "../typings/generated",
+  "src",
+  "tests",
+  "scripts",
+]
 
-            [tool.poetry.group.security.dependencies]
-                bandit = ">=1.8.0"
-                pip-audit = ">=2.7.3"
-
-            [tool.poetry.group.test.dependencies]
-                
-        
-factory-boy = ">=3.3.1"
-                faker = ">=37.4.0"
-                hypothesis = ">=6.125.0"
-                pytest = ">=8.4.0"
-                pytest-benchmark = ">=5.1.0"
-                pytest-clarity = ">=1.0.1"
-                pytest-cov = ">=7.0.0"
-                pytest-deadfixtures = ">=2.2.1"
-                pytest-env = ">=1.1.5"
-                pytest-httpx = ">=0.35.0"
-                pytest-mock = ">=3.14.0"
-                pytest-sugar = ">=1.0.0"
-                pytest-timeout = ">=2.4.0"
-                pytest-xdist = ">=3.8.0"
-
-            [tool.poetry.group.typings.dependencies]
-                types-psutil = ">=7.0.0"
-                types-python-dateutil = ">=2.9.0"
-                types-pyyaml = ">=6.0.12"
-                types-redis = ">=4.6.0"
-                types-requests = ">=2.32.4"
-                types-setuptools = ">=80.9.0"
-                types-toml = ">=0.10.8.20240310"
-
-    [tool.pytest.ini_options]
-        # addopts = "-ra -q --strict-markers --strict-config -p no:sugar"
-        addopts = [
-            "--cov-report=term-missing",
-            "--cov=src/",
-            "--strict-config",
-            "--strict-markers",
-            "--tb=short",
-            "-p no:sugar",
-            "-q",
-            "-ra",
-        ]
-        markers = [
-            "e2e: End-to-end tests",
-            "integration: Integration tests",
-            "slow: Slow tests",
-            "smoke: Smoke tests",
-            "unit: Unit tests",
-        ]
-        minversion = "8.0"
-        python_classes = [
-            "Test*",
-        ]
-        python_files = [
-            "*_test.py",
-            "test_*.py",
-        ]
-        python_functions = [
-            "test_*",
-        ]
-        testpaths = [
-            "tests",
-        ]
-
-    [tool.pyrefly]
-        search-path = [
-            "src",
-            "tests",
-            "examples",
-            "scripts",
-        ]
-
-    [tool.ruff]
-        extend = "../ruff-shared.toml"
-
-        [tool.ruff.lint.isort]
-            known-first-party = [
-                "flexcore",
-            ]
+[tool.bandit]
+skips = [ "B404", "B603", "B607", "B105", "B608" ]

@@ -1,5 +1,14 @@
 # FlexCore Legacy Docker Files
 
+
+<!-- TOC START -->
+- [Overview](#overview)
+- [Workspace Migration](#workspace-migration)
+- [Updated Commands](#updated-commands)
+- [Legacy Files](#legacy-files)
+- [Removal Timeline](#removal-timeline)
+<!-- TOC END -->
+
 **Status**: DEPRECATED · 1.0.0 Release Preparation
 **Migration Date**: 2025-08-23  
 **Replacement**: Workspace unified Docker infrastructure

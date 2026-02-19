@@ -1,5 +1,31 @@
 # Result Package
 
+
+<!-- TOC START -->
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Core Types](#core-types)
+  - [Result[T]](#resultt)
+  - [Async[T]](#asynct)
+  - [Tuple[T, U]](#tuplet-u)
+- [Functional Operations](#functional-operations)
+  - [Map - Transform Values](#map-transform-values)
+  - [FlatMap - Chain Operations](#flatmap-chain-operations)
+  - [Filter - Validate Values](#filter-validate-values)
+- [Error Handling Patterns](#error-handling-patterns)
+  - [Safe Value Access](#safe-value-access)
+  - [Go-style Error Handling](#go-style-error-handling)
+  - [Panic-based Patterns (Use with Caution)](#panic-based-patterns-use-with-caution)
+- [Async Operations](#async-operations)
+  - [Background Processing](#background-processing)
+  - [Safe Async Execution](#safe-async-execution)
+- [Integration with FLEXT Ecosystem](#integration-with-flext-ecosystem)
+- [Best Practices](#best-practices)
+- [Performance Considerations](#performance-considerations)
+- [Thread Safety](#thread-safety)
+- [Architecture Integration](#architecture-integration)
+<!-- TOC END -->
+
 **Package**: `github.com/flext-sh/flexcore/pkg/result`  
 **Version**: 0.9.9 RC  
 **Status**: 1.0.0 Release Preparation
