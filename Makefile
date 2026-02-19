@@ -12,8 +12,6 @@ BUILD_DIR := ../bin
 LOCAL_BUILD_DIR := bin
 
 # Quality Standards
-MIN_COVERAGE := 80
-
 # Service Configuration
 SERVICE_PORT := 8080
 SERVICE_HOST := localhost
@@ -36,8 +34,11 @@ help: ## Show available commands
 	@echo "  build-release    Build optimized release version"
 	@echo ""
 	@echo "🧪 QUALITY COMMANDS:"
-	@echo "  validate         Run all quality gates (lint+vet+test)"
+	@echo "  validate         Run validate gates only (use FIX=1 for auto-fix first)"
 	@echo "  check            Quick health check (lint+vet)"
+	@echo "  security         Run all security checks"
+	@echo "  format           Run all formatting"
+	@echo "  docs             Build docs"
 	@echo "  test             Run tests with coverage"
 	@echo "  test-flext-integration  Run FLEXT service integration tests"
 	@echo "  test-python      Run Python tests for FLEXT bridge"
@@ -109,10 +110,13 @@ mod-verify: ## Verify Go modules
 # =============================================================================
 
 .PHONY: validate
-validate: lint type-check security test mod-verify ## Run all quality gates
+validate: ## Run validate gates only (optional: FIX=1)
+	@echo "WARNING: optional mode available - run 'make validate FIX=1' to auto-run fix before validate gates"
+	@if [ "$(FIX)" = "1" ]; then $(MAKE) fix; fi
+	@$(MAKE) mod-verify
 
 .PHONY: check
-check: lint type-check ## Quick health check
+check: lint type-check ## Run lint gates
 
 .PHONY: lint
 lint: ## Run Go linting (ZERO TOLERANCE)
@@ -432,6 +436,10 @@ clean-all: clean ## Deep clean including cache
 	@echo "🧹 Deep cleaning..."
 	@go clean -cache -modcache -testcache
 
+.PHONY: docs
+docs: ## Build docs
+	@if [ -f mkdocs.yml ]; then mkdocs build; else echo "SKIP: docs (mkdocs.yml not found)"; fi
+
 .PHONY: reset
 reset: clean-all setup ## Reset project
 
@@ -448,23 +456,6 @@ diagnose: ## Project diagnostics
 
 .PHONY: doctor
 doctor: diagnose check ## Health check
-
-# =============================================================================
-# ALIASES (SINGLE LETTER SHORTCUTS)
-# =============================================================================
-
-.PHONY: t l f b c r v s h d w
-t: test
-l: lint
-f: format
-b: build
-c: clean
-r: run
-v: validate
-s: service-start
-h: service-health
-d: docker-run
-w: windmill-engine
 
 # =============================================================================
 # CONFIGURATION

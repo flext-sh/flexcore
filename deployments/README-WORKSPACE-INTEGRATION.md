@@ -1,5 +1,25 @@
 # FlexCore Docker Integration with Workspace Infrastructure
 
+
+<!-- TOC START -->
+- [Overview](#overview)
+- [Workspace Integration](#workspace-integration)
+  - [Centralized Docker Files (Preferred)](#centralized-docker-files-preferred)
+  - [Updated Makefile Commands](#updated-makefile-commands)
+- [Architecture Benefits](#architecture-benefits)
+  - [Unified Infrastructure](#unified-infrastructure)
+  - [Service Coordination](#service-coordination)
+- [Local Docker Files (Maintained for Reference)](#local-docker-files-maintained-for-reference)
+- [Best Practices](#best-practices)
+  - [Development Workflow](#development-workflow)
+  - [Production Deployment](#production-deployment)
+- [Configuration Management](#configuration-management)
+  - [Environment Variables](#environment-variables)
+  - [Service Discovery](#service-discovery)
+- [Migration Status](#migration-status)
+- [Next Steps](#next-steps)
+<!-- TOC END -->
+
 **Date**: 2025-08-23  
 **Status**: INTEGRATED · 1.0.0 Release Preparation
 **Migration**: COMPLETED

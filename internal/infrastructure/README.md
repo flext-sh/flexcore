@@ -1,5 +1,44 @@
 # Infrastructure Layer
 
+
+<!-- TOC START -->
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [⚠️ Current Status: Major Issues](#-current-status-major-issues)
+- [Core Components](#core-components)
+  - [Event Sourcing (`eventsourcing/`, `postgres_event_store.go`)](#event-sourcing-eventsourcing-postgreseventstorego)
+  - [Plugin System (`plugin_loader.go`, `plugin_execution_services.go`)](#plugin-system-pluginloadergo-pluginexecutionservicesgo)
+  - [Distributed Coordination (`redis_coordinator.go`)](#distributed-coordination-rediscoordinatorgo)
+  - [Observability (`observability/`)](#observability-observability)
+  - [CQRS Infrastructure (`cqrs/`)](#cqrs-infrastructure-cqrs)
+  - [Data Processors (`data-processor/`, `postgres-processor/`, `json-processor/`)](#data-processors-data-processor-postgres-processor-json-processor)
+  - [External Integration](#external-integration)
+- [Observability Stack](#observability-stack)
+  - [Monitoring Components](#monitoring-components)
+  - [Docker Compose Integration](#docker-compose-integration)
+- [Data Persistence](#data-persistence)
+  - [PostgreSQL Integration (`database.go`)](#postgresql-integration-databasego)
+  - [Event Store Schema](#event-store-schema)
+- [Middleware (`middleware/`)](#middleware-middleware)
+  - [Logging Middleware](#logging-middleware)
+- [Performance Considerations](#performance-considerations)
+  - [Current Bottlenecks](#current-bottlenecks)
+  - [Planned Optimizations](#planned-optimizations)
+- [Security Considerations](#security-considerations)
+  - [Current Security Issues](#current-security-issues)
+  - [Planned Security Enhancements](#planned-security-enhancements)
+- [Deployment and Operations](#deployment-and-operations)
+  - [Docker Configuration](#docker-configuration)
+  - [Configuration Management](#configuration-management)
+- [Integration Testing](#integration-testing)
+  - [Test Infrastructure](#test-infrastructure)
+- [Migration and Refactoring Plan](#migration-and-refactoring-plan)
+  - [Phase 1: Architecture Cleanup](#phase-1-architecture-cleanup)
+  - [Phase 2: Event Sourcing Enhancement](#phase-2-event-sourcing-enhancement)
+  - [Phase 3: Plugin System Security](#phase-3-plugin-system-security)
+  - [Phase 4: Performance Optimization](#phase-4-performance-optimization)
+<!-- TOC END -->
+
 **Package**: `github.com/flext-sh/flexcore/internal/infrastructure`  
 **Version**: 0.9.9 RC  
 **Status**: In Development - Major Refactoring Required · 1.0.0 Release Preparation

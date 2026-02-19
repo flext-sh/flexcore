@@ -1,5 +1,17 @@
 # flexcore Documentation
 
+
+<!-- TOC START -->
+- [📚 Table of Contents](#-table-of-contents)
+  - [Quick Start](#quick-start)
+  - [Architecture](#architecture)
+  - [Development](#development)
+  - [Integration](#integration)
+- [🎯 Key Features](#-key-features)
+- [🔗 External Links](#-external-links)
+- [📊 Status](#-status)
+<!-- TOC END -->
+
 ## 📚 Table of Contents
 
 ### Quick Start

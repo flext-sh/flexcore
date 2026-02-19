@@ -1,5 +1,31 @@
 # Domain Layer
 
+
+<!-- TOC START -->
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Core Components](#core-components)
+  - [Entity[T]](#entityt)
+  - [AggregateRoot[T]](#aggregateroott)
+  - [Domain Events](#domain-events)
+  - [Value Objects](#value-objects)
+  - [Specifications](#specifications)
+- [Domain Entities](#domain-entities)
+  - [Pipeline](#pipeline)
+  - [Plugin](#plugin)
+- [Event Sourcing Integration](#event-sourcing-integration)
+  - [Event Lifecycle](#event-lifecycle)
+- [Business Rules & Validation](#business-rules-validation)
+  - [Pipeline Business Rules](#pipeline-business-rules)
+  - [Validation Patterns](#validation-patterns)
+- [Integration with Application Layer](#integration-with-application-layer)
+- [Repository Pattern](#repository-pattern)
+- [Best Practices](#best-practices)
+- [Performance Considerations](#performance-considerations)
+- [Thread Safety](#thread-safety)
+- [Testing Strategy](#testing-strategy)
+<!-- TOC END -->
+
 **Package**: `github.com/flext-sh/flexcore/internal/domain`  
 **Version**: 0.9.9 RC  
 **Status**: 1.0.0 Release Preparation

@@ -1,5 +1,37 @@
 # Application Layer
 
+
+<!-- TOC START -->
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Current Status: Refactoring Required](#current-status-refactoring-required)
+  - [Known Issues](#known-issues)
+- [Core Components](#core-components)
+  - [Command Processing (`commands/`)](#command-processing-commands)
+  - [Query Processing (`queries/`)](#query-processing-queries)
+  - [Application Services (`application.go`)](#application-services-applicationgo)
+- [CQRS Implementation](#cqrs-implementation)
+  - [Command Side (Write Operations)](#command-side-write-operations)
+  - [Query Side (Read Operations)](#query-side-read-operations)
+- [Use Case Patterns](#use-case-patterns)
+  - [Transaction Management](#transaction-management)
+  - [Event-Driven Workflows](#event-driven-workflows)
+- [Integration Patterns](#integration-patterns)
+  - [Domain Layer Integration](#domain-layer-integration)
+  - [Infrastructure Layer Integration](#infrastructure-layer-integration)
+  - [Presentation Layer Integration](#presentation-layer-integration)
+- [Planned Improvements (Post-Refactoring)](#planned-improvements-post-refactoring)
+  - [Enhanced CQRS Implementation](#enhanced-cqrs-implementation)
+  - [Advanced Transaction Management](#advanced-transaction-management)
+  - [Performance Optimizations](#performance-optimizations)
+  - [Monitoring and Observability](#monitoring-and-observability)
+- [Best Practices](#best-practices)
+- [Testing Strategy](#testing-strategy)
+  - [Unit Testing](#unit-testing)
+  - [Integration Testing](#integration-testing)
+  - [Performance Testing](#performance-testing)
+<!-- TOC END -->
+
 **Package**: `github.com/flext-sh/flexcore/internal/app`  
 **Version**: 0.9.9 RC  
 **Status**: In Development - Architecture Refactoring Required · 1.0.0 Release Preparation

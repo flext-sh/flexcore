@@ -1,5 +1,20 @@
 # FlexCore Architecture Overview
 
+
+<!-- TOC START -->
+- [System Overview](#system-overview)
+- [Key Architectural Patterns](#key-architectural-patterns)
+  - [1. Clean Architecture](#1-clean-architecture)
+  - [2. Domain-Driven Design (DDD)](#2-domain-driven-design-ddd)
+  - [3. CQRS (Command Query Responsibility Segregation)](#3-cqrs-command-query-responsibility-segregation)
+  - [4. Event Sourcing](#4-event-sourcing)
+- [Directory Structure](#directory-structure)
+- [Integration Points](#integration-points)
+  - [FLEXT Ecosystem Integration](#flext-ecosystem-integration)
+  - [External Dependencies](#external-dependencies)
+- [Development Status](#development-status)
+<!-- TOC END -->
+
 **Version**: 0.9.9 RC  
 **Go Version**: 1.24+  
 **Architecture**: Clean Architecture + DDD + CQRS + Event Sourcing
