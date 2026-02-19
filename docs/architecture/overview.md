@@ -1,7 +1,6 @@
 # FlexCore Architecture Overview
 
 <!-- TOC START -->
-
 - [System Overview](#system-overview)
 - [Key Architectural Patterns](#key-architectural-patterns)
   - [1. Clean Architecture](#1-clean-architecture)
@@ -13,7 +12,6 @@
   - [FLEXT Ecosystem Integration](#flext-ecosystem-integration)
   - [External Dependencies](#external-dependencies)
 - [Development Status](#development-status)
-
 <!-- TOC END -->
 
 **Version**: 0.9.9 RC\

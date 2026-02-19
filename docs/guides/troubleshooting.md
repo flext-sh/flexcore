@@ -1,13 +1,13 @@
 <!-- Generated from docs/guides/troubleshooting.md for flexcore. -->
-
 <!-- Source of truth: workspace docs/guides/. -->
 
 # flexcore - FLEXT Troubleshooting Guide
 
 > Project profile: `flexcore`
 
-<!-- TOC START -->
 
+
+<!-- TOC START -->
 - Quick Diagnosis
   - Health Check Commands
   - System Status
@@ -36,10 +36,10 @@
   - Self-Service Resources
   - Community Support
   - Reporting Issues
+  - Your minimal example here
 - Prevention
   - Best Practices
 - Resources
-
 <!-- TOC END -->
 
 This guide covers common issues, their solutions, and debugging techniques for FLEXT applications and libraries.
@@ -663,12 +663,11 @@ monitor_cpu()
 ### Self-Service Resources
 
 1. **Check Documentation**
-
    - API Reference
    - Configuration Guide
    - Development Guide
 
-1. **Run Diagnostics**
+2. **Run Diagnostics**
 
    ```bash
    # System health check
@@ -678,7 +677,7 @@ monitor_cpu()
    cd flext-core && make validate
    ```
 
-1. **Check Logs**
+3. **Check Logs**
 
    ```bash
    # Enable debug logging
@@ -689,19 +688,16 @@ monitor_cpu()
 ### Community Support
 
 1. **GitHub Issues**
-
    - [Create Issue](https://github.com/flext-sh/flext/issues)
    - Search existing issues
    - Check closed issues for solutions
 
-1. **GitHub Discussions**
-
+2. **GitHub Discussions**
    - [Ask Question](https://github.com/flext-sh/flext/discussions)
    - Share solutions
    - Discuss best practices
 
-1. **Email Support**
-
+3. **Email Support**
    - <dev@flext.com> for technical issues
    - <support@flext.com> for general questions
 
@@ -717,7 +713,7 @@ When reporting issues, include:
    make info
    ```
 
-1. **Error Details**
+2. **Error Details**
 
    ```python
    # Full error traceback
@@ -728,7 +724,7 @@ When reporting issues, include:
        traceback.print_exc()
    ```
 
-1. **Minimal Reproduction**
+3. **Minimal Reproduction**
 
    ```python
    # Minimal code that reproduces the issue
@@ -758,7 +754,6 @@ from flext_core import u
 ### Your minimal example here
 
 4. **Expected vs Actual Behavior**
-
 - What you expected to happen
 - What actually happened
 - Steps to reproduce
@@ -790,7 +785,7 @@ def process(data: dict) -> ProcessedData:
        return FlextResult.ok(processed_data)
    ```
 
-1. **Use Type Hints**
+3. **Use Type Hints**
 
    ```python
    # ✅ GOOD
@@ -802,7 +797,7 @@ def process(data: dict) -> ProcessedData:
        pass
    ```
 
-1. **Test Thoroughly**
+4. **Test Thoroughly**
 
    ```python
    def test_process_data():

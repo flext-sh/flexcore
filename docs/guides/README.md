@@ -1,13 +1,13 @@
 <!-- Generated from docs/guides/README.md for flexcore. -->
-
 <!-- Source of truth: workspace docs/guides/. -->
 
 # flexcore - User Guides
 
 > Project profile: `flexcore`
 
-<!-- TOC START -->
 
+
+<!-- TOC START -->
 - Getting Started
   - [Installation Guide ✅](#installation-guidegetting-startedmd-)
   - Quick Start Tutorial (Coming Soon)
@@ -32,7 +32,6 @@
   - Performance Optimization (Coming Soon)
   - Security Best Practices (Coming Soon)
   - Error Handling (Coming Soon)
-
 <!-- TOC END -->
 
 ## Getting Started
