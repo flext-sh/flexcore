@@ -12,8 +12,6 @@ BUILD_DIR := ../bin
 LOCAL_BUILD_DIR := bin
 
 # Quality Standards
-MIN_COVERAGE := 80
-
 # Service Configuration
 SERVICE_PORT := 8080
 SERVICE_HOST := localhost
