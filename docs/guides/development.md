@@ -1,15 +1,54 @@
 <!-- Generated from docs/guides/development.md for flexcore. -->
+
 <!-- Source of truth: workspace docs/guides/. -->
 
 # flexcore - FLEXT Development Guide
 
 > Project profile: `flexcore`
 
+<!-- TOC START -->
 
+- Prerequisites
+- Development Environment Setup
+  - 1. Clone the Repository
+  - 2. Install Dependencies
+  - 3. Verify Installation
+- Project Structure
+- Development Workflow
+  - 1. Create a Feature Branch
+  - 2. Make Changes
+  - 3. Run Quality Gates
+  - 4. Commit Changes
+- Code Standards
+  - Type Safety (ZERO TOLERANCE)
+  - Railway-Oriented Programming
+  - Unified Models Pattern
+- Testing
+  - Running Tests
+  - Writing Tests
+- Quality Gates
+  - Pre-commit Hooks
+  - Quality Checks
+- Adding New Projects
+  - 1. Create Project Structure
+  - 2. Implement Core Patterns
+  - 3. Add to Workspace
+- Debugging
+  - Type Errors
+  - Test Failures
+  - Import Issues
+- Documentation
+  - Code Documentation
+  - README Updates
+- Contributing
+  - Pull Request Process
+  - Code Review Guidelines
+- Troubleshooting
+  - Common Issues
+- Resources
+- Support
 
-
-
-
+<!-- TOC END -->
 
 This guide covers setting up a development environment for FLEXT contributions and understanding the development workflow.
 
@@ -402,12 +441,12 @@ config = FlextNewlibSettings(new_setting="value")
 ### Pull Request Process
 
 1. **Fork the repository**
-2. **Create a feature branch**
-3. **Make your changes**
-4. **Run quality gates**
-5. **Write tests**
-6. **Update documentation**
-7. **Submit pull request**
+1. **Create a feature branch**
+1. **Make your changes**
+1. **Run quality gates**
+1. **Write tests**
+1. **Update documentation**
+1. **Submit pull request**
 
 ### Code Review Guidelines
 
@@ -422,13 +461,16 @@ config = FlextNewlibSettings(new_setting="value")
 ### Common Issues
 
 1. **Import Errors**
+
    ```bash
    # Check PYTHONPATH
    export PYTHONPATH=src
 
    # Reinstall dependencies
    make clean && make setup
-```
+   ```
+
+````
 
 2. **Test Failures**
 
@@ -438,7 +480,7 @@ config = FlextNewlibSettings(new_setting="value")
 
    # Check specific test
    pytest tests/unit/test_specific.py::test_function -v
-   ```
+````
 
 3. **Build Issues**
 

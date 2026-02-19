@@ -1,7 +1,7 @@
 # Application Layer
 
-
 <!-- TOC START -->
+
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Current Status: Refactoring Required](#current-status-refactoring-required)
@@ -30,10 +30,11 @@
   - [Unit Testing](#unit-testing)
   - [Integration Testing](#integration-testing)
   - [Performance Testing](#performance-testing)
+
 <!-- TOC END -->
 
-**Package**: `github.com/flext-sh/flexcore/internal/app`  
-**Version**: 0.9.9 RC  
+**Package**: `github.com/flext-sh/flexcore/internal/app`\
+**Version**: 0.9.9 RC\
 **Status**: In Development - Architecture Refactoring Required · 1.0.0 Release Preparation
 
 ## Overview
@@ -188,10 +189,10 @@ type ApplicationService interface {
 Commands represent user intentions to change system state:
 
 1. **Command Validation**: Ensure command structure and business rules
-2. **Domain Operation**: Execute business logic through aggregates
-3. **Event Generation**: Domain events are raised for state changes
-4. **Persistence**: Save aggregate state and events to storage
-5. **Event Publication**: Publish events to update read models
+1. **Domain Operation**: Execute business logic through aggregates
+1. **Event Generation**: Domain events are raised for state changes
+1. **Persistence**: Save aggregate state and events to storage
+1. **Event Publication**: Publish events to update read models
 
 ```go
 // Example command flow
@@ -227,9 +228,9 @@ func (s *ApplicationService) CreatePipeline(ctx context.Context, cmd CreatePipel
 Queries retrieve data without modifying system state:
 
 1. **Query Validation**: Ensure query parameters are valid
-2. **Data Retrieval**: Access optimized read models or projections
-3. **Result Composition**: Build view models for presentation layer
-4. **Caching**: Leverage caching for frequently accessed data
+1. **Data Retrieval**: Access optimized read models or projections
+1. **Result Composition**: Build view models for presentation layer
+1. **Caching**: Leverage caching for frequently accessed data
 
 ```go
 // Example query flow
@@ -378,11 +379,11 @@ func (h *PipelineCompletedHandler) Handle(ctx context.Context, event domain.Doma
 ## Best Practices
 
 1. **Clear Separation**: Keep commands and queries strictly separated
-2. **Thin Application Layer**: Delegate business logic to domain entities
-3. **Event-Driven Design**: Use domain events for loose coupling
-4. **Explicit Error Handling**: Use Result patterns throughout
-5. **Transaction Boundaries**: Manage consistency at aggregate boundaries
-6. **Idempotent Operations**: Ensure operations can be safely retried
+1. **Thin Application Layer**: Delegate business logic to domain entities
+1. **Event-Driven Design**: Use domain events for loose coupling
+1. **Explicit Error Handling**: Use Result patterns throughout
+1. **Transaction Boundaries**: Manage consistency at aggregate boundaries
+1. **Idempotent Operations**: Ensure operations can be safely retried
 
 ## Testing Strategy
 

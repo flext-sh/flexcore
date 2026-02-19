@@ -1,7 +1,7 @@
 # Domain Layer
 
-
 <!-- TOC START -->
+
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Core Components](#core-components)
@@ -24,10 +24,11 @@
 - [Performance Considerations](#performance-considerations)
 - [Thread Safety](#thread-safety)
 - [Testing Strategy](#testing-strategy)
+
 <!-- TOC END -->
 
-**Package**: `github.com/flext-sh/flexcore/internal/domain`  
-**Version**: 0.9.9 RC  
+**Package**: `github.com/flext-sh/flexcore/internal/domain`\
+**Version**: 0.9.9 RC\
 **Status**: 1.0.0 Release Preparation
 
 ## Overview
@@ -227,11 +228,11 @@ All aggregate operations generate domain events for:
 ### Event Lifecycle
 
 1. **Business Operation**: Aggregate method modifies state
-2. **Event Generation**: `RaiseEvent()` adds event to collection
-3. **Event Accumulation**: Events collect until aggregate persistence
-4. **Event Publication**: Application layer publishes to event bus
-5. **Event Processing**: Handlers update read models and trigger side effects
-6. **Event Clearing**: `ClearEvents()` resets collection after success
+1. **Event Generation**: `RaiseEvent()` adds event to collection
+1. **Event Accumulation**: Events collect until aggregate persistence
+1. **Event Publication**: Application layer publishes to event bus
+1. **Event Processing**: Handlers update read models and trigger side effects
+1. **Event Clearing**: `ClearEvents()` resets collection after success
 
 ## Business Rules & Validation
 
@@ -304,11 +305,11 @@ type PipelineRepository interface {
 ## Best Practices
 
 1. **Rich Domain Model**: Encapsulate business logic in entities and aggregates
-2. **Explicit Error Handling**: All operations return Results for clear error handling
-3. **Event-Driven Architecture**: Generate events for all state changes
-4. **Immutable Value Objects**: Represent domain concepts without identity
-5. **Aggregate Boundaries**: Maintain consistency within aggregate scope
-6. **Domain Services**: Use for complex operations spanning multiple aggregates
+1. **Explicit Error Handling**: All operations return Results for clear error handling
+1. **Event-Driven Architecture**: Generate events for all state changes
+1. **Immutable Value Objects**: Represent domain concepts without identity
+1. **Aggregate Boundaries**: Maintain consistency within aggregate scope
+1. **Domain Services**: Use for complex operations spanning multiple aggregates
 
 ## Performance Considerations
 

@@ -1,14 +1,48 @@
 <!-- Generated from docs/guides/testing.md for flexcore. -->
+
 <!-- Source of truth: workspace docs/guides/. -->
 
 # flexcore - FLEXT Testing Guide
 
 > Project profile: `flexcore`
 
+<!-- TOC START -->
 
+- Overview
+- Test Structure
+- Test Categories
+  - Unit Tests
+  - Integration Tests
+  - End-to-End Tests
+- Test Markers
+- Running Tests
+  - Basic Test Execution
+  - Coverage Analysis
+  - Parallel Test Execution
+- Test Fixtures
+  - Pytest Fixtures
+  - Using Fixtures
+- Mocking and Stubbing
+  - Unit Test Mocking
+  - Integration Test Stubbing
+- Performance Testing
+  - Load Testing
+  - Memory Testing
+- Test Data Management
+  - Test Fixtures Directory
+  - Loading Test Data
+- Continuous Integration
+  - GitHub Actions Workflow
+- Best Practices
+  - 1. Test Naming
+  - 2. Test Organization
+  - 3. Assertion Quality
+  - 4. Test Independence
+- Troubleshooting
+  - Common Test Issues
+- Resources
 
-
-
+<!-- TOC END -->
 
 This guide covers testing strategies, best practices, and procedures for FLEXT applications and libraries.
 
@@ -648,7 +682,7 @@ def test_parse_invalid_ldif():
    pytest
    ```
 
-2. **Fixture Not Found**
+1. **Fixture Not Found**
 
    ```python
    # Check fixture scope and dependencies
@@ -657,14 +691,14 @@ def test_parse_invalid_ldif():
        return "value"
    ```
 
-3. **Test Timeout**
+1. **Test Timeout**
 
    ```bash
    # Increase timeout
    pytest --timeout=300
    ```
 
-4. **Coverage Issues**
+1. **Coverage Issues**
 
    ```bash
    # Check coverage configuration

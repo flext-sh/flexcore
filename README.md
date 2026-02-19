@@ -1,7 +1,7 @@
 # FlexCore
 
-
 <!-- TOC START -->
+
 - [🚀 Key Features](#-key-features)
 - [📦 Installation](#-installation)
   - [Prerequisites](#prerequisites)
@@ -12,6 +12,7 @@
 - [🏗️ Architecture](#-architecture)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
+
 <!-- TOC END -->
 
 [![Go 1.24+](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
