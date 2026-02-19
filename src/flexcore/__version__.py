@@ -3,7 +3,7 @@
 Single source of truth pattern following flext-core standards.
 All metadata comes from pyproject.toml via importlib.metadata.
 
-Copyright (c) 2025 client-a Telecom. Todos os direitos reservados.
+Copyright (c) 2025 Flext Telecom. Todos os direitos reservados.
 SPDX-License-Identifier: Proprietary
 """
 
