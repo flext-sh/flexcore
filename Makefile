@@ -6,10 +6,17 @@
 
 # Project Configuration
 PROJECT_NAME := flexcore
+CORE_STACK := go
 GO_VERSION := 1.24
 BINARY_NAME := flexcore
 BUILD_DIR := ../bin
 LOCAL_BUILD_DIR := bin
+
+ifneq ("$(wildcard ../base.mk)", "")
+include ../base.mk
+else
+include base.mk
+endif
 
 # Quality Standards
 # Service Configuration
@@ -23,8 +30,8 @@ export PROJECT_NAME GO_VERSION MIN_COVERAGE BINARY_NAME SERVICE_PORT SERVICE_HOS
 # HELP & INFORMATION
 # =============================================================================
 
-.PHONY: help
-help: ## Show available commands
+.PHONY: help-local
+help-local: ## Show flexcore-specific commands
 	@echo "FLEXCORE - Distributed Runtime Container"
 	@echo "======================================="
 	@echo ""
@@ -88,8 +95,8 @@ info: ## Show project information
 # SETUP & DEPENDENCIES
 # =============================================================================
 
-.PHONY: setup
-setup: ## Complete project setup
+.PHONY: setup-local
+setup-local: ## Complete project setup (local legacy)
 	@echo "🚀 Setting up project..."
 	@go mod download
 	@go mod tidy
@@ -109,14 +116,14 @@ mod-verify: ## Verify Go modules
 # QUALITY GATES (MANDATORY)
 # =============================================================================
 
-.PHONY: validate
-validate: ## Run validate gates only (optional: FIX=1)
+.PHONY: validate-local
+validate-local: ## Run validate gates only (local legacy)
 	@echo "WARNING: optional mode available - run 'make validate FIX=1' to auto-run fix before validate gates"
 	@if [ "$(FIX)" = "1" ]; then $(MAKE) fix; fi
 	@$(MAKE) mod-verify
 
-.PHONY: check
-check: lint type-check markdown-lint ## Run lint gates
+.PHONY: check-local
+check-local: lint type-check markdown-lint ## Run lint gates (local legacy)
 
 .PHONY: lint
 lint: ## Run Go linting (ZERO TOLERANCE)
@@ -128,8 +135,8 @@ type-check: vet ## Run type checking (ZERO TOLERANCE)
 	@echo "🔍 Running type checking..."
 	@go vet ./...
 
-.PHONY: format
-format: ## Format Go code
+.PHONY: format-local
+format-local: ## Format Go code (local legacy)
 	@echo "🎨 Formatting..."
 	@go fmt ./...
 	@goimports -w .
@@ -150,8 +157,8 @@ vet: ## Run Go vet
 	@echo "🔍 Running vet..."
 	@go vet ./...
 
-.PHONY: security
-security: ## Run security scanning
+.PHONY: security-local
+security-local: ## Run security scanning (local legacy)
 	@echo "🔒 Security scan..."
 	@gosec ./...
 
@@ -163,8 +170,8 @@ fix: format ## Auto-fix issues
 # TESTING (MANDATORY - 80% COVERAGE)
 # =============================================================================
 
-.PHONY: test
-test: ## Run tests with coverage (MANDATORY)
+.PHONY: test-local
+test-local: ## Run tests with coverage (local legacy)
 	@echo "🧪 Running tests..."
 	@go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 	@go tool cover -func=coverage.out
@@ -431,8 +438,8 @@ docker-clean: ## Clean FlexCore Docker artifacts
 # MAINTENANCE
 # =============================================================================
 
-.PHONY: clean
-clean: ## Clean build artifacts
+.PHONY: clean-local
+clean-local: ## Clean build artifacts (local legacy)
 	@echo "🧹 Cleaning..."
 	@rm -f $(BUILD_DIR)/$(BINARY_NAME)
 	@rm -rf $(LOCAL_BUILD_DIR)
@@ -447,8 +454,8 @@ clean-all: clean ## Deep clean including cache
 	@echo "🧹 Deep cleaning..."
 	@go clean -cache -modcache -testcache
 
-.PHONY: docs
-docs: ## Build docs
+.PHONY: docs-local
+docs-local: ## Build docs (local legacy)
 	@if [ -f mkdocs.yml ]; then mkdocs build; else echo "SKIP: docs (mkdocs.yml not found)"; fi
 
 .PHONY: reset

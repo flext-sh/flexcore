@@ -332,6 +332,6 @@ type PipelineRepository interface {
 - **Event Testing**: Verify correct event generation for state changes
 - **Integration Tests**: Test aggregate interactions and repository patterns
 
----
+______________________________________________________________________
 
 **See Also**: [FlexCore Architecture](../../docs/architecture/overview.md) | [Result Package](../../pkg/result/README.md) | [Application Layer](../app/README.md)

@@ -51,6 +51,6 @@ docker-compose -f deployments/docker-compose.yml up -d
 
 These files will be removed in FlexCore v1.0 once workspace integration is fully validated in production.
 
----
+______________________________________________________________________
 
 **Migration Complete**: Use workspace Docker infrastructure for all new deployments.
