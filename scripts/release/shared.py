@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -54,6 +55,21 @@ def discover_projects(root: Path) -> list[Project]:
     return sorted(projects, key=lambda project: project.name)
 
 
+def resolve_projects(root: Path, names: list[str]) -> list[Project]:
+    projects = discover_projects(root)
+    if not names:
+        return projects
+
+    by_name = {project.name: project for project in projects}
+    missing = [name for name in names if name not in by_name]
+    if missing:
+        missing_text = ", ".join(sorted(missing))
+        raise RuntimeError(f"unknown release projects: {missing_text}")
+
+    resolved = [by_name[name] for name in names]
+    return sorted(resolved, key=lambda project: project.name)
+
+
 def parse_semver(version: str) -> tuple[int, int, int]:
     match = SEMVER_RE.match(version)
     if not match:
@@ -79,7 +95,7 @@ def bump_version(current_version: str, bump: str) -> str:
 def run_checked(command: list[str], cwd: Path | None = None) -> None:
     result = subprocess.run(command, cwd=cwd, check=False)
     if result.returncode != 0:
-        cmd = " ".join(command)
+        cmd = shlex.join(command)
         raise RuntimeError(f"command failed ({result.returncode}): {cmd}")
 
 
@@ -88,7 +104,7 @@ def run_capture(command: list[str], cwd: Path | None = None) -> str:
         command, cwd=cwd, capture_output=True, text=True, check=False
     )
     if result.returncode != 0:
-        cmd = " ".join(command)
+        cmd = shlex.join(command)
         detail = (result.stderr or result.stdout).strip()
         raise RuntimeError(f"command failed ({result.returncode}): {cmd}: {detail}")
     return result.stdout.strip()

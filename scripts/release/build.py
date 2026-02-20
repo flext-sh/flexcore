@@ -11,7 +11,7 @@ SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from release.shared import discover_projects, workspace_root
+from release.shared import resolve_projects, workspace_root
 
 
 def _parse_args() -> argparse.Namespace:
@@ -19,6 +19,7 @@ def _parse_args() -> argparse.Namespace:
     _ = parser.add_argument("--root", type=Path, default=Path("."))
     _ = parser.add_argument("--version", required=True)
     _ = parser.add_argument("--output-dir", type=Path, required=True)
+    _ = parser.add_argument("--projects", nargs="*", default=[])
     return parser.parse_args()
 
 
@@ -38,12 +39,10 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     report_path = output_dir / "build-report.json"
 
-    projects = discover_projects(root)
+    projects = resolve_projects(root, args.projects)
     targets = [
         ("root", root),
-        ("algar-oud-mig", root / "algar-oud-mig"),
         *[(project.name, project.path) for project in projects],
-        ("gruponos-meltano-native", root / "gruponos-meltano-native"),
     ]
 
     seen: set[str] = set()
