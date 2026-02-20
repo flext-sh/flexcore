@@ -38,6 +38,21 @@ def resolve_projects(root: Path, names: list[str]) -> list[Project]:
         ) from exc
 
 
+def resolve_projects(root: Path, names: list[str]) -> list[Project]:
+    projects = discover_projects(root)
+    if not names:
+        return projects
+
+    by_name = {project.name: project for project in projects}
+    missing = [name for name in names if name not in by_name]
+    if missing:
+        missing_text = ", ".join(sorted(missing))
+        raise RuntimeError(f"unknown release projects: {missing_text}")
+
+    resolved = [by_name[name] for name in names]
+    return sorted(resolved, key=lambda project: project.name)
+
+
 def parse_semver(version: str) -> tuple[int, int, int]:
     match = SEMVER_RE.match(version)
     if not match:
