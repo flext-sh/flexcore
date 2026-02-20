@@ -4,7 +4,7 @@ requires = [ "poetry-core>=2.0", "poetry-core>=2" ]
 
 [project]
 name = "flexcore"
-version = "0.10.0-dev"
+version = "0.10.0"
 description = "FlexCore - High-Performance Go-Python Hybrid Enterprise Framework"
 readme = "README.md"
 keywords = [
