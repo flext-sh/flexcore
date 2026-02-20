@@ -115,7 +115,9 @@ func TestBaseAdapter_Configure(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantHost, config.Host)
 			assert.Equal(t, tt.wantPort, config.Port)
-			assert.Equal(t, config, adapter.Config())
+			configured, ok := adapter.Config().(*testConfig)
+			require.True(t, ok)
+			assert.Equal(t, config, *configured)
 		})
 	}
 }

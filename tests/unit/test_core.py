@@ -8,7 +8,6 @@ SPDX-License-Identifier: MIT
 from __future__ import annotations
 
 import flext_core
-
 from flexcore.core import FlexCore
 
 

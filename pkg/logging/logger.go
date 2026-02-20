@@ -2,6 +2,10 @@
 package logging
 
 import (
+	"errors"
+	"os"
+	"strings"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -90,7 +94,17 @@ func F(key string, value interface{}) zap.Field {
 // Close flushes and closes the logger
 func Close() error {
 	if Logger != nil {
-		return Logger.Sync()
+		err := Logger.Sync()
+		if err == nil {
+			return nil
+		}
+		if errors.Is(err, os.ErrInvalid) {
+			return nil
+		}
+		if strings.Contains(err.Error(), "invalid argument") {
+			return nil
+		}
+		return err
 	}
 	return nil
 }

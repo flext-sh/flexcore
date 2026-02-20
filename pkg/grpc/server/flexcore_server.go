@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Package server provides gRPC server implementation for FlexCore Control Panel communication
 package server
 
@@ -135,7 +137,7 @@ func (s *FlexCoreServer) ListRuntimes(ctx context.Context, req *pb.ListRuntimesR
 
 	runtimeStatuses, err := s.runtimeManager.ListRuntimes(ctx, req.IncludeInactive)
 	if err != nil {
-		return nil, status.Error(internal.invalid, fmt.Sprintf("Failed to list runtimes: %v", err))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to list runtimes: %v", err))
 	}
 
 	pbStatuses := make([]*pb.RuntimeStatus, 0, len(runtimeStatuses))
@@ -213,7 +215,7 @@ func (s *FlexCoreServer) ListWorkflows(ctx context.Context, req *pb.ListWorkflow
 
 	workflows, err := s.windmillEngine.ListWorkflows(ctx)
 	if err != nil {
-		return nil, status.Error(internal.invalid, fmt.Sprintf("Failed to list workflows: %v", err))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to list workflows: %v", err))
 	}
 
 	pbWorkflows := make([]*pb.WorkflowStatus, 0, len(workflows))
@@ -392,7 +394,7 @@ func (s *FlexCoreServer) StreamLogs(req *pb.LogStreamRequest, stream pb.FlexCore
 
 	for _, logEntry := range mockLogs {
 		if err := stream.Send(logEntry); err != nil {
-			return status.Error(internal.invalid, fmt.Sprintf("Failed to send log entry: %v", err))
+			return status.Error(codes.Internal, fmt.Sprintf("Failed to send log entry: %v", err))
 		}
 	}
 
