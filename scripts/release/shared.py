@@ -38,15 +38,6 @@ def resolve_projects(root: Path, names: list[str]) -> list[Project]:
         ) from exc
 
 
-def resolve_projects(root: Path, names: list[str]) -> list[Project]:
-    try:
-        return _resolve_projects(root, names)
-    except RuntimeError as exc:
-        raise RuntimeError(
-            str(exc).replace("unknown projects", "unknown release projects")
-        ) from exc
-
-
 def parse_semver(version: str) -> tuple[int, int, int]:
     match = SEMVER_RE.match(version)
     if not match:
