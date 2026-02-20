@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Owner-Skill: .claude/skills/scripts-dependencies/SKILL.md
 """Sync internal FLEXT path dependencies for workspace/standalone modes."""
 
 from __future__ import annotations

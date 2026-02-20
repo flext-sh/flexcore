@@ -11,6 +11,7 @@ GO_VERSION := 1.24
 BINARY_NAME := flexcore
 BUILD_DIR := ../bin
 LOCAL_BUILD_DIR := bin
+CHECK_GATES ?= markdown
 
 ifneq ("$(wildcard ../base.mk)", "")
 include ../base.mk
