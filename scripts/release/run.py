@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import argparse
-import re
 from pathlib import Path
 import sys
+import tomllib
 
 SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
 if str(SCRIPTS_ROOT) not in sys.path:
@@ -12,8 +12,8 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 from release.shared import (
     bump_version,
-    discover_projects,
     parse_semver,
+    resolve_projects,
     run_capture,
     run_checked,
     workspace_root,
@@ -31,17 +31,21 @@ def _parse_args() -> argparse.Namespace:
     _ = parser.add_argument("--push", type=int, default=0)
     _ = parser.add_argument("--dry-run", type=int, default=0)
     _ = parser.add_argument("--create-branches", type=int, default=1)
+    _ = parser.add_argument("--projects", nargs="*", default=[])
     return parser.parse_args()
 
 
 def _current_version(root: Path) -> str:
     pyproject = root / "pyproject.toml"
-    content = pyproject.read_text(encoding="utf-8")
-    match = re.search(r'^version\s*=\s*"(?P<version>[^"]+)"', content, flags=re.M)
-    if not match:
+    content = pyproject.read_bytes()
+    data = tomllib.loads(content.decode("utf-8"))
+    project = data.get("project")
+    if not isinstance(project, dict):
+        raise RuntimeError("unable to detect [project] section from pyproject.toml")
+    version = project.get("version")
+    if not isinstance(version, str) or not version:
         raise RuntimeError("unable to detect version from pyproject.toml")
-    value = match.group("version")
-    return value.removesuffix("-dev")
+    return version.removesuffix("-dev")
 
 
 def _resolve_version(args: argparse.Namespace, root: Path) -> str:
@@ -71,18 +75,18 @@ def _resolve_tag(args: argparse.Namespace, version: str) -> str:
     return f"v{version}"
 
 
-def _create_release_branches(root: Path, version: str) -> None:
+def _create_release_branches(
+    root: Path, version: str, selected_projects: list[Path]
+) -> None:
     branch = f"release/{version}"
     run_checked(["git", "checkout", "-B", branch], cwd=root)
-    for project in discover_projects(root):
-        run_checked(["git", "checkout", "-B", branch], cwd=project.path)
-    for extra in ("algar-oud-mig", "gruponos-meltano-native"):
-        project_root = root / extra
-        if project_root.exists():
-            run_checked(["git", "checkout", "-B", branch], cwd=project_root)
+    for project_path in selected_projects:
+        run_checked(["git", "checkout", "-B", branch], cwd=project_path)
 
 
-def _phase_version(root: Path, version: str, dry_run: bool) -> None:
+def _phase_version(
+    root: Path, version: str, dry_run: bool, project_names: list[str]
+) -> None:
     command = [
         "python",
         "scripts/release/version.py",
@@ -92,6 +96,8 @@ def _phase_version(root: Path, version: str, dry_run: bool) -> None:
         version,
         "--check" if dry_run else "--apply",
     ]
+    if project_names:
+        command.extend(["--projects", *project_names])
     run_checked(command, cwd=root)
 
 
@@ -99,43 +105,48 @@ def _phase_validate(root: Path) -> None:
     run_checked(["make", "validate", "VALIDATE_SCOPE=workspace"], cwd=root)
 
 
-def _phase_build(root: Path, version: str) -> None:
+def _phase_build(root: Path, version: str, project_names: list[str]) -> None:
     output = root / ".reports" / "release" / f"v{version}"
-    run_checked(
-        [
-            "python",
-            "scripts/release/build.py",
-            "--root",
-            str(root),
-            "--version",
-            version,
-            "--output-dir",
-            str(output),
-        ],
-        cwd=root,
-    )
+    command = [
+        "python",
+        "scripts/release/build.py",
+        "--root",
+        str(root),
+        "--version",
+        version,
+        "--output-dir",
+        str(output),
+    ]
+    if project_names:
+        command.extend(["--projects", *project_names])
+    run_checked(command, cwd=root)
 
 
 def _phase_publish(
-    root: Path, version: str, tag: str, push: bool, dry_run: bool
+    root: Path,
+    version: str,
+    tag: str,
+    push: bool,
+    dry_run: bool,
+    project_names: list[str],
 ) -> None:
     notes = root / ".reports" / "release" / tag / "RELEASE_NOTES.md"
     notes.parent.mkdir(parents=True, exist_ok=True)
-    run_checked(
-        [
-            "python",
-            "scripts/release/notes.py",
-            "--root",
-            str(root),
-            "--tag",
-            tag,
-            "--version",
-            version,
-            "--output",
-            str(notes),
-        ],
-        cwd=root,
-    )
+    command = [
+        "python",
+        "scripts/release/notes.py",
+        "--root",
+        str(root),
+        "--tag",
+        tag,
+        "--version",
+        version,
+        "--output",
+        str(notes),
+    ]
+    if project_names:
+        command.extend(["--projects", *project_names])
+    run_checked(command, cwd=root)
     if not dry_run:
         run_checked(
             [
@@ -164,6 +175,9 @@ def _phase_publish(
 def main() -> int:
     args = _parse_args()
     root = workspace_root(args.root)
+    selected_projects = resolve_projects(root, args.projects)
+    selected_project_names = [project.name for project in selected_projects]
+    selected_project_paths = [project.path for project in selected_projects]
     version = _resolve_version(args, root)
     tag = _resolve_tag(args, version)
     phases = (
@@ -175,22 +189,30 @@ def main() -> int:
     _ = print(f"release_version={version}")
     _ = print(f"release_tag={tag}")
     _ = print(f"phases={','.join(phases)}")
+    _ = print(f"projects={','.join(selected_project_names)}")
 
     if args.create_branches == 1 and args.dry_run == 0:
-        _create_release_branches(root, version)
+        _create_release_branches(root, version, selected_project_paths)
 
     for phase in phases:
         if phase == "validate":
             _phase_validate(root)
             continue
         if phase == "version":
-            _phase_version(root, version, args.dry_run == 1)
+            _phase_version(root, version, args.dry_run == 1, selected_project_names)
             continue
         if phase == "build":
-            _phase_build(root, version)
+            _phase_build(root, version, selected_project_names)
             continue
         if phase == "publish":
-            _phase_publish(root, version, tag, args.push == 1, args.dry_run == 1)
+            _phase_publish(
+                root,
+                version,
+                tag,
+                args.push == 1,
+                args.dry_run == 1,
+                selected_project_names,
+            )
             continue
         raise RuntimeError(f"invalid phase: {phase}")
 

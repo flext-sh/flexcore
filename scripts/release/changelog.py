@@ -25,13 +25,14 @@ def _parse_args() -> argparse.Namespace:
 
 def _update_changelog(existing: str, version: str, tag: str) -> str:
     date = datetime.now(UTC).date().isoformat()
+    heading = f"## {version} - "
     section = (
-        f"## {version} - {date}\n\n"
+        f"{heading}{date}\n\n"
         f"- Workspace release tag: `{tag}`\n"
         "- Status: Alpha, non-production\n\n"
         f"Full notes: `docs/releases/{tag}.md`\n\n"
     )
-    if section in existing:
+    if heading in existing:
         return existing
     marker = "# Changelog\n\n"
     if marker in existing:

@@ -9,7 +9,7 @@ SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from release.shared import discover_projects, run_capture, workspace_root
+from release.shared import resolve_projects, run_capture, workspace_root
 
 
 def _parse_args() -> argparse.Namespace:
@@ -18,6 +18,7 @@ def _parse_args() -> argparse.Namespace:
     _ = parser.add_argument("--tag", required=True)
     _ = parser.add_argument("--output", type=Path, required=True)
     _ = parser.add_argument("--version", default="")
+    _ = parser.add_argument("--projects", nargs="*", default=[])
     return parser.parse_args()
 
 
@@ -56,7 +57,7 @@ def main() -> int:
 
     previous = _previous_tag(root, args.tag)
     changes = _collect_changes(root, previous, args.tag)
-    projects = discover_projects(root)
+    projects = resolve_projects(root, args.projects)
 
     version = args.version or args.tag.removeprefix("v")
     lines: list[str] = [
@@ -70,7 +71,7 @@ def main() -> int:
         "## Scope",
         "",
         f"- Workspace release version: {version}",
-        f"- Projects packaged: {len(projects) + 2}",
+        f"- Projects packaged: {len(projects) + 1}",
         "",
         "## Projects impacted",
         "",
@@ -79,9 +80,7 @@ def main() -> int:
         f"- {name}"
         for name in [
             "root",
-            "algar-oud-mig",
             *[project.name for project in projects],
-            "gruponos-meltano-native",
         ]
     )
     lines.extend([
