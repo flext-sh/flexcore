@@ -303,3 +303,8 @@ build/
 # ============================================================================
 !**/.gitkeep
 .github/*.rej
+
+# --- workspace-sync: required ignores (auto-managed) ---
+.reports/
+.venv/
+__pycache__/
