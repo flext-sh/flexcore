@@ -11,7 +11,7 @@ import argparse
 import json
 from pathlib import Path
 
-from documentation.shared import (
+from scripts.documentation.shared import (
     Scope,
     build_scopes,
     write_json,
@@ -53,7 +53,7 @@ def maybe_write_todo(scope: Scope, *, apply_mode: bool) -> bool:
         return False
     path = scope.path / "TODOS.md"
     content = "# TODOS\n\n- [ ] Resolve documentation validation findings from `.reports/docs/validate-report.md`.\n"
-    path.write_text(content, encoding="utf-8")
+    _ = path.write_text(content, encoding="utf-8")
     return True
 
 
@@ -101,12 +101,12 @@ def run_scope(scope: Scope, *, apply_mode: bool, check: str) -> int:
 def main() -> int:
     """Entry point for documentation validation CLI."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", default=".")
-    parser.add_argument("--project")
-    parser.add_argument("--projects")
-    parser.add_argument("--output-dir", default=".reports/docs")
-    parser.add_argument("--apply", action="store_true")
-    parser.add_argument("--check", default="all")
+    _ = parser.add_argument("--root", default=".")
+    _ = parser.add_argument("--project")
+    _ = parser.add_argument("--projects")
+    _ = parser.add_argument("--output-dir", default=".reports/docs")
+    _ = parser.add_argument("--apply", action="store_true")
+    _ = parser.add_argument("--check", default="all")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
