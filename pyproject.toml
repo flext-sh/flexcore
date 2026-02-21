@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = [ "poetry-core>=2", "poetry-core>=2" ]
+requires = [ "poetry-core>=2" ]
 
 [project]
 name = "flexcore"
