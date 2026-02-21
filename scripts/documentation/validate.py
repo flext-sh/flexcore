@@ -11,7 +11,7 @@ import argparse
 import json
 from pathlib import Path
 
-from shared import (
+from documentation.shared import (
     Scope,
     build_scopes,
     write_json,
